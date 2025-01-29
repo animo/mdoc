@@ -103,15 +103,17 @@ describe('issuing an MDOC', () => {
 
   it('should include the namespace and attributes', () => {
     const attrValues = parsedDocument.getIssuerNameSpace('org.iso.18013.5.1')
-    // @ts-expect error this will work
-    const currentAge = new Date(Date.now() - new Date('2007-03-25').getTime()).getFullYear() - 1970
     expect(attrValues).toMatchInlineSnapshot(`
       Map {
         "family_name" => "Jones",
         "given_name" => "Ava",
         "birth_date" => "2007-03-25",
+        "age_over_12" => true,
+        "age_over_14" => true,
+        "age_over_16" => true,
+        "age_over_18" => false,
         "age_over_21" => false,
-        "age_over_17" => true,
+        "age_over_65" => false,
         "issue_date" => "2023-09-01",
         "expiry_date" => "2028-09-30",
         "issuing_country" => "US",
