@@ -28,6 +28,10 @@ import {
 import type { InputDescriptor, PresentationDefinition } from './presentation-definition.js'
 import type { DeviceAuth, DeviceSigned, MacSupportedAlgs, SupportedAlgs } from './types.js'
 
+type SessionTranscriptCallback = (context: {
+  crypto: MdocContext['crypto']
+}) => Promise<Uint8Array>
+
 /**
  * A builder class for creating a device response.
  */
@@ -36,6 +40,7 @@ export class DeviceResponse {
   private pd?: PresentationDefinition
   private deviceRequest?: DeviceRequest
   private sessionTranscriptBytes?: Uint8Array
+  private sessionTranscriptCallback?: SessionTranscriptCallback
   private useMac = true
   private devicePrivateKey?: JWK
   public nameSpaces: Map<string, Map<string, unknown>> = new Map()
@@ -110,7 +115,7 @@ export class DeviceResponse {
    * @returns {DeviceResponse}
    */
   public usingSessionTranscriptBytes(sessionTranscriptBytes: Uint8Array): DeviceResponse {
-    if (this.sessionTranscriptBytes) {
+    if (this.sessionTranscriptBytes || this.sessionTranscriptCallback) {
       throw new Error(
         'A session transcript has already been set, either with .usingSessionTranscriptForOID4VP, .usingSessionTranscriptForWebAPI or .usingSessionTranscriptBytes'
       )
@@ -119,8 +124,19 @@ export class DeviceResponse {
     return this
   }
 
+  private usingSessionTranscriptCallback(sessionTranscriptCallback: SessionTranscriptCallback): DeviceResponse {
+    if (this.sessionTranscriptBytes || this.sessionTranscriptCallback) {
+      throw new Error(
+        'A session transcript has already been set, either with .usingSessionTranscriptForOID4VP, .usingSessionTranscriptForWebAPI or .usingSessionTranscriptBytes'
+      )
+    }
+
+    this.sessionTranscriptCallback = sessionTranscriptCallback
+    return this
+  }
+
   /**
-   * Set the session transcript data to use for the device response as defined in ISO/IEC 18013-7 in Annex B (OID4VP), 2023 draft.
+   * Set the session transcript data to use for the device response as defined in ISO/IEC 18013-7 in Annex B (OID4VP), 2024 draft.
    *
    * This should match the session transcript as it will be calculated by the verifier.
    *
@@ -136,30 +152,44 @@ export class DeviceResponse {
     responseUri: string
     verifierGeneratedNonce: string
   }): DeviceResponse {
-    const bytes = DeviceResponse.calculateSessionTranscriptForOID4VP(input)
-    this.usingSessionTranscriptBytes(bytes)
+    this.usingSessionTranscriptCallback((context) =>
+      DeviceResponse.calculateSessionTranscriptForOID4VP({ ...input, context })
+    )
     return this
   }
 
-  public static calculateSessionTranscriptForOID4VP(input: {
+  public static async calculateSessionTranscriptForOID4VP(input: {
+    context: {
+      crypto: MdocContext['crypto']
+    }
     mdocGeneratedNonce: string
     clientId: string
     responseUri: string
     verifierGeneratedNonce: string
   }) {
-    const { mdocGeneratedNonce, clientId, responseUri, verifierGeneratedNonce } = input
+    const { mdocGeneratedNonce, clientId, responseUri, verifierGeneratedNonce, context } = input
 
     return cborEncode(
       DataItem.fromData([
         null, // deviceEngagementBytes
         null, // eReaderKeyBytes
-        [mdocGeneratedNonce, clientId, responseUri, verifierGeneratedNonce],
+        [
+          await context.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([clientId, mdocGeneratedNonce]),
+          }),
+          await context.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([responseUri, mdocGeneratedNonce]),
+          }),
+          verifierGeneratedNonce,
+        ],
       ])
     )
   }
 
   /**
-   * Set the session transcript data to use for the device response as defined in ISO/IEC 18013-7 in Annex A (Web API), 2023 draft.
+   * Set the session transcript data to use for the device response as defined in ISO/IEC 18013-7 in Annex A (Web API), 2024 draft.
    *
    * This should match the session transcript as it will be calculated by the verifier.
    *
@@ -173,23 +203,32 @@ export class DeviceResponse {
     readerEngagementBytes: Uint8Array
     eReaderKeyBytes: Uint8Array
   }): DeviceResponse {
-    const bytes = DeviceResponse.calculateSessionTranscriptForWebApi(input)
-    this.usingSessionTranscriptBytes(bytes)
+    this.usingSessionTranscriptCallback((context) =>
+      DeviceResponse.calculateSessionTranscriptForWebApi({ ...input, context })
+    )
     return this
   }
 
-  public static calculateSessionTranscriptForWebApi(input: {
+  public static async calculateSessionTranscriptForWebApi(input: {
+    context: {
+      crypto: MdocContext['crypto']
+    }
     deviceEngagementBytes: Uint8Array
     readerEngagementBytes: Uint8Array
     eReaderKeyBytes: Uint8Array
   }) {
-    const { deviceEngagementBytes, eReaderKeyBytes, readerEngagementBytes } = input
+    const { deviceEngagementBytes, eReaderKeyBytes, readerEngagementBytes, context } = input
+
+    const readerEngagementBytesHash = await context.crypto.digest({
+      bytes: readerEngagementBytes,
+      digestAlgorithm: 'SHA-256',
+    })
 
     return cborEncode(
       DataItem.fromData([
         new DataItem({ buffer: deviceEngagementBytes }),
         new DataItem({ buffer: eReaderKeyBytes }),
-        readerEngagementBytes,
+        readerEngagementBytesHash,
       ])
     )
   }
@@ -252,7 +291,14 @@ export class DeviceResponse {
       )
     }
 
-    if (!this.sessionTranscriptBytes) {
+    // Calculate session transcript bytes if not calculated previously yet
+    if (!this.sessionTranscriptBytes && this.sessionTranscriptCallback) {
+      this.sessionTranscriptBytes = await this.sessionTranscriptCallback(ctx)
+      this.sessionTranscriptCallback = undefined
+    }
+
+    const sessionTranscriptBytes = this.sessionTranscriptBytes
+    if (!sessionTranscriptBytes) {
       throw new Error(
         'Must provide the session transcript with either .usingSessionTranscriptForOID4VP, .usingSessionTranscriptForWebAPI or .usingSessionTranscriptBytes'
       )
@@ -279,7 +325,7 @@ export class DeviceResponse {
             nameSpaces: disclosedNameSpaces,
             issuerAuth: mdoc.issuerSigned.issuerAuth,
           },
-          await this.getDeviceSigned(mdoc.docType, ctx)
+          await this.getDeviceSigned(mdoc.docType, sessionTranscriptBytes, ctx)
         )
       })
     )
@@ -289,24 +335,21 @@ export class DeviceResponse {
 
   private async getDeviceSigned(
     docType: string,
+    sessionTranscriptBytes: Uint8Array,
     ctx: {
       cose: MdocContext['cose']
       crypto: MdocContext['crypto']
     }
   ): Promise<DeviceSigned> {
     const deviceAuthenticationBytes = calculateDeviceAutenticationBytes(
-      this.sessionTranscriptBytes,
+      sessionTranscriptBytes,
       docType,
       this.nameSpaces
     )
 
     let deviceAuth: DeviceAuth
     if (this.useMac) {
-      if (!this.sessionTranscriptBytes) {
-        throw new Error('Missing sessionTranscriptBytes for getDeviceSigned')
-      }
-
-      deviceAuth = await this.getDeviceAuthMac(deviceAuthenticationBytes, this.sessionTranscriptBytes, ctx)
+      deviceAuth = await this.getDeviceAuthMac(deviceAuthenticationBytes, sessionTranscriptBytes, ctx)
     } else {
       deviceAuth = await this.getDeviceAuthSign(deviceAuthenticationBytes, ctx)
     }

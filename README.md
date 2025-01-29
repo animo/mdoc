@@ -10,7 +10,7 @@
 
 [ISO 18013-5](https://www.iso.org/standard/69084.html) defines mDL (mobile Driver’s Licenses): an ISO standard for digital driver licenses.
 
-This is a JavaScript library for Node.JS, browers and React Native to issue and verify mDL [CBOR encoded](https://cbor.io/) documents in accordance with **ISO 18013-7 (draft's date: 2023-08-02)**.
+This is a JavaScript library for Node.JS, browers and React Native to issue and verify mDL [CBOR encoded](https://cbor.io/) documents in accordance with **ISO 18013-7 (draft's date: 2024-03-12)**.
 
 <h4 align="center">Powered by &nbsp; 
   <picture>
@@ -49,7 +49,7 @@ npm i @animo-id/mdoc
 ### Verifying a credential
 
 ```javascript
-import { Verifier } from "@auth0/mdl";
+import { Verifier } from "@animo-id/mdoc";
 import { inspect } from "node:util";
 import fs from "node:fs";
 
@@ -76,7 +76,7 @@ import fs from "node:fs";
 ### Getting diagnostic information
 
 ```javascript
-import { Verifier } from "@auth0/mdl";
+import { Verifier } from "@animo-id/mdoc";
 import { inspect } from "node:util";
 import fs from "node:fs";
 
@@ -106,7 +106,7 @@ import fs from "node:fs";
 ##$ Issuing a credential
 
 ```js
-import { MDoc, Document } from "@auth0/mdl";
+import { MDoc, Document } from "@animo-id/mdoc";
 import { inspect } from "node:util";
 
 (async () => {
@@ -135,7 +135,7 @@ import { inspect } from "node:util";
 ##$ Generating a device response
 
 ```js
-import { DeviceResponse, MDoc } from "@auth0/mdl";
+import { DeviceResponse, MDoc } from "@animo-id/mdoc";
 
 (async () => {
   let issuerMDoc;

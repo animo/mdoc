@@ -5,7 +5,7 @@ import * as jose from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { mdocContext } from '..'
 import type { DeviceSignedDocument } from '../..'
-import { DataItem, DeviceResponse, Document, MDoc, Verifier, cborEncode, parseDeviceResponse } from '../..'
+import { DeviceResponse, Document, MDoc, Verifier, parseDeviceResponse } from '../..'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK, PRESENTATION_DEFINITION_1 } from './config.js'
 const { d, ...publicKeyJWK } = DEVICE_JWK
 
@@ -87,15 +87,6 @@ describe('issuing a device response with MAC authentication', () => {
     const clientId = 'Cq1anPb8vZU5j5C0d7hcsbuJLBpIawUJIDQRi2Ebwb4'
     const responseUri = 'http://localhost:4000/api/presentation_request/dc8999df-d6ea-4c84-9985-37a8b81a82ec/callback'
 
-    const getSessionTranscriptBytes = (clId: string, respUri: string, nonce: string, mdocNonce: string) =>
-      cborEncode(
-        DataItem.fromData([
-          null, // DeviceEngagementBytes
-          null, // EReaderKeyBytes
-          [mdocNonce, clId, respUri, nonce], // Handover = OID4VPHandover
-        ])
-      )
-
     beforeAll(async () => {
       //  This is the Device side
       const deviceResponseMDoc = await DeviceResponse.from(mdoc)
@@ -122,12 +113,13 @@ describe('issuing a device response with MAC authentication', () => {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: getSessionTranscriptBytes(
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+            context: mdocContext,
             clientId,
             responseUri,
             verifierGeneratedNonce,
-            mdocGeneratedNonce
-          ),
+            mdocGeneratedNonce,
+          }),
         },
         mdocContext
       )
@@ -152,12 +144,13 @@ describe('issuing a device response with MAC authentication', () => {
                 encodedDeviceResponse,
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: getSessionTranscriptBytes(
-                  values.clientId,
-                  values.responseUri,
-                  values.verifierGeneratedNonce,
-                  values.mdocGeneratedNonce
-                ),
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+                  context: mdocContext,
+                  clientId: values.clientId,
+                  responseUri: values.responseUri,
+                  verifierGeneratedNonce: values.verifierGeneratedNonce,
+                  mdocGeneratedNonce: values.mdocGeneratedNonce,
+                }),
               },
               mdocContext
             )
@@ -194,15 +187,6 @@ describe('issuing a device response with MAC authentication', () => {
     const readerEngagementBytes = randomFillSync(Buffer.alloc(32))
     const deviceEngagementBytes = randomFillSync(Buffer.alloc(32))
 
-    const getSessionTranscriptBytes = (rdrEngtBytes: Buffer, devEngtBytes: Buffer, eRdrKeyBytes: Buffer) =>
-      cborEncode(
-        DataItem.fromData([
-          new DataItem({ buffer: devEngtBytes }),
-          new DataItem({ buffer: eRdrKeyBytes }),
-          rdrEngtBytes,
-        ])
-      )
-
     beforeAll(async () => {
       // This is the verifier side before requesting the Device Response
       {
@@ -238,11 +222,12 @@ describe('issuing a device response with MAC authentication', () => {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: getSessionTranscriptBytes(
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+            context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
-            eReaderKeyBytes
-          ),
+            eReaderKeyBytes,
+          }),
         },
         mdocContext
       )
@@ -268,11 +253,12 @@ describe('issuing a device response with MAC authentication', () => {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 encodedDeviceResponse,
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: getSessionTranscriptBytes(
-                  values.readerEngagementBytes,
-                  values.deviceEngagementBytes,
-                  values.eReaderKeyBytes
-                ),
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+                  context: mdocContext,
+                  readerEngagementBytes: values.readerEngagementBytes,
+                  deviceEngagementBytes: values.deviceEngagementBytes,
+                  eReaderKeyBytes: values.eReaderKeyBytes,
+                }),
               },
               mdocContext
             )

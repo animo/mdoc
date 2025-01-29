@@ -235,7 +235,7 @@ export class Verifier {
             ? ephemeralPrivateKey
             : COSEKeyToRAW(COSEKey.fromJWK(ephemeralPrivateKey).encode()),
         publicKey: deviceKeyRaw,
-        sessionTranscriptBytes: sessionTranscriptBytes,
+        sessionTranscriptBytes,
       })
 
       const isValid = await ctx.cose.mac0.verify({

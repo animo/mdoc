@@ -107,7 +107,8 @@ describe('issuing a device response', () => {
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
-          encodedSessionTranscript: DeviceResponse.calculateSessionTranscriptForOID4VP({
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+            context: mdocContext,
             clientId,
             responseUri,
             verifierGeneratedNonce,
@@ -136,7 +137,8 @@ describe('issuing a device response', () => {
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 encodedDeviceResponse,
-                encodedSessionTranscript: DeviceResponse.calculateSessionTranscriptForOID4VP({
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+                  context: mdocContext,
                   clientId: values.clientId,
                   responseUri: values.responseUri,
                   verifierGeneratedNonce: values.verifierGeneratedNonce,
@@ -218,7 +220,8 @@ describe('issuing a device response', () => {
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
-          encodedSessionTranscript: DeviceResponse.calculateSessionTranscriptForWebApi({
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+            context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
             eReaderKeyBytes,
@@ -246,11 +249,12 @@ describe('issuing a device response', () => {
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 encodedDeviceResponse,
-                encodedSessionTranscript: getSessionTranscriptBytes(
-                  values.readerEngagementBytes,
-                  values.deviceEngagementBytes,
-                  values.eReaderKeyBytes
-                ),
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+                  context: mdocContext,
+                  readerEngagementBytes: values.readerEngagementBytes,
+                  deviceEngagementBytes: values.deviceEngagementBytes,
+                  eReaderKeyBytes: values.eReaderKeyBytes,
+                }),
               },
               mdocContext
             )
@@ -328,7 +332,8 @@ describe('issuing a device response', () => {
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
-          encodedSessionTranscript: DeviceResponse.calculateSessionTranscriptForWebApi({
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+            context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
             eReaderKeyBytes,
