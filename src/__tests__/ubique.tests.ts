@@ -1,8 +1,8 @@
-import { describe, it } from 'vitest'
-import { mdocContext } from './'
-import { Verifier } from '../mdoc/verifier'
-import { DeviceResponse } from '../mdoc/model/device-response'
 import { X509Certificate } from '@peculiar/x509'
+import { describe, it } from 'vitest'
+import { DeviceResponse } from '../mdoc/model/device-response'
+import { Verifier } from '../mdoc/verifier'
+import { mdocContext } from './'
 
 const ISSUER_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIBQTCB76ADAgECAiBtxZMzkeRG1H7HmLdQGvZQTeY3NmAVroE8U1glBaBFQzAK
