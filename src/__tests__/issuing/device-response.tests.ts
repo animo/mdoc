@@ -182,15 +182,6 @@ describe('issuing a device response', () => {
     const readerEngagementBytes = randomFillSync(Buffer.alloc(32))
     const deviceEngagementBytes = randomFillSync(Buffer.alloc(32))
 
-    const getSessionTranscriptBytes = (rdrEngtBytes: Buffer, devEngtBytes: Buffer, eRdrKeyBytes: Buffer) =>
-      cborEncode(
-        DataItem.fromData([
-          new DataItem({ buffer: devEngtBytes }),
-          new DataItem({ buffer: eRdrKeyBytes }),
-          rdrEngtBytes,
-        ])
-      )
-
     beforeAll(async () => {
       // Nothing more to do on the verifier side.
 
