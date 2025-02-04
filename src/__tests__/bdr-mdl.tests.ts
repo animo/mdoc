@@ -1,8 +1,8 @@
 import { X509Certificate } from '@peculiar/x509'
 import { describe, it } from 'vitest'
-import { mdocContext } from './'
-import { Verifier } from '../mdoc/verifier'
 import { parseIssuerSigned } from '../mdoc/parser'
+import { Verifier } from '../mdoc/verifier'
+import { mdocContext } from './'
 
 const ISSUER_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIICKTCCAc+gAwIBAgIUbsApBxL0COE3jxup8qQBlIlEy/8wCgYIKoZIzj0EAwIw
