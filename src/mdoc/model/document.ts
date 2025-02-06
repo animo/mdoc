@@ -38,26 +38,6 @@ export default function isObject(input: unknown): input is Record<string, unknow
 
 const DEFAULT_NS = 'org.iso.18013.5.1'
 
-// TODO:
-//
-// This should be calculated from the `validFrom` field in device retrieval
-// and the `iat` from server retrieval. Not `Date.now()`
-//
-// In case of device retrieval, the value of an age_over_NN data element
-// shall be calculated by the issuing authority infrastructure to be valid
-// at the value of the timestamp in the validFrom element in the MSO
-// from 9.1.2.4. In case of server retrieval, the value of an age_over_NN
-// data element shall be valid at the value of the iat timestamp as
-// defined in 8.3.2.2.2.2 and 8.3.3.2.2.
-const getAgeInYears = (birth: string): number => {
-  const birthDate = new Date(birth)
-  birthDate.setHours(0, 0, 0, 0)
-  // @ts-expect-error this works
-  const ageDifMs = Date.now() - birthDate
-  const ageDate = new Date(ageDifMs)
-  return Math.abs(ageDate.getUTCFullYear() - 1970)
-}
-
 const addYears = (date: Date, years: number): Date => {
   const r = new Date(date.getTime())
   r.setFullYear(date.getFullYear() + years)
@@ -138,24 +118,10 @@ export class Document {
 
     for (const [key, value] of Object.entries(values)) {
       addAttribute(key, value)
-      if (this.docType === 'org.iso.18013.5.1.mDL' && key === 'birth_date') {
+      if (this.docType === 'org.iso.18013.5.1.mDL' && namespace === DEFAULT_NS && key === 'birth_date') {
         if (typeof value !== 'string') {
           throw new Error(`Invalid type for 'birth_date'. Expected 'string', received '${typeof value}'`)
         }
-
-        const ageInYears = getAgeInYears(value)
-        const addAgePredicate = (predicate: number) => addAttribute(`age_over_${predicate}`, ageInYears >= predicate)
-
-        // Age predicates.
-        // Values defined in: https://bmi.usercontent.opencode.de/eudi-wallet/eidas-2.0-architekturkonzept/functions/00-pid-issuance-and-presentation/#pid-contents
-        // ISO/IEC 18013-5: 7.2.5 does not define which ages should be included.
-
-        addAgePredicate(12)
-        addAgePredicate(14)
-        addAgePredicate(16)
-        addAgePredicate(18)
-        addAgePredicate(21)
-        addAgePredicate(65)
       }
     }
 
