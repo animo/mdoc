@@ -3,13 +3,14 @@ import type { JWK } from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { mdocContext } from '..'
 import type { DeviceSignedDocument, IssuerSignedDocument } from '../..'
-import { COSEKey, Document, MDoc, Verifier, defaultCallback, parseDeviceResponse } from '../..'
+import { COSEKey, DateOnly, Document, MDoc, Verifier, defaultCallback, parseDeviceResponse } from '../..'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from './config.js'
 const { d, ...publicKeyJWK } = DEVICE_JWK as JWK
 
 describe('issuing an MDOC', () => {
   let encodedDeviceResponse: Uint8Array
   let parsedDocument: IssuerSignedDocument
+  let mdoc: MDoc
 
   const signed = new Date('2023-10-24T14:55:18Z')
   const validFrom = new Date(signed)
@@ -24,9 +25,9 @@ describe('issuing an MDOC', () => {
       .addIssuerNameSpace('org.iso.18013.5.1', {
         family_name: 'Jones',
         given_name: 'Ava',
-        birth_date: '2007-03-25',
-        issue_date: '2023-09-01',
-        expiry_date: '2028-09-30',
+        birth_date: new DateOnly('2007-03-25'),
+        issue_date: new Date('2023-09-01'),
+        expiry_date: new Date('2028-09-30'),
         issuing_country: 'US',
         issuing_authority: 'NY DMV',
         document_number: '01-856-5050',
@@ -34,13 +35,13 @@ describe('issuing an MDOC', () => {
         driving_privileges: [
           {
             vehicle_category_code: 'A',
-            issue_date: '2021-09-02',
-            expiry_date: '2026-09-20',
+            issue_date: new DateOnly('2021-09-02'),
+            expiry_date: new DateOnly('2026-09-20'),
           },
           {
             vehicle_category_code: 'B',
-            issue_date: '2022-09-02',
-            expiry_date: '2027-09-20',
+            issue_date: new DateOnly('2022-09-02'),
+            expiry_date: new DateOnly('2027-09-20'),
           },
         ],
       })
@@ -56,7 +57,8 @@ describe('issuing an MDOC', () => {
         mdocContext
       )
 
-    const mdoc = new MDoc([document])
+    mdoc = new MDoc([document])
+
     encodedDeviceResponse = mdoc.encode()
 
     const parsedMDOC = parseDeviceResponse(encodedDeviceResponse)
@@ -108,8 +110,8 @@ describe('issuing an MDOC', () => {
         "family_name" => "Jones",
         "given_name" => "Ava",
         "birth_date" => "2007-03-25",
-        "issue_date" => "2023-09-01",
-        "expiry_date" => "2028-09-30",
+        "issue_date" => 2023-09-01T00:00:00.000Z,
+        "expiry_date" => 2028-09-30T00:00:00.000Z,
         "issuing_country" => "US",
         "issuing_authority" => "NY DMV",
         "document_number" => "01-856-5050",

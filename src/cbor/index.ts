@@ -1,7 +1,6 @@
 import type { Options } from './cbor-x/index.js'
-import { addExtension } from './cbor-x/index.js'
 
-import { Encoder } from './cbor-x/encode.js'
+import { Encoder, addExtension } from './cbor-x/encode.js'
 
 export { DataItem } from './data-item.js'
 
@@ -47,7 +46,9 @@ addExtension({
 addExtension({
   Class: DateOnly,
   tag: 1004,
-  encode: (date: DateOnly, encode) => encode(date.toISOString()),
+  encode: (date: DateOnly, encode) => {
+    return encode(date.toISOString())
+  },
   decode: (isoStringDate: string): object => new DateOnly(isoStringDate),
 })
 
