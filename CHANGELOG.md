@@ -1,5 +1,16 @@
 # @animo-id/mdoc
 
+## 0.4.0
+
+### Minor Changes
+
+- 59e3266: fix: do not include age_over_NN attributes by default
+
+### Patch Changes
+
+- 4187667: feat: add OID4VP DC API session transcript calculation
+- ff41f06: Include different age*over_NN values and exclude age_over*<CURRENT_AGE>
+
 ## 0.3.0
 
 ### Minor Changes
