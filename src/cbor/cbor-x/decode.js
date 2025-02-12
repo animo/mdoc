@@ -911,11 +911,6 @@ export class Tag {
   }
 }
 
-currentExtensions[0] = (dateString) => {
-  // string date extension
-  return new Date(dateString)
-}
-
 currentExtensions[1] = (epochSec) => {
   // numeric date extension
   return new Date(Math.round(epochSec * 1000))

@@ -99,9 +99,13 @@ export class IssuerSignedItem {
     digestID: number,
     elementIdentifier: string,
     elementValue: unknown,
-    ctx: { crypto: MdocContext['crypto'] }
+    ctx?: { crypto: MdocContext['crypto'] },
+    random?: Uint8Array
   ): IssuerSignedItem {
-    const random = ctx.crypto.random(32)
+    const r = random ?? ctx?.crypto.random(32)
+    if (!r) {
+      throw new Error('Either pass in a random value or crypto context')
+    }
     const dataItem: IssuerSignedDataItem = DataItem.fromData(
       new Map([
         ['digestID', digestID],

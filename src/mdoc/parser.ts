@@ -47,13 +47,11 @@ const parseDeviceAuthElement = (rawDeviceAuth: RawDeviceAuth): DeviceAuth => {
   throw new MDLParseError(`Invalid deviceAuth element. Missing 'deviceSignature' and 'deviceMac'`)
 }
 
-const namespaceToArray = (entries: RawIndexedDataItem): IssuerSignedItem[] => {
-  return entries.map((di) => new IssuerSignedItem(di))
-}
+const namespaceToArray = (entries: RawIndexedDataItem): IssuerSignedItem[] =>
+  entries.map((di) => new IssuerSignedItem(di))
 
-const mapIssuerNameSpaces = (namespace: RawNameSpaces): IssuerNameSpaces => {
-  return new Map(Array.from(namespace.entries()).map(([nameSpace, entries]) => [nameSpace, namespaceToArray(entries)]))
-}
+const mapIssuerNameSpaces = (namespace: RawNameSpaces): IssuerNameSpaces =>
+  new Map(Array.from(namespace.entries()).map(([nameSpace, entries]) => [nameSpace, namespaceToArray(entries)]))
 
 /**
  * Parse a IssuerSignedDocument

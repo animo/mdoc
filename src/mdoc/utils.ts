@@ -3,14 +3,11 @@ import { cborDecode, cborEncode } from '../cbor/index.js'
 import { base64ToUint8Array } from '../u-base64.js'
 
 export const calculateDeviceAutenticationBytes = (
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  sessionTranscript: Uint8Array | any,
+  sessionTranscript: Uint8Array | unknown,
   docType: string,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  nameSpaces: Map<string, Map<string, any>>
+  nameSpaces: Map<string, Map<string, unknown>>
 ): Uint8Array => {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  let decodedSessionTranscript: any
+  let decodedSessionTranscript: unknown
   if (sessionTranscript instanceof Uint8Array) {
     // assume is encoded in a DataItem
     decodedSessionTranscript = (cborDecode(sessionTranscript) as DataItem).data
