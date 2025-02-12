@@ -175,6 +175,101 @@ describe('issuing a device response', () => {
     })
   })
 
+  describe('using OID4VPDCAPI handover', () => {
+    const verifierGeneratedNonce = 'abcdefg'
+    const origin = 'http://localhost:4000'
+    const clientId = 'Cq1anPb8vZU5j5C0d7hcsbuJLBpIawUJIDQRi2Ebwb4'
+
+    beforeAll(async () => {
+      //  This is the Device side
+      const devicePrivateKey = DEVICE_JWK
+      const deviceResponseMDoc = await DeviceResponse.from(mdoc)
+        .usingPresentationDefinition(PRESENTATION_DEFINITION_1)
+        .usingSessionTranscriptForForOID4VPDCApi({
+          clientId,
+          origin,
+          verifierGeneratedNonce,
+        })
+        .authenticateWithSignature(devicePrivateKey, 'ES256')
+        .addDeviceNameSpace('com.foobar-device', { test: 1234 })
+        .sign(mdocContext)
+
+      encodedDeviceResponse = deviceResponseMDoc.encode()
+      const parsedMDOC = parseDeviceResponse(encodedDeviceResponse)
+      ;[parsedDocument] = parsedMDOC.documents as [DeviceSignedDocument, ...DeviceSignedDocument[]]
+    })
+
+    it('should be verifiable', async () => {
+      const verifier = new Verifier()
+      await verifier.verifyDeviceResponse(
+        {
+          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+          encodedDeviceResponse,
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VPDCApi({
+            context: mdocContext,
+            clientId,
+            origin,
+            verifierGeneratedNonce,
+          }),
+        },
+        mdocContext
+      )
+    })
+
+    describe('should not be verifiable', () => {
+      const testCases = ['clientId', 'origin', 'verifierGeneratedNonce']
+
+      testCases.forEach((name) => {
+        const values = {
+          clientId,
+          origin,
+          verifierGeneratedNonce,
+          [name]: 'wrong',
+        }
+        it(`with a different ${name}`, async () => {
+          try {
+            const verifier = new Verifier()
+            await verifier.verifyDeviceResponse(
+              {
+                trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+                encodedDeviceResponse,
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VPDCApi({
+                  context: mdocContext,
+                  clientId: values.clientId,
+                  origin: values.origin,
+                  verifierGeneratedNonce: values.verifierGeneratedNonce,
+                }),
+              },
+              mdocContext
+            )
+            throw new Error('should not validate with different transcripts')
+          } catch (error) {
+            expect((error as Error).message).toMatch(
+              'Unable to verify deviceAuth signature (ECDSA/EdDSA): Device signature must be valid'
+            )
+          }
+        })
+      })
+    })
+
+    it('should contain the validity info', () => {
+      const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.decodedPayload
+      expect(validityInfo).toBeDefined()
+      expect(validityInfo.signed).toEqual(signed)
+      expect(validityInfo.validFrom).toEqual(signed)
+      expect(validityInfo.validUntil).toEqual(validUntil)
+      expect(validityInfo.expectedUpdate).toBeUndefined()
+    })
+
+    it('should contain the device namespaces', () => {
+      expect(parsedDocument.getDeviceNameSpace('com.foobar-device')).toEqual(new Map([['test', 1234]]))
+    })
+
+    it('should generate the signature without payload', () => {
+      expect(parsedDocument.deviceSigned.deviceAuth.deviceSignature?.payload).toBeNull()
+    })
+  })
+
   describe('using WebAPI handover', () => {
     // The actual value for the engagements & the key do not matter,
     // as long as the device and the reader agree on what value to use.

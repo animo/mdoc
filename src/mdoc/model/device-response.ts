@@ -188,6 +188,52 @@ export class DeviceResponse {
     )
   }
 
+  public static async calculateSessionTranscriptForOID4VPDCApi(input: {
+    context: {
+      crypto: MdocContext['crypto']
+    }
+    clientId: string
+    origin: string
+    verifierGeneratedNonce: string
+  }) {
+    const { clientId, verifierGeneratedNonce, context, origin } = input
+
+    return cborEncode(
+      DataItem.fromData([
+        null, // deviceEngagementBytes
+        null, // eReaderKeyBytes
+        [
+          'OpenID4VPDCAPIHandover', //  A fixed identifier for this handover type
+          await context.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([origin, clientId, verifierGeneratedNonce]),
+          }),
+        ],
+      ])
+    )
+  }
+
+  /**
+   * Set the session transcript data to use for the device response as defined in [OID4VP B.3.4.1, Draft 24](https://openid.net/specs/openid-4-verifiable-presentations-1_0-24.html#appendix-B.3.4.1)
+   *
+   * This should match the session transcript as it will be calculated by the verifier.
+   *
+   * @param {string} clientId - The client_id Authorization Request parameter from the Authorization Request Object.
+   * @param {string} origin - The origin of the Authorization Request, as defined in Appendix A.2. of OID4VP
+   * @param {string} verifierGeneratedNonce - The nonce Authorization Request parameter from the Authorization Request Object.
+   * @returns {DeviceResponse}
+   */
+  public usingSessionTranscriptForForOID4VPDCApi(input: {
+    origin: string
+    clientId: string
+    verifierGeneratedNonce: string
+  }): DeviceResponse {
+    this.usingSessionTranscriptCallback((context) =>
+      DeviceResponse.calculateSessionTranscriptForOID4VPDCApi({ ...input, context })
+    )
+    return this
+  }
+
   /**
    * Set the session transcript data to use for the device response as defined in ISO/IEC 18013-7 in Annex A (Web API), 2024 draft.
    *
