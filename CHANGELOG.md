@@ -1,5 +1,17 @@
 # @animo-id/mdoc
 
+## 0.4.0
+
+### Minor Changes
+
+- 59e3266: fix: do not include age_over_NN attributes by default
+- e54a767: - Remove magic surrounding the date type, this means that when you provide the input for an mdl, make sure that the `birth_date`, `driving_privileges[n].issue_date` and `driving_privileges[n].expiry_date` are of class `DateOnly` and `issue_date` and `expiry_date` are of type `Date`.
+
+### Patch Changes
+
+- 4187667: feat: add OID4VP DC API session transcript calculation
+- ff41f06: Include different age*over_NN values and exclude age_over*<CURRENT_AGE>
+
 ## 0.3.0
 
 ### Minor Changes
