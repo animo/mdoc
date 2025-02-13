@@ -17,8 +17,7 @@ export class DateOnly extends Date {
   override toString(): string {
     return this.toISOString()
   }
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  override toJSON(key?: unknown): string {
+  override toJSON(_key?: unknown): string {
     return this.toISOString()
   }
   [customInspectSymbol](): string {

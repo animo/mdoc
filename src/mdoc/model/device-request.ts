@@ -54,12 +54,9 @@ export class DeviceRequest {
 
     const { version, docRequests } = res
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const parsedDocRequests: DocRequest[] = docRequests.map((docRequest) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       const itemsRequest = new ItemsRequest(docRequest.itemsRequest)
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return {
         ...docRequest,
         itemsRequest,
@@ -80,7 +77,6 @@ export class DeviceRequest {
   encode() {
     return cborEncode({
       version: this.version,
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       docRequests: this.docRequests.map(DeviceRequest.encodeDocRequest),
     })
   }

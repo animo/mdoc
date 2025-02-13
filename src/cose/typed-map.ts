@@ -58,7 +58,6 @@ export class TypedMap<KV extends unknown[]> implements Iterable<KV> {
    * @returns - An iterable of keys in the map
    */
   keys(): IterableIterator<KV[0]> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.#map.keys()
   }
 
@@ -68,7 +67,6 @@ export class TypedMap<KV extends unknown[]> implements Iterable<KV> {
    * @returns - An iterable of values in the map
    */
   values(): IterableIterator<KV[1]> {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.#map.values()
   }
 
@@ -132,7 +130,6 @@ export class TypedMap<KV extends unknown[]> implements Iterable<KV> {
     const className = this.constructor.name
     if (depth !== null && depth < 0) {
       // @ts-expect-error this works
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return options.stylize(`[${className}]`, 'special')
     }
     const newOptions = Object.assign({}, options, {

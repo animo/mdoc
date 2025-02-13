@@ -35,7 +35,7 @@ export default function isObject(input: unknown): input is Record<string, unknow
   return Object.getPrototypeOf(input) === proto
 }
 
-export const DEFAULT_NS = 'org.iso.18013.5.1'
+const DEFAULT_NS = 'org.iso.18013.5.1'
 
 const addYears = (date: Date, years: number): Date => {
   const r = new Date(date.getTime())

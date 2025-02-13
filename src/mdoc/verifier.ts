@@ -332,8 +332,7 @@ export class Verifier {
               check:
                 "The 'issuing_country' if present must match the 'countryName' in the subject field within the DS certificate",
               reason: invalidCountry
-                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  `The 'issuing_country' (${invalidCountry.ev.elementValue}) must match the 'countryName' (${issuerAuth.getIssuingCountry(ctx)}) in the subject field within the issuer certificate`
+                ? `The 'issuing_country' (${invalidCountry.ev.elementValue}) must match the 'countryName' (${issuerAuth.getIssuingCountry(ctx)}) in the subject field within the issuer certificate`
                 : undefined,
             })
 
@@ -346,8 +345,7 @@ export class Verifier {
               check:
                 "The 'issuing_jurisdiction' if present must match the 'stateOrProvinceName' in the subject field within the DS certificate",
               reason: invalidJurisdiction
-                ? // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-                  `The 'issuing_jurisdiction' (${invalidJurisdiction.ev.elementValue}) must match the 'stateOrProvinceName' (${issuerAuth.getIssuingStateOrProvince(ctx)}) in the subject field within the issuer certificate`
+                ? `The 'issuing_jurisdiction' (${invalidJurisdiction.ev.elementValue}) must match the 'stateOrProvinceName' (${issuerAuth.getIssuingStateOrProvince(ctx)}) in the subject field within the issuer certificate`
                 : undefined,
             })
           }

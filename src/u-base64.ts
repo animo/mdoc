@@ -30,14 +30,11 @@ const FROM_BASE64URL = (() => {
     charMap[i] = -1
   }
 
-  // eslint-disable-next-line @typescript-eslint/prefer-for-of
   for (let i = 0; i < IGNORE_BASE64URL.length; i += 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     charMap[IGNORE_BASE64URL[i]?.charCodeAt(0)] = -2
   }
 
   for (let i = 0; i < TO_BASE64URL.length; i += 1) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     charMap[TO_BASE64URL[i]?.charCodeAt(0)] = i
   }
 

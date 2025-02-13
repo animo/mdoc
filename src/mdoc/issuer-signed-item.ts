@@ -101,7 +101,7 @@ export class IssuerSignedItem {
     elementValue: unknown,
     ctx: { crypto: MdocContext['crypto'] }
   ): IssuerSignedItem {
-    const random = ctx?.crypto.random(32)
+    const random = ctx.crypto.random(32)
     const dataItem: IssuerSignedDataItem = DataItem.fromData(
       new Map([
         ['digestID', digestID],

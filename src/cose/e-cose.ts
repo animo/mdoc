@@ -72,7 +72,6 @@ export type COSE_ERROR_CODE =
   | 'COSE_UNSUPPORTED_ALG'
 
 export class CoseError extends Error {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"
   public override readonly cause?: Error
   public readonly code
@@ -85,7 +84,6 @@ export class CoseError extends Error {
     const cause = getCauseFromUnknown(opts.cause)
     const message = opts.message ?? cause?.message ?? opts.code
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore https://github.com/tc39/proposal-error-cause
     super(message, { cause })
 
