@@ -46,10 +46,8 @@ addExtension({
 addExtension({
   Class: DateOnly,
   tag: 1004,
-  encode: (date: DateOnly, encode) => {
-    return encode(date.toISOString())
-  },
-  decode: (isoStringDate: string): object => new DateOnly(isoStringDate),
+  encode: (date: DateOnly, encode) => encode(date.toISOString()),
+  decode: (isoStringDate: string) => new DateOnly(isoStringDate),
 })
 
 export const cborDecode = (

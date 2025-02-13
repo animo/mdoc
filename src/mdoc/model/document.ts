@@ -30,7 +30,6 @@ export default function isObject(input: unknown): input is Record<string, unknow
   }
   let proto = input
   while (Object.getPrototypeOf(proto) !== null) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     proto = Object.getPrototypeOf(proto)
   }
   return Object.getPrototypeOf(input) === proto
@@ -67,8 +66,7 @@ export class Document {
     this.ctx = ctx
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private validateValues(values: Record<string, unknown>) {
+  private validateValues(_values: Record<string, unknown>) {
     // TODO
     // validate required fields, no extra fields, data types, etc...
   }

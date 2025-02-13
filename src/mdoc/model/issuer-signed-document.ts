@@ -19,9 +19,9 @@ export class IssuerSignedDocument {
    */
   public prepare(): Map<string, unknown> {
     const nameSpaces = new Map(
-      Array.from(this.issuerSigned.nameSpaces.entries()).map(([nameSpace, items]) => {
-        return [nameSpace, items.map((item) => item.dataItem)] as const
-      })
+      Array.from(this.issuerSigned.nameSpaces.entries()).map(
+        ([nameSpace, items]) => [nameSpace, items.map((item) => item.dataItem)] as const
+      )
     )
 
     // TODO: ERRORS MISSING

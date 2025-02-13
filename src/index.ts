@@ -19,7 +19,10 @@ export { DeviceSignedDocument } from './mdoc/model/device-signed-document.js'
 export { Document } from './mdoc/model/document.js'
 export { IssuerSignedDocument } from './mdoc/model/issuer-signed-document.js'
 export { MDoc, MDocStatus } from './mdoc/model/mdoc.js'
-export { limitDisclosureToInputDescriptor } from './mdoc/model/pex-limit-disclosure.js'
+export {
+  limitDisclosureToInputDescriptor,
+  limitDisclosureToDeviceRequestNameSpaces,
+} from './mdoc/model/pex-limit-disclosure.js'
 export type { PresentationDefinition } from './mdoc/model/presentation-definition.js'
 export type {
   DiagnosticInformation,
