@@ -29,7 +29,7 @@ describe('Ubique mdoc implementation', () => {
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
         encodedDeviceResponse: deviceResponse,
-        encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+        encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForOID4VP({
           context: mdocContext,
           clientId,
           responseUri,

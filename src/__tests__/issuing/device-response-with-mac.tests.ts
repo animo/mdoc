@@ -113,7 +113,7 @@ describe('issuing a device response with MAC authentication', () => {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForOID4VP({
             context: mdocContext,
             clientId,
             responseUri,
@@ -144,7 +144,7 @@ describe('issuing a device response with MAC authentication', () => {
                 encodedDeviceResponse,
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForOID4VP({
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForOID4VP({
                   context: mdocContext,
                   clientId: values.clientId,
                   responseUri: values.responseUri,
@@ -222,7 +222,7 @@ describe('issuing a device response with MAC authentication', () => {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForWebApi({
             context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
@@ -253,7 +253,7 @@ describe('issuing a device response with MAC authentication', () => {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 encodedDeviceResponse,
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptForWebApi({
+                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForWebApi({
                   context: mdocContext,
                   readerEngagementBytes: values.readerEngagementBytes,
                   deviceEngagementBytes: values.deviceEngagementBytes,

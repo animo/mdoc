@@ -153,12 +153,12 @@ export class DeviceResponse {
     verifierGeneratedNonce: string
   }): DeviceResponse {
     this.usingSessionTranscriptCallback((context) =>
-      DeviceResponse.calculateSessionTranscriptForOID4VP({ ...input, context })
+      DeviceResponse.calculateSessionTranscriptBytesForOID4VP({ ...input, context })
     )
     return this
   }
 
-  public static async calculateSessionTranscriptForOID4VP(input: {
+  public static async calculateSessionTranscriptBytesForOID4VP(input: {
     context: {
       crypto: MdocContext['crypto']
     }
@@ -188,7 +188,7 @@ export class DeviceResponse {
     )
   }
 
-  public static async calculateSessionTranscriptForOID4VPDCApi(input: {
+  public static async calculateSessionTranscriptBytesForOID4VPDCApi(input: {
     context: {
       crypto: MdocContext['crypto']
     }
@@ -229,7 +229,7 @@ export class DeviceResponse {
     verifierGeneratedNonce: string
   }): DeviceResponse {
     this.usingSessionTranscriptCallback((context) =>
-      DeviceResponse.calculateSessionTranscriptForOID4VPDCApi({ ...input, context })
+      DeviceResponse.calculateSessionTranscriptBytesForOID4VPDCApi({ ...input, context })
     )
     return this
   }
@@ -250,12 +250,12 @@ export class DeviceResponse {
     eReaderKeyBytes: Uint8Array
   }): DeviceResponse {
     this.usingSessionTranscriptCallback((context) =>
-      DeviceResponse.calculateSessionTranscriptForWebApi({ ...input, context })
+      DeviceResponse.calculateSessionTranscriptBytesForWebApi({ ...input, context })
     )
     return this
   }
 
-  public static async calculateSessionTranscriptForWebApi(input: {
+  public static async calculateSessionTranscriptBytesForWebApi(input: {
     context: {
       crypto: MdocContext['crypto']
     }
