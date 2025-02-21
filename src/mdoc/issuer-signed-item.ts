@@ -9,7 +9,7 @@ export const MDL_NAMESPACE = 'org.iso.18013.5.1'
 
 const supportedDigestAlgorithms = ['SHA-256', 'SHA-384', 'SHA-512']
 
-export type IssuerSignedDataItem = DataItem<Map<keyof IssuerSignedItem, unknown>>
+export type IssuerSignedDataItem = DataItem<Map<'digestID' | 'elementIdentifier' | 'elementValue' | 'random', unknown>>
 
 export class IssuerSignedItem {
   readonly #dataItem: IssuerSignedDataItem

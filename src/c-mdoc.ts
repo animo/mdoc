@@ -32,7 +32,7 @@ export interface X509Context {
 
 export interface MdocContext {
   crypto: {
-    random: (length: number) => MaybePromise<Uint8Array>
+    random: (length: number) => Uint8Array
     digest: (input: {
       digestAlgorithm: DigestAlgorithm
       bytes: Uint8Array

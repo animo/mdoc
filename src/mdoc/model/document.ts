@@ -66,11 +66,6 @@ export class Document {
     this.ctx = ctx
   }
 
-  private validateValues(_values: Record<string, unknown>) {
-    // TODO
-    // validate required fields, no extra fields, data types, etc...
-  }
-
   /**
    * Add a namespace to an unsigned document.
    *
@@ -79,10 +74,6 @@ export class Document {
    * @returns {Document} - The document
    */
   addIssuerNameSpace(namespace: 'org.iso.18013.5.1' | (string & {}), values: Record<string, unknown>): Document {
-    if (namespace === DEFAULT_NS) {
-      this.validateValues(values)
-    }
-
     const namespaceRecord = this.#issuerNameSpaces.get(namespace) ?? []
 
     const addAttribute = (key: string, value: unknown) => {
