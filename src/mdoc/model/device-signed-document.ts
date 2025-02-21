@@ -37,8 +37,9 @@ export class DeviceSignedDocument extends IssuerSignedDocument {
       // TODO: ERRORS MISSING
       deviceAuth: {
         ...this.deviceSigned.deviceAuth,
-        deviceSignature,
-        deviceMac,
+        // This is to prevent an undfeined value from ending up in the device signed structure
+        ...(deviceSignature ? { deviceSignature } : {}),
+        ...(deviceMac ? { deviceMac } : {}),
       },
     })
 
