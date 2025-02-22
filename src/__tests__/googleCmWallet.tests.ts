@@ -1,8 +1,9 @@
 import { X509Certificate } from '@peculiar/x509'
-import { describe, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { mdocContext } from '.'
 import { DeviceResponse } from '../mdoc/model/device-response'
 import { Verifier } from '../mdoc/verifier'
+import { cborEncode, DataItem } from '../cbor'
 
 const ROOT_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIB7zCCAZWgAwIBAgIUPEQW7teE87QT5I9W8HWr+m2H64QwCgYIKoZIzj0EAwIw
@@ -64,5 +65,34 @@ describe('Google CM Wallet mdoc implementation', () => {
       },
       mdocContext
     )
+  })
+
+  it('session transcript should match the one created by digital-credentials.dev', async () => {
+    const verifierGeneratedNonce = 'NYWpYQzwln1W4rlmrIIf_dgVqsgbwXIUW_zOkhzMV44'
+    const origin = 'https://digital-credentials.dev'
+    const clientId = `web-origin:${origin}`
+
+    const ourSessionTranscript = Buffer.from(
+      await DeviceResponse.calculateSessionTranscriptForOID4VPDCApi({
+        context: mdocContext,
+        origin,
+        clientId,
+        verifierGeneratedNonce,
+      })
+    ).toString('base64url')
+
+    const theirSessionTranscript = Buffer.from(
+      cborEncode(
+        new DataItem({
+          data: [
+            null,
+            null,
+            ['OpenID4VPDCAPIHandover', Buffer.from('ZTP4msIZ764B4KcTV9Ke4NYqDPpOW4AfL0wfMFX07gA', 'base64url')],
+          ],
+        })
+      )
+    ).toString('base64url')
+
+    expect(ourSessionTranscript).toEqual(theirSessionTranscript)
   })
 })
