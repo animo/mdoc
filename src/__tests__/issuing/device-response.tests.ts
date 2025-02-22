@@ -200,19 +200,6 @@ describe('issuing a device response', () => {
     })
 
     it('should be verifiable', async () => {
-      console.log({
-        clientId,
-        origin,
-        verifierGeneratedNonce,
-        base64UrlSessionTranscriptBytes: Buffer.from(
-          await DeviceResponse.calculateSessionTranscriptBytesForOID4VPDCApi({
-            context: mdocContext,
-            clientId,
-            origin,
-            verifierGeneratedNonce,
-          })
-        ).toString('base64url'),
-      })
       const verifier = new Verifier()
       await verifier.verifyDeviceResponse(
         {
