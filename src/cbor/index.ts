@@ -7,19 +7,21 @@ export { DataItem } from './data-item.js'
 export { addExtension } from './cbor-x/index.js'
 
 const customInspectSymbol = Symbol.for('nodejs.util.inspect.custom')
-export class DateOnly extends Date {
+export class DateOnly {
+  private date: Date
+
+  public constructor(date?: string) {
+    this.date = date ? new Date(date) : new Date()
+  }
+
   get [Symbol.toStringTag]() {
     return DateOnly.name
   }
-  override toISOString(): string {
-    return super.toISOString().split('T')[0]
+
+  toISOString(): string {
+    return this.date.toISOString().split('T')[0]
   }
-  override toString(): string {
-    return this.toISOString()
-  }
-  override toJSON(_key?: unknown): string {
-    return this.toISOString()
-  }
+
   [customInspectSymbol](): string {
     return this.toISOString()
   }
