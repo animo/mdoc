@@ -18,6 +18,14 @@ export class DateOnly {
     return DateOnly.name
   }
 
+  toString() {
+    return this.toISOString()
+  }
+
+  toJSON() {
+    return this.toISOString()
+  }
+
   toISOString(): string {
     return this.date.toISOString().split('T')[0]
   }
