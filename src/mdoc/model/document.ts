@@ -223,9 +223,9 @@ export class Document {
     const headers: ConstructorParameters<typeof UnprotectedHeaders>[0] = kid
       ? [
           [Headers.KeyID, kid],
-          [Headers.X5Chain, [issuerPublicKeyBuffer]],
+          [Headers.X5Chain, issuerPublicKeyBuffer],
         ]
-      : [[Headers.X5Chain, [issuerPublicKeyBuffer]]]
+      : [[Headers.X5Chain, issuerPublicKeyBuffer]]
 
     const unprotectedHeader = UnprotectedHeaders.from(headers)
 
