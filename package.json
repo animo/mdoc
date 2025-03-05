@@ -4,8 +4,10 @@
   "packageManager": "pnpm@9.12.3+sha256.24235772cc4ac82a62627cd47f834c72667a2ce87799a846ec4e8e555e2d4b8b",
   "author": "Martin Auer",
   "exports": "./src/index.ts",
-  "version": "0.4.1",
-  "files": ["dist"],
+  "version": "0.5.0",
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",

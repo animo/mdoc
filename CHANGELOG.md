@@ -1,5 +1,16 @@
 # @animo-id/mdoc
 
+## 0.5.0
+
+### Minor Changes
+
+- 4ce7385: rename calculateSessionTranscript methods to calculateSessionTranscriptBytes as they are different things and the bytes are returned
+- 04dd7d8: fix: DateOnly does not extend Date anymore as it would lead to issues with instanceof checks
+
+### Patch Changes
+
+- 5b708d2: fix: x5c header as string not array because there's only one certificate according to RFC 9360 (https://www.rfc-editor.org/rfc/rfc9360.html#section-2-5.4.1)
+
 ## 0.4.1
 
 ### Patch Changes
