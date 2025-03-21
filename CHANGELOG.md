@@ -1,5 +1,11 @@
 # @animo-id/mdoc
 
+## 0.5.1
+
+### Patch Changes
+
+- 8d7a541: fix: do not include undefined 'expectedUpdate'
+
 ## 0.5.0
 
 ### Minor Changes
