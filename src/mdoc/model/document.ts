@@ -56,7 +56,6 @@ export class Document {
     signed: new Date(),
     validFrom: new Date(),
     validUntil: addYears(new Date(), 1),
-    expectedUpdate: undefined,
   }
   #digestAlgorithm: DigestAlgorithm = 'SHA-256'
   ctx: { crypto: MdocContext['crypto'] }
@@ -139,8 +138,13 @@ export class Document {
       signed,
       validFrom,
       validUntil,
-      expectedUpdate: info.expectedUpdate,
     }
+
+    // We don't want an undefined value to end up in the CBOR
+    if (info.expectedUpdate) {
+      this.#validityInfo.expectedUpdate = info.expectedUpdate
+    }
+
     return this
   }
 
