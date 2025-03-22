@@ -1,5 +1,11 @@
 # @animo-id/mdoc
 
+## 0.5.2
+
+### Patch Changes
+
+- b8c2ad6: feat: support `optional` keyword in PEX input descriptor field
+
 ## 0.5.1
 
 ### Patch Changes
