@@ -1,6 +1,7 @@
 export interface PresentationDefinitionField {
   path: string[]
   intent_to_retain: boolean
+  optional?: boolean
 }
 
 export interface Format {

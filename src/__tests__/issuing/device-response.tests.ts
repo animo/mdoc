@@ -175,6 +175,82 @@ describe('issuing a device response', () => {
     })
   })
 
+  describe('DIF Presentation Exchange optional fields', () => {
+    const verifierGeneratedNonce = 'abcdefg'
+    const mdocGeneratedNonce = '123456'
+    const clientId = 'Cq1anPb8vZU5j5C0d7hcsbuJLBpIawUJIDQRi2Ebwb4'
+    const responseUri = 'http://localhost:4000/api/presentation_request/dc8999df-d6ea-4c84-9985-37a8b81a82ec/callback'
+
+    it('ignores optional field that is not present', async () => {
+      await expect(
+        DeviceResponse.from(mdoc)
+          .usingPresentationDefinition({
+            ...PRESENTATION_DEFINITION_1,
+            input_descriptors: [
+              {
+                ...PRESENTATION_DEFINITION_1.input_descriptors[0],
+                constraints: {
+                  ...PRESENTATION_DEFINITION_1.input_descriptors[0].constraints,
+                  fields: [
+                    ...PRESENTATION_DEFINITION_1.input_descriptors[0].constraints.fields,
+                    {
+                      intent_to_retain: true,
+                      path: ["$['org.iso.18013.5.1']['non_existent']"],
+                      optional: true,
+                    },
+                  ],
+                },
+              },
+            ],
+          })
+          .usingSessionTranscriptForOID4VP({
+            mdocGeneratedNonce,
+            clientId,
+            responseUri,
+            verifierGeneratedNonce,
+          })
+          .authenticateWithSignature(DEVICE_JWK, 'ES256')
+          .addDeviceNameSpace('com.foobar-device', { test: 1234 })
+          .sign(mdocContext)
+      ).resolves.not.toThrow()
+    })
+
+    it('throws error for non-optional field that is not present', async () => {
+      await expect(
+        DeviceResponse.from(mdoc)
+          .usingPresentationDefinition({
+            ...PRESENTATION_DEFINITION_1,
+            input_descriptors: [
+              {
+                ...PRESENTATION_DEFINITION_1.input_descriptors[0],
+                constraints: {
+                  ...PRESENTATION_DEFINITION_1.input_descriptors[0].constraints,
+                  fields: [
+                    ...PRESENTATION_DEFINITION_1.input_descriptors[0].constraints.fields,
+                    {
+                      intent_to_retain: true,
+                      path: ["$['org.iso.18013.5.1']['non_existent']"],
+                    },
+                  ],
+                },
+              },
+            ],
+          })
+          .usingSessionTranscriptForOID4VP({
+            mdocGeneratedNonce,
+            clientId,
+            responseUri,
+            verifierGeneratedNonce,
+          })
+          .authenticateWithSignature(DEVICE_JWK, 'ES256')
+          .addDeviceNameSpace('com.foobar-device', { test: 1234 })
+          .sign(mdocContext)
+      ).rejects.toThrow(
+        `Cannot limit the disclosure to the input descriptor. No matching field found for '$['org.iso.18013.5.1']['non_existent']'`
+      )
+    })
+  })
+
   describe('using OID4VPDCAPI handover', () => {
     const verifierGeneratedNonce = 'abcdefg'
     const origin = 'http://localhost:4000'

@@ -132,6 +132,9 @@ export const limitDisclosureToInputDescriptor = (
 
   for (const field of inputDescriptor.constraints.fields) {
     const result = prepareDigestForInputDescriptor(field.path, mdoc.issuerSigned.nameSpaces)
+    if (!result && field.optional) {
+      continue
+    }
     if (!result) {
       throw new Error(
         `Cannot limit the disclosure to the input descriptor. No matching field found for '${field.path.join('.')}'`
