@@ -1,7 +1,7 @@
 import type { JWK } from 'jose'
-import type { Mac0, VerifyOptions } from './cose/mac0.js'
+import type { Mac0 } from './cose/mac0.js'
 import type { Sign1 } from './cose/sign1.js'
-import type { VerifyOptions as Sign1VerifyOpts } from './cose/signature-base.js'
+import type { VerifyOptions } from './cose/signature-base.js'
 import type { DigestAlgorithm } from './mdoc/model/types.js'
 
 export type MaybePromise<TType> = Promise<TType> | TType
@@ -16,8 +16,8 @@ export interface X509Context {
     alg: string
   }) => MaybePromise<JWK>
   validateCertificateChain: (input: {
-    trustedCertificates: [Uint8Array, ...Uint8Array[]]
-    x5chain: [Uint8Array, ...Uint8Array[]]
+    trustedCertificates: Uint8Array[]
+    x5chain: Uint8Array[]
   }) => MaybePromise<void>
   getCertificateData: (input: { certificate: Uint8Array }) => MaybePromise<{
     issuerName: string
@@ -43,11 +43,6 @@ export interface MdocContext {
      * There are two cases for this function:
      * 1. SDeviceKey.Priv and EReaderKey.Pub for the mdoc
      * 2. EReaderKey.Priv and SDeviceKey.Pub for the mdoc reader
-     *
-     * @param {Uint8Array} privateKey - The private key of the current party
-     * @param {Uint8Array} publicKey - The public key of the other party
-     * @param {Uint8Array} sessionTranscriptBytes - The session transcript bytes
-     * @returns {Uint8Array} - The ephemeral mac key
      */
     calculateEphemeralMacKeyJwk: (input: {
       privateKey: Uint8Array
@@ -61,7 +56,7 @@ export interface MdocContext {
 
       verify(input: {
         jwk: JWK
-        options?: Sign1VerifyOpts | undefined
+        options?: VerifyOptions
         sign1: Sign1
       }): MaybePromise<boolean>
     }
@@ -72,7 +67,7 @@ export interface MdocContext {
       verify(input: {
         mac0: Mac0
         jwk: JWK
-        options: VerifyOptions
+        options?: VerifyOptions
       }): MaybePromise<boolean>
     }
   }

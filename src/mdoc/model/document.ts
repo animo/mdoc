@@ -1,12 +1,14 @@
 import type { JWK } from 'jose'
 import type { MdocContext } from '../../c-mdoc.js'
 import { DataItem, cborDecode, cborEncode } from '../../cbor/index.js'
-import { Algorithms, Headers, ProtectedHeaders, UnprotectedHeaders } from '../../cose/headers.js'
+import { Algorithm, Header } from '../../cose/headers.js'
+import { ProtectedHeaders } from '../../cose/headers/protected-headers.js'
+import { UnprotectedHeaders } from '../../cose/headers/unprotected-headers.js'
 import { COSEKey } from '../../cose/key/cose-key.js'
 import { stringToUint8Array } from '../../u-uint8-array.js'
 import { IssuerSignedItem } from '../issuer-signed-item.js'
 import { fromPEM } from '../utils.js'
-import IssuerAuth from './issuer-auth.js'
+import { IssuerAuth } from './issuer-auth.js'
 import { IssuerSignedDocument } from './issuer-signed-document.js'
 import type {
   DeviceKeyInfo,
@@ -34,8 +36,6 @@ export default function isObject(input: unknown): input is Record<string, unknow
   }
   return Object.getPrototypeOf(input) === proto
 }
-
-const DEFAULT_NS = 'org.iso.18013.5.1'
 
 const addYears = (date: Date, years: number): Date => {
   const r = new Date(date.getTime())
@@ -67,10 +67,6 @@ export class Document {
 
   /**
    * Add a namespace to an unsigned document.
-   *
-   * @param {string} namespace - The namespace to add.
-   * @param {Record<string, any>} values - The values to add to the namespace.
-   * @returns {Document} - The document
    */
   addIssuerNameSpace(namespace: 'org.iso.18013.5.1' | (string & {}), values: Record<string, unknown>): Document {
     const namespaceRecord = this.#issuerNameSpaces.get(namespace) ?? []
@@ -92,9 +88,6 @@ export class Document {
 
   /**
    * Get the values in a namespace.
-   *
-   * @param {string} namespace - The namespace to add.
-   * @returns {Record<string, any>} - The values in the namespace as an object
    */
   getIssuerNameSpace(namespace: string): Record<string, unknown> | undefined {
     const nameSpace = this.#issuerNameSpaces.get(namespace)
@@ -105,13 +98,10 @@ export class Document {
   /**
    * Add the device public key which will be include in the issuer signature.
    * The device public key could be in JWK format or as COSE_Key format.
-   *
-   * @param params
-   * @param {JWK | Uint8Array} params.devicePublicKey - The device public key.
    */
   addDeviceKeyInfo({ deviceKey }: { deviceKey: JWK | Uint8Array }): Document {
     const deviceKeyCOSEKey = deviceKey instanceof Uint8Array ? deviceKey : COSEKey.fromJWK(deviceKey).encode()
-    const decodedCoseKey = cborDecode(deviceKeyCOSEKey)
+    const decodedCoseKey = cborDecode<Map<number, number>>(deviceKeyCOSEKey)
 
     this.#deviceKeyInfo = {
       deviceKey: decodedCoseKey,
@@ -152,9 +142,6 @@ export class Document {
    * Set the digest algorithm used for the value digests in the issuer signature.
    *
    * The default is SHA-256.
-   *
-   * @param {DigestAlgorithm} digestAlgorithm - The digest algorithm to use.
-   * @returns
    */
   useDigestAlgorithm(digestAlgorithm: DigestAlgorithm): Document {
     this.#digestAlgorithm = digestAlgorithm
@@ -163,13 +150,6 @@ export class Document {
 
   /**
    * Generate the issuer signature for the document.
-   *
-   * @param {Object} params - The parameters object
-   * @param {JWK | Uint8Array} params.issuerPrivateKey - The issuer's private key either in JWK format or COSE_KEY format as buffer.
-   * @param {string | Uint8Array} params.issuerCertificate - The issuer's certificate in pem format or as a buffer.
-   * @param {SupportedAlgs} params.alg - The algorhitm used for the MSO signature.
-   * @param {string | Uint8Array} [params.kid] - The key id of the issuer's private key. default: issuerPrivateKey.kid
-   * @returns {Promise<IssuerSignedDoc>} - The signed document
    */
   async sign(
     params: {
@@ -220,20 +200,24 @@ export class Document {
     }
 
     const payload = cborEncode(DataItem.fromData(mso))
-    const protectedHeader: ProtectedHeaders = ProtectedHeaders.from([[Headers.Algorithm, Algorithms[params.alg]]])
 
     const _kid = params.kid ?? issuerPrivateKeyJWK.kid
     const kid = typeof _kid === 'string' ? stringToUint8Array(_kid) : _kid
-    const headers: ConstructorParameters<typeof UnprotectedHeaders>[0] = kid
-      ? [
-          [Headers.KeyID, kid],
-          [Headers.X5Chain, issuerPublicKeyBuffer],
-        ]
-      : [[Headers.X5Chain, issuerPublicKeyBuffer]]
+    const headers = new Map(
+      kid
+        ? [
+            [Header.KeyID, kid],
+            [Header.X5Chain, issuerPublicKeyBuffer],
+          ]
+        : [[Header.X5Chain, issuerPublicKeyBuffer]]
+    )
 
-    const unprotectedHeader = UnprotectedHeaders.from(headers)
+    const protectedHeaders = new ProtectedHeaders({
+      protectedHeaders: new Map([[Header.Algorithm, Algorithm[params.alg]]]),
+    })
+    const unprotectedHeaders = new UnprotectedHeaders({ unprotectedHeaders: headers })
 
-    const issuerAuth = IssuerAuth.create(protectedHeader, unprotectedHeader, payload)
+    const issuerAuth = new IssuerAuth({ unprotectedHeaders, protectedHeaders, payload })
 
     const signature = await ctx.cose.sign1.sign({
       sign1: issuerAuth,

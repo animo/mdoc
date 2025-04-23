@@ -1,4 +1,4 @@
-import { cborDecodeUnknown, cborEncode } from '../cbor/index.js'
+import { cborDecode, cborEncode } from '../cbor/index.js'
 
 export class COSEBase {
   #encodedProtectedHeaders?: Uint8Array
@@ -11,9 +11,7 @@ export class COSEBase {
     if (protectedHeaders instanceof Uint8Array) {
       this.#encodedProtectedHeaders = protectedHeaders
       this.protectedHeaders =
-        protectedHeaders.length === 0
-          ? new Map<number, unknown>()
-          : (cborDecodeUnknown(protectedHeaders) as Map<number, unknown>)
+        protectedHeaders.length === 0 ? new Map<number, unknown>() : cborDecode<Map<number, unknown>>(protectedHeaders)
     } else {
       this.protectedHeaders = protectedHeaders
       this.#encodedProtectedHeaders = cborEncode(protectedHeaders)

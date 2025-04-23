@@ -1,10 +1,8 @@
-import { cborEncode } from '../cbor/index.js'
-import { TypedMap } from './typed-map.js'
 /**
  * COSE Header labels registered in the IANA "COSE Header Parameters" registry.
  * Reference: https://www.iana.org/assignments/cose/cose.xhtml#header-parameters
  */
-export enum Headers {
+export enum Header {
   Algorithm = 1,
   Critical = 2,
   ContentType = 3,
@@ -21,7 +19,7 @@ export enum Headers {
   X5U = 35,
 }
 
-export enum Algorithms {
+export enum Algorithm {
   EdDSA = -8,
   ES256 = -7,
   ES384 = -35,
@@ -34,13 +32,13 @@ export enum Algorithms {
   RS512 = -259,
 }
 
-export enum MacAlgorithms {
+export enum MacAlgorithm {
   HS256 = 5,
   HS384 = 6,
   HS512 = 7,
 }
 
-export enum EncryptionAlgorithms {
+export enum EncryptionAlgorithm {
   A128GCM = 1,
   A192GCM = 2,
   A256GCM = 3,
@@ -49,34 +47,36 @@ export enum EncryptionAlgorithms {
 
 export type Direct = -6
 
-export type SupportedEncryptionAlgorithms = 'A128GCM' | 'A192GCM' | 'A256GCM'
+export type SupportedEncryptionAlgorithm = 'A128GCM' | 'A192GCM' | 'A256GCM'
 
-export const EncryptionAlgorithmNames = new Map<EncryptionAlgorithms, SupportedEncryptionAlgorithms>([
-  [EncryptionAlgorithms.A128GCM, 'A128GCM'],
-  [EncryptionAlgorithms.A192GCM, 'A192GCM'],
-  [EncryptionAlgorithms.A256GCM, 'A256GCM'],
+export const EncryptionAlgorithmNames = new Map<EncryptionAlgorithm, SupportedEncryptionAlgorithm>([
+  [EncryptionAlgorithm.A128GCM, 'A128GCM'],
+  [EncryptionAlgorithm.A192GCM, 'A192GCM'],
+  [EncryptionAlgorithm.A256GCM, 'A256GCM'],
 ])
 
-export const MacAlgorithmNames = new Map<MacAlgorithms, SupportedMacAlg>([
-  [MacAlgorithms.HS256, 'HS256'],
-  [MacAlgorithms.HS384, 'HS384'],
-  [MacAlgorithms.HS512, 'HS512'],
+export const MacAlgorithmNames = new Map<MacAlgorithm, SupportedMacAlg>([
+  [MacAlgorithm.HS256, 'HS256'],
+  [MacAlgorithm.HS384, 'HS384'],
+  [MacAlgorithm.HS512, 'HS512'],
 ])
 
-export const AlgorithmNames = new Map<Algorithms, SupportedAlgs>([
-  [Algorithms.EdDSA, 'EdDSA'],
-  [Algorithms.ES256, 'ES256'],
-  [Algorithms.ES384, 'ES384'],
-  [Algorithms.ES512, 'ES512'],
-  [Algorithms.PS256, 'PS256'],
-  [Algorithms.PS384, 'PS384'],
-  [Algorithms.PS512, 'PS512'],
-  [Algorithms.RS256, 'RS256'],
-  [Algorithms.RS384, 'RS384'],
-  [Algorithms.RS512, 'RS512'],
+export const AlgorithmNames = new Map<Algorithm, SupportedSignatureAlg>([
+  [Algorithm.EdDSA, 'EdDSA'],
+  [Algorithm.ES256, 'ES256'],
+  [Algorithm.ES384, 'ES384'],
+  [Algorithm.ES512, 'ES512'],
+  [Algorithm.PS256, 'PS256'],
+  [Algorithm.PS384, 'PS384'],
+  [Algorithm.PS512, 'PS512'],
+  [Algorithm.RS256, 'RS256'],
+  [Algorithm.RS384, 'RS384'],
+  [Algorithm.RS512, 'RS512'],
 ])
 
-export type SupportedAlgs =
+export type SupportedMacAlg = 'HS256' | 'HS384' | 'HS512'
+
+export type SupportedSignatureAlg =
   | 'EdDSA'
   | 'ES256'
   | 'ES384'
@@ -88,113 +88,113 @@ export type SupportedAlgs =
   | 'RS384'
   | 'RS512'
 
-export class ProtectedHeaders extends TypedMap<
-  | [Headers.Algorithm, Algorithms]
-  | [Headers.Critical, Headers[]]
-  | [Headers.ContentType, number | Uint8Array]
-  | [Headers.KeyID, Uint8Array]
-  | [
-      Omit<Headers, Headers.Algorithm | Headers.Critical | Headers.ContentType | Headers.KeyID>,
-      Uint8Array | Uint8Array[] | number | number[],
-    ]
-> {
-  /**
-   * Ensure input is a ProtectedHeaders instance.
-   *
-   * @param headers - The headers to wrap.
-   * @returns
-   */
-  static from(headers: ProtectedHeaders | ConstructorParameters<typeof ProtectedHeaders>[0]) {
-    //similar to base class wrap
-    if (headers instanceof ProtectedHeaders) {
-      return headers
-    }
-    return new ProtectedHeaders(headers)
-  }
+// export class ProtectedHeaders extends TypedMap<
+//   | [Header.Algorithm, Algorithm]
+//   | [Header.Critical, Header[]]
+//   | [Header.ContentType, number | Uint8Array]
+//   | [Header.KeyID, Uint8Array]
+//   | [
+//       Omit<Header, Header.Algorithm | Header.Critical | Header.ContentType | Header.KeyID>,
+//       Uint8Array | Uint8Array[] | number | number[],
+//     ]
+// > {
+//   /**
+//    * Ensure input is a ProtectedHeaders instance.
+//    *
+//    * @param headers - The headers to wrap.
+//    * @returns
+//    */
+//   static from(headers: ProtectedHeaders | ConstructorParameters<typeof ProtectedHeaders>[0]) {
+//     //similar to base class wrap
+//     if (headers instanceof ProtectedHeaders) {
+//       return headers
+//     }
+//     return new ProtectedHeaders(headers)
+//   }
+//
+//   /**
+//    * CBOR encode the hedaers instance
+//    * @returns {Uint8Array} - The encoded protected headers.
+//    */
+//   encode(): Uint8Array {
+//     return cborEncode(this.esMap)
+//   }
+// }
+//
 
-  /**
-   * CBOR encode the hedaers instance
-   * @returns {Uint8Array} - The encoded protected headers.
-   */
-  encode(): Uint8Array {
-    return cborEncode(this.esMap)
-  }
-}
-
-export type SupportedMacAlg = 'HS256' | 'HS384' | 'HS512'
-
-export class EncryptProtectedHeaders extends TypedMap<
-  | [Headers.Algorithm, EncryptionAlgorithms]
-  | [Headers.Critical, Headers[]]
-  | [Headers.ContentType, number | Uint8Array]
-  | [Headers.KeyID, Uint8Array]
-  | [
-      Omit<Headers, Headers.Algorithm | Headers.Critical | Headers.ContentType | Headers.KeyID>,
-      Uint8Array | number | number[],
-    ]
-> {
-  /**
-   * Ensure input is a EncryptProtectedHeaders instance.
-   *
-   * @param headers - The headers to wrap.
-   * @returns
-   */
-  static from(headers: EncryptProtectedHeaders | ConstructorParameters<typeof EncryptProtectedHeaders>[0]) {
-    //similar to base class wrap
-    if (headers instanceof EncryptProtectedHeaders) {
-      return headers
-    }
-    return new MacProtectedHeaders(headers)
-  }
-}
-
-export class MacProtectedHeaders extends TypedMap<
-  | [Headers.Algorithm, MacAlgorithms]
-  | [Headers.Critical, Headers[]]
-  | [Headers.ContentType, number | Uint8Array]
-  | [Headers.KeyID, Uint8Array]
-  | [
-      Omit<Headers, Headers.Algorithm | Headers.Critical | Headers.ContentType | Headers.KeyID>,
-      Uint8Array | number | number[],
-    ]
-> {
-  /**
-   * Ensure input is a MacProtectedHeaders instance.
-   *
-   * @param headers - The headers to wrap.
-   * @returns
-   */
-  static from(headers: MacProtectedHeaders | ConstructorParameters<typeof MacProtectedHeaders>[0]) {
-    //similar to base class wrap
-    if (headers instanceof MacProtectedHeaders) {
-      return headers
-    }
-    return new MacProtectedHeaders(headers)
-  }
-}
-
-export class UnprotectedHeaders extends TypedMap<
-  | [Headers.ContentType, number | Uint8Array]
-  | [Headers.KeyID, Uint8Array]
-  | [Headers.IV, Uint8Array]
-  | [Headers.PartialIV, Uint8Array]
-  | [Headers.X5Chain, Uint8Array | Uint8Array[]]
-  | [
-      Exclude<Headers, Headers.ContentType | Headers.KeyID | Headers.PartialIV | Headers.X5Chain>,
-      number | number[] | Uint8Array | Uint8Array[],
-    ]
-> {
-  /**
-   * Ensure input is a MacProtectedHeaders instance.
-   *
-   * @param headers - The headers to wrap.
-   * @returns
-   */
-  static from(headers: UnprotectedHeaders | ConstructorParameters<typeof UnprotectedHeaders>[0]) {
-    //similar to base class wrap
-    if (headers instanceof UnprotectedHeaders) {
-      return headers
-    }
-    return new UnprotectedHeaders(headers)
-  }
-}
+//
+// export class EncryptProtectedHeaders extends TypedMap<
+//   | [Header.Algorithm, EncryptionAlgorithm]
+//   | [Header.Critical, Header[]]
+//   | [Header.ContentType, number | Uint8Array]
+//   | [Header.KeyID, Uint8Array]
+//   | [
+//       Omit<Header, Header.Algorithm | Header.Critical | Header.ContentType | Header.KeyID>,
+//       Uint8Array | number | number[],
+//     ]
+// > {
+//   /**
+//    * Ensure input is a EncryptProtectedHeaders instance.
+//    *
+//    * @param headers - The headers to wrap.
+//    * @returns
+//    */
+//   static from(headers: EncryptProtectedHeaders | ConstructorParameters<typeof EncryptProtectedHeaders>[0]) {
+//     //similar to base class wrap
+//     if (headers instanceof EncryptProtectedHeaders) {
+//       return headers
+//     }
+//     return new MacProtectedHeaders(headers)
+//   }
+// }
+//
+// export class MacProtectedHeaders extends TypedMap<
+//   | [Header.Algorithm, MacAlgorithm]
+//   | [Header.Critical, Header[]]
+//   | [Header.ContentType, number | Uint8Array]
+//   | [Header.KeyID, Uint8Array]
+//   | [
+//       Omit<Header, Header.Algorithm | Header.Critical | Header.ContentType | Header.KeyID>,
+//       Uint8Array | number | number[],
+//     ]
+// > {
+//   /**
+//    * Ensure input is a MacProtectedHeaders instance.
+//    *
+//    * @param headers - The headers to wrap.
+//    * @returns
+//    */
+//   static from(headers: MacProtectedHeaders | ConstructorParameters<typeof MacProtectedHeaders>[0]) {
+//     //similar to base class wrap
+//     if (headers instanceof MacProtectedHeaders) {
+//       return headers
+//     }
+//     return new MacProtectedHeaders(headers)
+//   }
+// }
+//
+// export class UnprotectedHeaders extends TypedMap<
+//   | [Header.ContentType, number | Uint8Array]
+//   | [Header.KeyID, Uint8Array]
+//   | [Header.IV, Uint8Array]
+//   | [Header.PartialIV, Uint8Array]
+//   | [Header.X5Chain, Uint8Array | Uint8Array[]]
+//   | [
+//       Exclude<Header, Header.ContentType | Header.KeyID | Header.PartialIV | Header.X5Chain>,
+//       number | number[] | Uint8Array | Uint8Array[],
+//     ]
+// > {
+//   /**
+//    * Ensure input is a MacProtectedHeaders instance.
+//    *
+//    * @param headers - The headers to wrap.
+//    * @returns
+//    */
+//   static from(headers: UnprotectedHeaders | ConstructorParameters<typeof UnprotectedHeaders>[0]) {
+//     //similar to base class wrap
+//     if (headers instanceof UnprotectedHeaders) {
+//       return headers
+//     }
+//     return new UnprotectedHeaders(headers)
+//   }
+// }

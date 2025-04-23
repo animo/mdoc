@@ -3,7 +3,6 @@ export {
   DateOnly,
   DataItem,
   cborDecode,
-  cborDecodeUnknown,
   cborEncode,
 } from './cbor/index'
 export { COSEKey, COSEKeyToRAW } from './cose/key/cose-key.js'

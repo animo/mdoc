@@ -1,55 +1,57 @@
 import type { X509Context } from '../../c-mdoc.js'
-import { DataItem } from '../../cbor/data-item.js'
-import { cborDecode } from '../../cbor/index.js'
-import type { ProtectedHeaders, UnprotectedHeaders } from '../../cose/headers.js'
-import { Sign1 } from '../../cose/sign1.js'
-import type { MSO } from './types.js'
+import { type CborDecodeOptions, cborDecode } from '../../cbor/index.js'
+import { CoseError } from '../../cose/e-cose.js'
+import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
+import { Mso } from './mso.js'
+
+export type IssuerAuthStructure = Sign1Structure
+export type IssuerAuthOptions = Sign1Options
 
 /**
  * The IssuerAuth which is a COSE_Sign1 message
  * as defined in https://www.iana.org/assignments/cose/cose.xhtml#messages
  */
-export default class IssuerAuth extends Sign1 {
-  #decodedPayload?: MSO
-  #x5chain?: [Uint8Array, ...Uint8Array[]]
-
-  public get decodedPayload(): MSO {
-    if (this.#decodedPayload) {
-      return this.#decodedPayload
+export class IssuerAuth extends Sign1 {
+  public get mso(): Mso {
+    if (!this.payload) {
+      throw new CoseError({
+        code: 'COSE_PAYLOAD_MUST_BE_DEFINED',
+        message: 'Payload must be defined on the issuer auth object',
+      })
     }
 
-    let decoded = cborDecode(this.payload)
-    decoded = decoded instanceof DataItem ? decoded.data : decoded
-    decoded = Object.fromEntries(decoded)
-    const mapValidityInfo = (validityInfo: Map<string, Uint8Array>) => {
-      if (!validityInfo) {
-        return validityInfo
-      }
-      return Object.fromEntries(
-        [...validityInfo.entries()].map(([key, value]) => {
-          return [key, value instanceof Uint8Array ? cborDecode(value) : value]
-        })
-      )
-    }
+    const mso = Mso.decode(this.payload)
 
-    const result: MSO = {
-      ...decoded,
-      validityInfo: mapValidityInfo(decoded.validityInfo),
-      validityDigests: decoded.validityDigests ? Object.fromEntries(decoded.validityDigests) : undefined,
-      deviceKeyInfo: decoded.deviceKeyInfo ? Object.fromEntries(decoded.deviceKeyInfo) : undefined,
-    }
-    this.#decodedPayload = result
-    return result
+    // @todo this should happen in the `Mso.decode` method
+    // const mapValidityInfo = (validityInfo?: Map<string, Uint8Array>) => {
+    //   if (!validityInfo) {
+    //     return validityInfo
+    //   }
+    //   return Object.fromEntries(
+    //     [...validityInfo.entries()].map(([key, value]) => {
+    //       return [key, value instanceof Uint8Array ? cborDecode(value) : value]
+    //     })
+    //   )
+    // }
+
+    // const result: MSO = {
+    //   ...decodedEntries,
+    //   validityInfo: mapValidityInfo(decodedEntries.validityInfo),
+    //   validityDigests: decoded.validityDigests ? Object.fromEntries(decoded.validityDigests) : undefined,
+    //   deviceKeyInfo: decoded.deviceKeyInfo ? Object.fromEntries(decoded.deviceKeyInfo) : undefined,
+    // }
+    // this.#decodedPayload = result
+    // return result
+    return mso
   }
 
+  /**
+   *
+   * @todo the original method seems very weird here...
+   *
+   */
   public get certificateChain() {
-    if (this.#x5chain) return this.#x5chain
-    this.#x5chain = this.x5chain
-
-    if (!this.#x5chain) {
-      throw new Error('No certificate found')
-    }
-    return this.#x5chain
+    return [] as Array<Uint8Array>
   }
 
   public get certificate() {
@@ -74,13 +76,14 @@ export default class IssuerAuth extends Sign1 {
     return stateOrProvince
   }
 
-  static override create(
-    protectedHeaders: ProtectedHeaders,
-    unprotectedHeaders: UnprotectedHeaders | undefined,
-    payload: Uint8Array
-  ): IssuerAuth {
-    const sign1 = Sign1.create(protectedHeaders, unprotectedHeaders, payload)
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
+    const data = cborDecode<IssuerAuthStructure>(bytes, options)
 
-    return new IssuerAuth(sign1.protectedHeaders, sign1.unprotectedHeaders, sign1.payload)
+    return new IssuerAuth({
+      protectedHeaders: data[0] as Uint8Array,
+      unprotectedHeaders: data[1] as Map<unknown, unknown>,
+      payload: data[2] as Uint8Array,
+      signature: data[3] as Uint8Array,
+    })
   }
 }

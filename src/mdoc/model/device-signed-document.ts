@@ -20,24 +20,27 @@ export class DeviceSignedDocument extends IssuerSignedDocument {
   override prepare(): Map<string, unknown> {
     const doc = super.prepare()
 
-    const deviceSignature: Array<unknown> | undefined =
-      this.deviceSigned.deviceAuth.deviceSignature?.getContentForEncoding()
-    const deviceMac: Array<unknown> | undefined = this.deviceSigned.deviceAuth.deviceMac?.getContentForEncoding()
-    // detach payload
+    const deviceSignature = this.deviceSigned.deviceAuth.deviceSignature?.encodedStructure() as
+      | Array<unknown>
+      | undefined
+    const deviceMac = this.deviceSigned.deviceAuth.deviceMac?.encodedStructure() as Array<unknown> | undefined
+
+    // detach the payload
     if (deviceMac) {
       deviceMac[2] = null
     }
+
     if (deviceSignature) {
       deviceSignature[2] = null
     }
-    //
+
     doc.set('deviceSigned', {
       ...this.deviceSigned,
       nameSpaces: DataItem.fromData(this.deviceSigned.nameSpaces),
       // TODO: ERRORS MISSING
       deviceAuth: {
         ...this.deviceSigned.deviceAuth,
-        // This is to prevent an undfeined value from ending up in the device signed structure
+        // This is to prevent an undefined value from ending up in the device signed structure
         ...(deviceSignature ? { deviceSignature } : {}),
         ...(deviceMac ? { deviceMac } : {}),
       },
@@ -48,9 +51,6 @@ export class DeviceSignedDocument extends IssuerSignedDocument {
 
   /**
    * Helper method to get the values in a namespace as a JS object.
-   *
-   * @param {string} namespace - The namespace to add.
-   * @returns {Map<string, unknown>} - The values in the namespace as an object
    */
   getDeviceNameSpace(namespace: string): Map<string, unknown> | undefined {
     return this.deviceSigned.nameSpaces.get(namespace)

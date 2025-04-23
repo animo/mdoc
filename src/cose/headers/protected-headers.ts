@@ -1,0 +1,24 @@
+import { CborStructure } from '../../cbor/cbor-structure.js'
+import { cborDecode, cborEncode } from '../../cbor/parser.js'
+
+export type ProtectedHeaderOptions = {
+  protectedHeaders?: Map<unknown, unknown> | Uint8Array
+}
+
+export class ProtectedHeaders extends CborStructure {
+  public headers?: Map<unknown, unknown>
+
+  public constructor(options: ProtectedHeaderOptions) {
+    super()
+
+    if (options.protectedHeaders instanceof Map) {
+      this.headers = options.protectedHeaders
+    } else if (options.protectedHeaders instanceof Uint8Array) {
+      this.headers = cborDecode<Map<unknown, unknown>>(options.protectedHeaders)
+    }
+  }
+
+  public encodedStructure(): unknown {
+    return cborEncode(this.headers) ?? new Uint8Array()
+  }
+}

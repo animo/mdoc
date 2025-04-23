@@ -5,7 +5,7 @@ import { Sign1 } from '../cose/sign1.js'
 import { MDLParseError } from './errors.js'
 import { IssuerSignedItem } from './issuer-signed-item.js'
 import { DeviceSignedDocument } from './model/device-signed-document.js'
-import IssuerAuth from './model/issuer-auth.js'
+import { IssuerAuth } from './model/issuer-auth.js'
 import { IssuerSignedDocument } from './model/issuer-signed-document.js'
 import { MDoc } from './model/mdoc.js'
 import type {
@@ -21,8 +21,7 @@ import type {
 
 const parseIssuerAuthElement = (rawIssuerAuth: RawIssuerAuth, expectedDocType?: string): IssuerAuth => {
   const issuerAuth = new IssuerAuth(...rawIssuerAuth)
-  const { decodedPayload } = issuerAuth
-  const { docType, version } = decodedPayload
+  const { docType, version } = issuerAuth.mso
 
   if (expectedDocType && docType !== expectedDocType) {
     throw new MDLParseError(`The issuerAuth docType must be ${expectedDocType}`)
@@ -83,7 +82,7 @@ export const parseIssuerSigned = (
     issuerAuth,
   }
 
-  return new IssuerSignedDocument(issuerAuth.decodedPayload.docType, parsedIssuerSigned)
+  return new IssuerSignedDocument(issuerAuth.mso.docType, parsedIssuerSigned)
 }
 
 /**

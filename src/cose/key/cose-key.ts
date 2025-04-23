@@ -2,7 +2,7 @@ import type { JWK } from 'jose'
 import { cborDecode, cborEncode } from '../../cbor/index.js'
 import { base64UrlToUint8Array, uint8ArrayToBase64Url } from '../../u-base64.js'
 import { concatUint8Array, uint8ArrayToString } from '../../u-uint8-array.js'
-import { Algorithms } from '../headers.js'
+import { Algorithm } from '../headers.js'
 import { TypedMap } from '../typed-map.js'
 import { Curve } from './curve.js'
 import type { KeyOps } from './key-ops.js'
@@ -24,16 +24,16 @@ function normalize(input: string | Uint8Array): string {
 export const JWKFromCOSEValue = new Map<string, (v: unknown) => string>([
   ['kty', (value: KeyType) => JWKKeyType[value]],
   ['crv', (value: Curve) => Curve[value]],
-  ['alg', (value: Algorithms) => Algorithms[value]],
+  ['alg', (value: Algorithm) => Algorithm[value]],
   ['kid', (v: string | Uint8Array) => (typeof v === 'string' ? v : uint8ArrayToBase64Url(v))],
   ['key_ops', (v) => toArray(v).map((value) => JWKKeyOps.get(value))],
   ...['x', 'y', 'd', 'k'].map((param) => [param, (v: Uint8Array) => uint8ArrayToBase64Url(v)]),
 ])
 
-export const JWKToCOSEValue = new Map<string, (v: unknown) => KeyType | Uint8Array | Algorithms | KeyOps[]>([
+export const JWKToCOSEValue = new Map<string, (v: unknown) => KeyType | Uint8Array | Algorithm | KeyOps[]>([
   ['kty', (value: JWKKeyType) => JWKKeyType[value]],
   ['crv', (value: Curve) => Curve[value]],
-  ['alg', (value: Algorithms) => Algorithms[value]],
+  ['alg', (value: Algorithm) => Algorithm[value]],
   ['kid', (v: unknown) => v],
   ['key_ops', (v: unknown) => toArray(v).flatMap((value) => JWKKeyOpsToCOSE.get(value))],
   ...['x', 'y', 'd', 'k'].map((label) => [
@@ -49,7 +49,7 @@ export const JWKToCOSEValue = new Map<string, (v: unknown) => KeyType | Uint8Arr
 export class COSEKey extends TypedMap<
   | [COSEKeyParam.KeyType, KeyType]
   | [COSEKeyParam.KeyID, Uint8Array]
-  | [COSEKeyParam.Algorithm, Algorithms]
+  | [COSEKeyParam.Algorithm, Algorithm]
   | [COSEKeyParam.KeyOps, KeyOps[]]
   | [COSEKeyParam.BaseIV, Uint8Array]
   | [COSEKeyParam.Curve, Curve]

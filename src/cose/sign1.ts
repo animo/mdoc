@@ -1,91 +1,112 @@
-import { addExtension, cborEncode } from '../cbor/index.js'
+import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
 import { CoseError } from './e-cose.js'
-import { AlgorithmNames, Headers, ProtectedHeaders, UnprotectedHeaders } from './headers.js'
-import type { VerifyOptions } from './signature-base.js'
-import { SignatureBase } from './signature-base.js'
+import { type Algorithm, AlgorithmNames, Header } from './headers.js'
+import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
+import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
 
-export class Sign1 extends SignatureBase {
-  constructor(
-    protectedHeaders: Map<number, unknown> | Uint8Array,
-    unprotectedHeaders: Map<number, unknown>,
-    public readonly payload: Uint8Array,
-    _signature?: Uint8Array
-  ) {
-    super(protectedHeaders, unprotectedHeaders, _signature)
+export type Sign1Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
+
+export type Sign1Options = {
+  protectedHeaders: ProtectedHeaders | ProtectedHeaderOptions['protectedHeaders']
+  unprotectedHeaders: UnprotectedHeaders | UnprotectedHeaderOptions['unprotectedHeaders']
+  payload?: Uint8Array | null
+  signature?: Uint8Array
+
+  detachedContent?: Uint8Array
+  externalAad?: Uint8Array
+}
+
+export class Sign1 extends CborStructure {
+  public static tag = 18
+
+  public protectedHeaders: ProtectedHeaders
+  public unprotectedHeaders: UnprotectedHeaders
+  public payload: Uint8Array | null
+  public signature?: Uint8Array
+
+  public detachedContent?: Uint8Array
+  public externalAad?: Uint8Array
+
+  public constructor(options: Sign1Options) {
+    super()
+
+    this.protectedHeaders =
+      options.protectedHeaders instanceof ProtectedHeaders
+        ? options.protectedHeaders
+        : new ProtectedHeaders({ protectedHeaders: options.protectedHeaders })
+
+    this.unprotectedHeaders =
+      options.unprotectedHeaders instanceof UnprotectedHeaders
+        ? options.unprotectedHeaders
+        : new UnprotectedHeaders({ unprotectedHeaders: options.unprotectedHeaders })
+
+    this.payload = options.payload ?? null
+    this.signature = options.signature
+
+    this.detachedContent = options.detachedContent
+    this.externalAad = options.externalAad
   }
 
-  public getContentForEncoding() {
-    return [this.encodedProtectedHeaders, this.unprotectedHeaders, this.payload, this.signature]
+  public encodedStructure(): unknown {
+    return [
+      this.protectedHeaders.encodedStructure(),
+      this.unprotectedHeaders.encodedStructure(),
+      this.payload,
+      this.signature,
+    ]
   }
 
-  private static Signature1(protectedHeaders: Uint8Array, applicationHeaders: Uint8Array, payload: Uint8Array) {
-    return cborEncode(['Signature1', protectedHeaders, applicationHeaders, payload])
-  }
+  public get toBeSigned() {
+    const payload = this.detachedContent ?? this.payload
 
-  public static create(
-    protectedHeaders: ProtectedHeaders | ConstructorParameters<typeof ProtectedHeaders>[0],
-    unprotectedHeaders: UnprotectedHeaders | ConstructorParameters<typeof UnprotectedHeaders>[0] | undefined,
-    payload: Uint8Array,
-    signature?: Uint8Array
-  ) {
-    const wProtectedHeaders = ProtectedHeaders.wrap(protectedHeaders)
-    const sig1AlgName = wProtectedHeaders.get(Headers.Algorithm)
-    const alg = sig1AlgName ? AlgorithmNames.get(sig1AlgName) : undefined
-
-    if (!alg) {
+    if (!payload) {
       throw new CoseError({
-        code: 'COSE_INVALID_ALG',
-        message: `The [${Headers.Algorithm}] (Algorithm) header must be set.`,
+        code: 'COSE_PAYLOAD_MUST_BE_DEFINED',
+        message: 'Payload was not provided, nor was detached content',
       })
     }
 
-    const encodedProtectedHeaders = cborEncode(wProtectedHeaders.esMap)
-    const wUnprotectedHeaders = UnprotectedHeaders.wrap(unprotectedHeaders)
+    const toBeSigned: Array<unknown> = ['Signature1', this.protectedHeaders]
 
-    return new Sign1(encodedProtectedHeaders, wUnprotectedHeaders.esMap as Map<number, unknown>, payload, signature)
+    if (this.externalAad) toBeSigned.push(this.externalAad)
+
+    toBeSigned.push(payload)
+
+    return cborEncode(toBeSigned)
   }
 
-  public getRawSigningData() {
-    const alg = this.algName
-    if (!alg) {
+  public get signatureAlgorithmName() {
+    const algorithm =
+      this.protectedHeaders.headers?.get(Header.Algorithm) ?? this.unprotectedHeaders.headers?.get(Header.Algorithm)
+    if (!algorithm) {
       throw new CoseError({
         code: 'COSE_INVALID_ALG',
-        message: 'Cannot get raw signing data. Alg is not defined',
+        message: 'Could not find the algorithm in the protected or unprotected headers',
       })
     }
-
-    const toBeSigned = Sign1.Signature1(
-      cborEncode(ProtectedHeaders.wrap(this.protectedHeaders).esMap),
-      new Uint8Array(),
-      this.payload
-    )
-
-    return {
-      data: toBeSigned,
-      alg,
+    const algorithmName = AlgorithmNames.get(algorithm as Algorithm)
+    if (!algorithmName) {
+      throw new CoseError({
+        code: 'COSE_INVALID_ALG',
+        message: `Found algorithm with id '${algorithm}', but could not map this to a name`,
+      })
     }
+    return algorithmName
   }
 
-  public getRawVerificationData(options?: VerifyOptions) {
-    const toBeSigned = Sign1.Signature1(
-      this.encodedProtectedHeaders ?? new Uint8Array(),
-      options?.externalAAD ?? new Uint8Array(),
-      options?.detachedPayload ?? this.payload
-    )
-
-    return this.internalGetRawVerificationData(toBeSigned)
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
+    return cborDecode<Sign1>(bytes, options)
   }
-
-  static tag = 18
 }
 
 addExtension({
   Class: Sign1,
   tag: Sign1.tag,
+  // TODO: why is the tag not being used?
   encode(instance: Sign1, encodeFn: (obj: unknown) => Uint8Array) {
-    return encodeFn(instance.getContentForEncoding())
+    return encodeFn(instance.encodedStructure())
   },
-  decode: (data: ConstructorParameters<typeof Sign1>) => {
-    return new Sign1(data[0], data[1], data[2], data[3])
+  decode: (data: Sign1Structure) => {
+    return new Sign1({ protectedHeaders: data[0], unprotectedHeaders: data[1], payload: data[2], signature: data[3] })
   },
 })

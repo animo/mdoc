@@ -30,7 +30,7 @@ export class IssuerSignedDocument {
         docType: this.docType,
         issuerSigned: {
           nameSpaces,
-          issuerAuth: this.issuerSigned.issuerAuth.getContentForEncoding(),
+          issuerAuth: this.issuerSigned.issuerAuth.encodedStructure(),
         },
       })
     )

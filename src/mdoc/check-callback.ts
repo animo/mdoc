@@ -14,7 +14,7 @@ export const defaultCallback: VerificationCallback = (verification) => {
   throw new MDLError(verification.reason ?? verification.check)
 }
 
-export const onCatCheck = (onCheck: VerificationCallback, category: VerificationAssessment['category']) => {
+export const onCategoryCheck = (onCheck: VerificationCallback, category: VerificationAssessment['category']) => {
   return (item: Omit<VerificationAssessment, 'category'>) => {
     onCheck({ ...item, category })
   }

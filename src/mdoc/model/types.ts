@@ -2,7 +2,7 @@ import type { JWK } from 'jose'
 import type { Mac0 } from '../../cose/mac0.js'
 import type { Sign1 } from '../../cose/sign1.js'
 import type { IssuerSignedDataItem, IssuerSignedItem } from '../issuer-signed-item.js'
-import type IssuerAuth from './issuer-auth.js'
+import type { IssuerAuth } from './issuer-auth.js'
 
 export interface ValidityInfo {
   signed: Date

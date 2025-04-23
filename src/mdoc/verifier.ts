@@ -4,7 +4,7 @@ import type { MDoc } from './model/mdoc.js'
 import { calculateDeviceAutenticationBytes } from './utils.js'
 
 import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
-import { defaultCallback, onCatCheck } from './check-callback.js'
+import { defaultCallback, onCategoryCheck } from './check-callback.js'
 
 import type { JWK } from 'jose'
 import type { MdocContext, X509Context } from '../c-mdoc.js'
@@ -12,7 +12,7 @@ import { COSEKey, COSEKeyToRAW } from '../cose/key/cose-key.js'
 import { Sign1 } from '../cose/sign1.js'
 import { MDL_NAMESPACE } from './issuer-signed-item.js'
 import { DeviceSignedDocument } from './model/device-signed-document.js'
-import type IssuerAuth from './model/issuer-auth.js'
+import type { IssuerAuth } from './model/issuer-auth.js'
 import type { IssuerSignedDocument } from './model/issuer-signed-document.js'
 import type { DiagnosticInformation } from './model/types.js'
 import { parseDeviceResponse } from './parser.js'
@@ -39,7 +39,7 @@ export class Verifier {
     ctx: { x509: X509Context; cose: MdocContext['cose'] }
   ) {
     const { issuerAuth, disableCertificateChainValidation, onCheckG } = input
-    const onCheck = onCatCheck(onCheckG ?? defaultCallback, 'ISSUER_AUTH')
+    const onCheck = onCategoryCheck(onCheckG ?? defaultCallback, 'ISSUER_AUTH')
     const { certificateChain } = issuerAuth
     const countryName = issuerAuth.getIssuingCountry(ctx)
 
@@ -52,7 +52,7 @@ export class Verifier {
       return
     }
 
-    if (!issuerAuth.algName) {
+    if (!issuerAuth.signatureAlgorithmName) {
       onCheck({
         status: 'FAILED',
         check: 'IssuerAuth must have an alg property',
@@ -86,7 +86,7 @@ export class Verifier {
 
     const verificationJwk = await ctx.x509.getPublicKey({
       certificate: issuerAuth.certificate,
-      alg: issuerAuth.algName,
+      alg: issuerAuth.signatureAlgorithmName,
     })
 
     const verificationResult = await ctx.cose.sign1.verify({
@@ -100,7 +100,7 @@ export class Verifier {
     })
 
     // Validity
-    const { validityInfo } = issuerAuth.decodedPayload
+    const { validityInfo } = issuerAuth.mso
     const now = input.now ?? new Date()
 
     const certificateData = await ctx.x509.getCertificateData({
@@ -141,11 +141,11 @@ export class Verifier {
     }
   ) {
     const { deviceSigned, sessionTranscriptBytes, ephemeralPrivateKey } = input
-    const onCheck = onCatCheck(input.onCheckG ?? defaultCallback, 'DEVICE_AUTH')
+    const onCheck = onCategoryCheck(input.onCheckG ?? defaultCallback, 'DEVICE_AUTH')
 
     const { deviceAuth, nameSpaces } = deviceSigned.deviceSigned
     const { docType } = deviceSigned
-    const { deviceKeyInfo } = deviceSigned.issuerSigned.issuerAuth.decodedPayload
+    const { deviceKeyInfo } = deviceSigned.issuerSigned.issuerAuth.mso
     const { deviceKey: deviceKeyCoseKey } = deviceKeyInfo ?? {}
 
     // Prevent cloning of the mdoc and mitigate man in the middle attacks
@@ -183,7 +183,12 @@ export class Verifier {
       try {
         const ds = deviceAuth.deviceSignature
 
-        const sign1 = new Sign1(ds.protectedHeaders, ds.unprotectedHeaders, deviceAuthenticationBytes, ds.signature)
+        const sign1 = new Sign1({
+          protectedHeaders: ds.protectedHeaders,
+          unprotectedHeaders: ds.unprotectedHeaders,
+          signature: ds.signature,
+          detachedContent: deviceAuthenticationBytes,
+        })
 
         const jwk = deviceKey.toJWK()
         const verificationResult = await ctx.cose.sign1.verify({ sign1, jwk })
@@ -211,11 +216,18 @@ export class Verifier {
       return
     }
 
-    onCheck({
-      status: deviceAuth.deviceMac.hasSupportedAlg() ? 'PASSED' : 'FAILED',
-      check: 'Device MAC must use alg 5 (HMAC 256/256)',
-    })
-    if (!deviceAuth.deviceMac.hasSupportedAlg()) {
+    try {
+      deviceAuth.deviceMac.signatureAlgorithmName
+
+      onCheck({
+        status: 'PASSED',
+        check: 'Device MAC must use alg 5 (HMAC 256/256)',
+      })
+    } catch {
+      onCheck({
+        status: 'FAILED',
+        check: 'Device MAC must use alg 5 (HMAC 256/256)',
+      })
       return
     }
 
@@ -267,9 +279,9 @@ export class Verifier {
     const { mdoc, onCheckG } = input
     // Confirm that the mdoc data has not changed since issuance
     const { issuerAuth } = mdoc.issuerSigned
-    const { valueDigests, digestAlgorithm } = issuerAuth.decodedPayload
+    const { valueDigests, digestAlgorithm } = issuerAuth.mso
 
-    const onCheck = onCatCheck(onCheckG ?? defaultCallback, 'DATA_INTEGRITY')
+    const onCheck = onCategoryCheck(onCheckG ?? defaultCallback, 'DATA_INTEGRITY')
 
     onCheck({
       status: digestAlgorithm && DIGEST_ALGS[digestAlgorithm] ? 'PASSED' : 'FAILED',
@@ -508,15 +520,16 @@ export class Verifier {
     let deviceKey: JWK | undefined = undefined
 
     if (document.issuerSigned.issuerAuth) {
-      const { deviceKeyInfo } = document.issuerSigned.issuerAuth.decodedPayload
+      const { deviceKeyInfo } = document.issuerSigned.issuerAuth.mso
       if (deviceKeyInfo?.deviceKey) {
         deviceKey = COSEKey.import(deviceKeyInfo.deviceKey).toJWK()
       }
     }
     const disclosedAttributes = attributes.filter((attr) => attr.isValid).length
-    const totalAttributes = Array.from(
-      document.issuerSigned.issuerAuth.decodedPayload.valueDigests?.entries() ?? []
-    ).reduce((prev, [, digests]) => prev + digests.size, 0)
+    const totalAttributes = Array.from(document.issuerSigned.issuerAuth.mso.valueDigests?.entries() ?? []).reduce(
+      (prev, [, digests]) => prev + digests.size,
+      0
+    )
 
     return {
       general: {
@@ -525,22 +538,21 @@ export class Verifier {
         status: decoded.status,
         documents: decoded.documents.length,
       },
-      validityInfo: document.issuerSigned.issuerAuth.decodedPayload.validityInfo,
+      validityInfo: document.issuerSigned.issuerAuth.mso.validityInfo,
       issuerCertificate: await ctx.x509.getCertificateData({
         certificate: issuerCert,
       }),
       issuerSignature: {
-        // TODO
-        // biome-ignore lint/style/noNonNullAssertion: <explanation>
-        alg: document.issuerSigned.issuerAuth.algName!,
+        alg: document.issuerSigned.issuerAuth.signatureAlgorithmName,
         isValid: dr.filter((check) => check.category === 'ISSUER_AUTH').every((check) => check.status === 'PASSED'),
         reasons: dr
           .filter((check) => check.category === 'ISSUER_AUTH' && check.status === 'FAILED')
           .map((check) => check.reason ?? check.check),
         digests: Object.fromEntries(
-          Array.from(document.issuerSigned.issuerAuth.decodedPayload.valueDigests?.entries() ?? []).map(
-            ([ns, digests]) => [ns, digests.size]
-          )
+          Array.from(document.issuerSigned.issuerAuth.mso.valueDigests?.entries() ?? []).map(([ns, digests]) => [
+            ns,
+            digests.size,
+          ])
         ),
       },
       deviceKey: {
@@ -550,8 +562,8 @@ export class Verifier {
         document instanceof DeviceSignedDocument
           ? {
               alg:
-                document.deviceSigned.deviceAuth.deviceSignature?.algName ??
-                document.deviceSigned.deviceAuth.deviceMac?.algName,
+                document.deviceSigned.deviceAuth.deviceSignature?.signatureAlgorithmName ??
+                document.deviceSigned.deviceAuth.deviceMac?.signatureAlgorithmName,
               isValid: dr
                 .filter((check) => check.category === 'DEVICE_AUTH')
                 .every((check) => check.status === 'PASSED'),
