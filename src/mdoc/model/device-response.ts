@@ -1,7 +1,7 @@
 import type { JWK } from 'jose'
 import { DataItem, cborEncode } from '../../cbor/index.js'
 import type { MdocContext } from '../../context.js'
-import { Algorithm, Header, MacAlgorithm } from '../../cose/headers/defaults.js'
+import { SignatureAlgorithm, Header, MacAlgorithm } from '../../cose/headers/defaults.js'
 import { ProtectedHeaders } from '../../cose/headers/protected-headers.js'
 import { UnprotectedHeaders } from '../../cose/headers/unprotected-headers.js'
 import { COSEKeyToRAW, CoseKey } from '../../cose/key/cose-key.js'
@@ -431,7 +431,7 @@ export class DeviceResponse {
       ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToBytes(kid)]]) })
       : undefined
     const protectedHeaders = new ProtectedHeaders({
-      protectedHeaders: new Map([[Header.Algorithm, Algorithm[this.alg]]]),
+      protectedHeaders: new Map([[Header.Algorithm, SignatureAlgorithm[this.alg]]]),
     })
 
     const sign1 = new Sign1({

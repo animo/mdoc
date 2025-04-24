@@ -2,7 +2,7 @@ import type { JWK } from 'jose'
 import { cborDecode, cborEncode } from '../../cbor/index.js'
 import { base64url, bytesToString, concatBytes } from '../../utils/transformers.js'
 import { CoseInvalidTypeForKey, CoseInvalidValueForKty } from '../error.js'
-import { Algorithm } from '../headers'
+import { SignatureAlgorithm } from '../headers'
 import { TypedMap } from '../typed-map.js'
 import { Curve } from './curve.js'
 import type { KeyOps } from './key-ops.js'
@@ -21,16 +21,16 @@ function normalize(input: string | Uint8Array): string {
 export const JwkFromCoseValue = new Map<string, (v: unknown) => string>([
   ['kty', (value: KeyType) => JwkKeyType[value]],
   ['crv', (value: Curve) => Curve[value]],
-  ['alg', (value: Algorithm) => Algorithm[value]],
+  ['alg', (value: SignatureAlgorithm) => SignatureAlgorithm[value]],
   ['kid', (v: string | Uint8Array) => (typeof v === 'string' ? v : base64url.encode(v))],
   ['key_ops', (v) => toArray(v).map((value) => JWKKeyOps.get(value))],
   ...['x', 'y', 'd', 'k'].map((param) => [param, base64url.encode]),
 ])
 
-export const JwkToCoseValue = new Map<string, (v: unknown) => KeyType | Uint8Array | Algorithm | KeyOps[]>([
+export const JwkToCoseValue = new Map<string, (v: unknown) => KeyType | Uint8Array | SignatureAlgorithm | KeyOps[]>([
   ['kty', (value: JwkKeyType) => JwkKeyType[value]],
   ['crv', (value: Curve) => Curve[value]],
-  ['alg', (value: Algorithm) => Algorithm[value]],
+  ['alg', (value: SignatureAlgorithm) => SignatureAlgorithm[value]],
   ['kid', (v: unknown) => v],
   ['key_ops', (v: unknown) => toArray(v).flatMap((value) => JWKKeyOpsToCOSE.get(value))],
   ...['x', 'y', 'd', 'k'].map((label) => [label, (v: Uint8Array | string) => base64url.decode(normalize(v))]),
@@ -40,7 +40,7 @@ export const JwkToCoseValue = new Map<string, (v: unknown) => KeyType | Uint8Arr
 export class CoseKey extends TypedMap<
   | [CoseKeyParam.KeyType, KeyType]
   | [CoseKeyParam.KeyID, Uint8Array]
-  | [CoseKeyParam.Algorithm, Algorithm]
+  | [CoseKeyParam.Algorithm, SignatureAlgorithm]
   | [CoseKeyParam.KeyOps, KeyOps[]]
   | [CoseKeyParam.BaseIV, Uint8Array]
   | [CoseKeyParam.Curve, Curve]

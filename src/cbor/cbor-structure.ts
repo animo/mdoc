@@ -29,4 +29,8 @@ export abstract class CborStructure {
   public static decode(bytes: Uint8Array, options?: CborDecodeOptions) {
     return cborDecode(bytes, options)
   }
+
+  public static fromEncodedStructure(_encodedStructure: unknown): CborStructure {
+    throw new Error('fromEncodedStructure must be implemented')
+  }
 }

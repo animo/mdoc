@@ -19,26 +19,6 @@ export class IssuerAuth extends Sign1 {
 
     const mso = Mso.decode(this.payload)
 
-    // @todo this should happen in the `Mso.decode` method
-    // const mapValidityInfo = (validityInfo?: Map<string, Uint8Array>) => {
-    //   if (!validityInfo) {
-    //     return validityInfo
-    //   }
-    //   return Object.fromEntries(
-    //     [...validityInfo.entries()].map(([key, value]) => {
-    //       return [key, value instanceof Uint8Array ? cborDecode(value) : value]
-    //     })
-    //   )
-    // }
-
-    // const result: MSO = {
-    //   ...decodedEntries,
-    //   validityInfo: mapValidityInfo(decodedEntries.validityInfo),
-    //   validityDigests: decoded.validityDigests ? Object.fromEntries(decoded.validityDigests) : undefined,
-    //   deviceKeyInfo: decoded.deviceKeyInfo ? Object.fromEntries(decoded.deviceKeyInfo) : undefined,
-    // }
-    // this.#decodedPayload = result
-    // return result
     return mso
   }
 
@@ -75,12 +55,15 @@ export class IssuerAuth extends Sign1 {
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
     const data = cborDecode<IssuerAuthStructure>(bytes, options)
+    return IssuerAuth.fromEncodedStructure(data)
+  }
 
+  public static override fromEncodedStructure(encodedStructure: IssuerAuthStructure): IssuerAuth {
     return new IssuerAuth({
-      protectedHeaders: data[0] as Uint8Array,
-      unprotectedHeaders: data[1] as Map<unknown, unknown>,
-      payload: data[2] as Uint8Array,
-      signature: data[3] as Uint8Array,
+      protectedHeaders: encodedStructure[0],
+      unprotectedHeaders: encodedStructure[1],
+      payload: encodedStructure[2],
+      signature: encodedStructure[3],
     })
   }
 }

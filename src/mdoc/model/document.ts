@@ -1,7 +1,7 @@
 import type { JWK } from 'jose'
 import { DataItem, cborDecode, cborEncode } from '../../cbor/index.js'
 import type { MdocContext } from '../../context.js'
-import { Algorithm, Header } from '../../cose/headers/defaults.js'
+import { SignatureAlgorithm, Header } from '../../cose/headers/defaults.js'
 import { ProtectedHeaders } from '../../cose/headers/protected-headers.js'
 import { UnprotectedHeaders } from '../../cose/headers/unprotected-headers.js'
 import { CoseKey } from '../../cose/key/cose-key.js'
@@ -213,7 +213,7 @@ export class Document {
     )
 
     const protectedHeaders = new ProtectedHeaders({
-      protectedHeaders: new Map([[Header.Algorithm, Algorithm[params.alg]]]),
+      protectedHeaders: new Map([[Header.Algorithm, SignatureAlgorithm[params.alg]]]),
     })
     const unprotectedHeaders = new UnprotectedHeaders({ unprotectedHeaders: headers })
 

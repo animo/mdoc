@@ -1,6 +1,7 @@
+import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
-import { type Algorithm, AlgorithmNames, Header } from './headers/defaults.js'
+import { type SignatureAlgorithm, SignatureAlgorithmNames, Header } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
 
@@ -47,7 +48,11 @@ export class Sign1 extends CborStructure {
     this.externalAad = options.externalAad
   }
 
-  public encodedStructure(): unknown {
+  public encodedStructure(): Sign1Structure {
+    if (!this.signature) {
+      throw new CborEncodeError('Signature must be defined when trying to encode a Sign1 structure')
+    }
+
     return [
       this.protectedHeaders.encodedStructure(),
       this.unprotectedHeaders.encodedStructure(),
@@ -80,7 +85,7 @@ export class Sign1 extends CborStructure {
       throw new CoseInvalidAlgorithm()
     }
 
-    const algorithmName = AlgorithmNames.get(algorithm as Algorithm)
+    const algorithmName = SignatureAlgorithmNames.get(algorithm as SignatureAlgorithm)
 
     if (!algorithmName) {
       throw new CoseInvalidAlgorithm()
@@ -92,6 +97,15 @@ export class Sign1 extends CborStructure {
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
     return cborDecode<Sign1>(bytes, options)
   }
+
+  public static override fromEncodedStructure(encodedStructure: Sign1Structure): Sign1 {
+    return new Sign1({
+      protectedHeaders: encodedStructure[0],
+      unprotectedHeaders: encodedStructure[1],
+      payload: encodedStructure[2],
+      signature: encodedStructure[3],
+    })
+  }
 }
 
 addExtension({
@@ -101,7 +115,5 @@ addExtension({
   encode(instance: Sign1, encodeFn: (obj: unknown) => Uint8Array) {
     return encodeFn(instance.encodedStructure())
   },
-  decode: (data: Sign1Structure) => {
-    return new Sign1({ protectedHeaders: data[0], unprotectedHeaders: data[1], payload: data[2], signature: data[3] })
-  },
+  decode: Sign1.fromEncodedStructure,
 })

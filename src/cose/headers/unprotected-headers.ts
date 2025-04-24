@@ -12,7 +12,7 @@ export class UnprotectedHeaders extends CborStructure {
     this.headers = options.unprotectedHeaders
   }
 
-  public encodedStructure(): unknown {
+  public encodedStructure(): Map<unknown, unknown> {
     return this.headers ?? new Map()
   }
 }

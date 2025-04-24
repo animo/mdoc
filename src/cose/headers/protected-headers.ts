@@ -18,7 +18,7 @@ export class ProtectedHeaders extends CborStructure {
     }
   }
 
-  public encodedStructure(): unknown {
+  public encodedStructure(): Uint8Array {
     return cborEncode(this.headers) ?? new Uint8Array()
   }
 }

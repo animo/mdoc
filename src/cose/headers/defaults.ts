@@ -15,7 +15,7 @@ export enum Header {
   X5U = 35,
 }
 
-export enum Algorithm {
+export enum SignatureAlgorithm {
   EdDSA = -8,
   ES256 = -7,
   ES384 = -35,
@@ -51,28 +51,29 @@ export const EncryptionAlgorithmNames = new Map<EncryptionAlgorithm, SupportedEn
   [EncryptionAlgorithm.A256GCM, 'A256GCM'],
 ])
 
-export const MacAlgorithmNames = new Map<MacAlgorithm, SupportedMacAlg>([
+export const MacAlgorithmNames = new Map<MacAlgorithm, SupportedMacAlgorithms>([
   [MacAlgorithm.HS256, 'HS256'],
   [MacAlgorithm.HS384, 'HS384'],
   [MacAlgorithm.HS512, 'HS512'],
 ])
 
-export const AlgorithmNames = new Map<Algorithm, SupportedSignatureAlg>([
-  [Algorithm.EdDSA, 'EdDSA'],
-  [Algorithm.ES256, 'ES256'],
-  [Algorithm.ES384, 'ES384'],
-  [Algorithm.ES512, 'ES512'],
-  [Algorithm.PS256, 'PS256'],
-  [Algorithm.PS384, 'PS384'],
-  [Algorithm.PS512, 'PS512'],
-  [Algorithm.RS256, 'RS256'],
-  [Algorithm.RS384, 'RS384'],
-  [Algorithm.RS512, 'RS512'],
+export const SignatureAlgorithmNames = new Map<SignatureAlgorithm, SupportedSignatureAlgorithms>([
+  [SignatureAlgorithm.EdDSA, 'EdDSA'],
+  [SignatureAlgorithm.ES256, 'ES256'],
+  [SignatureAlgorithm.ES384, 'ES384'],
+  [SignatureAlgorithm.ES512, 'ES512'],
+  [SignatureAlgorithm.PS256, 'PS256'],
+  [SignatureAlgorithm.PS384, 'PS384'],
+  [SignatureAlgorithm.PS512, 'PS512'],
+  [SignatureAlgorithm.RS256, 'RS256'],
+  [SignatureAlgorithm.RS384, 'RS384'],
+  [SignatureAlgorithm.RS512, 'RS512'],
 ])
 
-export type SupportedMacAlg = 'HS256' | 'HS384' | 'HS512'
+// @todo remove these?
+export type SupportedMacAlgorithms = 'HS256' | 'HS384' | 'HS512'
 
-export type SupportedSignatureAlg =
+export type SupportedSignatureAlgorithms =
   | 'EdDSA'
   | 'ES256'
   | 'ES384'

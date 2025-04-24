@@ -1,8 +1,9 @@
 import { CborStructure } from '../cbor/cbor-structure.js'
+import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, addExtension } from '../cbor/index.js'
 import { cborDecode, cborEncode } from '../cbor/parser.js'
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
-import { type Algorithm, AlgorithmNames, Header } from './headers/defaults.js'
+import { Header, type MacAlgorithm, MacAlgorithmNames } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
 
@@ -49,7 +50,11 @@ export class Mac0 extends CborStructure {
     this.detachedContent = options.detachedContent
   }
 
-  public encodedStructure(): unknown {
+  public encodedStructure(): Mac0Structure {
+    if (!this.tag) {
+      throw new CborEncodeError('Tag must be defined when trying to encode a Mac0 structure')
+    }
+
     return [
       this.protectedHeaders.encodedStructure(),
       this.unprotectedHeaders.encodedStructure(),
@@ -82,7 +87,7 @@ export class Mac0 extends CborStructure {
       throw new CoseInvalidAlgorithm()
     }
 
-    const algorithmName = AlgorithmNames.get(algorithm as Algorithm)
+    const algorithmName = MacAlgorithmNames.get(algorithm as MacAlgorithm)
 
     if (!algorithmName) {
       throw new CoseInvalidAlgorithm()
@@ -94,6 +99,15 @@ export class Mac0 extends CborStructure {
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
     return cborDecode<Mac0>(bytes, options)
   }
+
+  public static override fromEncodedStructure(encodedStructure: Mac0Structure): Mac0 {
+    return new Mac0({
+      protectedHeaders: encodedStructure[0],
+      unprotectedHeaders: encodedStructure[1],
+      payload: encodedStructure[2],
+      tag: encodedStructure[3],
+    })
+  }
 }
 
 addExtension({
@@ -103,7 +117,5 @@ addExtension({
   encode(instance: Mac0, encodeFn: (obj: unknown) => Uint8Array) {
     return encodeFn(instance.encodedStructure())
   },
-  decode: (data: Mac0Structure) => {
-    return new Mac0({ protectedHeaders: data[0], unprotectedHeaders: data[1], payload: data[2], tag: data[3] })
-  },
+  decode: Mac0.fromEncodedStructure,
 })
