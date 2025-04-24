@@ -1,6 +1,6 @@
-import type { X509Context } from '../../c-mdoc.js'
 import { type CborDecodeOptions, cborDecode } from '../../cbor/index.js'
-import { CoseError } from '../../cose/e-cose.js'
+import type { X509Context } from '../../context.js'
+import { CoseError } from '../../cose/error.js'
 import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
 import { Mso } from './mso.js'
 

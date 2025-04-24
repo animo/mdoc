@@ -1,4 +1,4 @@
-import { MDLError } from './errors.js'
+import { MdlError } from './errors.js'
 
 export interface VerificationAssessment {
   status: 'PASSED' | 'FAILED' | 'WARNING'
@@ -9,9 +9,9 @@ export interface VerificationAssessment {
 
 export type VerificationCallback = (item: VerificationAssessment) => void
 
-export const defaultCallback: VerificationCallback = (verification) => {
+export const defaultVerificationCallback: VerificationCallback = (verification) => {
   if (verification.status !== 'FAILED') return
-  throw new MDLError(verification.reason ?? verification.check)
+  throw new MdlError(verification.reason ?? verification.check)
 }
 
 export const onCategoryCheck = (onCheck: VerificationCallback, category: VerificationAssessment['category']) => {

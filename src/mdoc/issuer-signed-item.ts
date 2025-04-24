@@ -1,7 +1,7 @@
-import type { MdocContext, X509Context } from '../c-mdoc.js'
 import { DataItem } from '../cbor/data-item.js'
 import { cborEncode } from '../cbor/index.js'
-import { areEqualUint8Array } from '../u-uint8-array.js'
+import type { MdocContext, X509Context } from '../context.js'
+import { compareBytes } from '../utils/transformers.js'
 import type { IssuerAuth } from './model/issuer-auth.js'
 import type { DigestAlgorithm } from './model/types.js'
 
@@ -74,7 +74,7 @@ export class IssuerSignedItem {
       return false
     }
     const expectedDigest = digests.get(this.digestID)
-    this.#isValid = expectedDigest && areEqualUint8Array(digest, expectedDigest)
+    this.#isValid = expectedDigest && compareBytes(digest, expectedDigest)
     return Boolean(this.#isValid)
   }
 

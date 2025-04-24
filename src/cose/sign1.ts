@@ -1,6 +1,6 @@
 import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
-import { CoseError } from './e-cose.js'
-import { type Algorithm, AlgorithmNames, Header } from './headers.js'
+import { CoseError } from './error.js'
+import { type Algorithm, AlgorithmNames, Header } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
 

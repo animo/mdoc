@@ -1,13 +1,13 @@
 import type { JWK } from 'jose'
-import type { MdocContext } from '../../c-mdoc.js'
 import { DataItem, cborDecode, cborEncode } from '../../cbor/index.js'
-import { Algorithm, Header } from '../../cose/headers.js'
+import type { MdocContext } from '../../context.js'
+import { Algorithm, Header } from '../../cose/headers/defaults.js'
 import { ProtectedHeaders } from '../../cose/headers/protected-headers.js'
 import { UnprotectedHeaders } from '../../cose/headers/unprotected-headers.js'
-import { COSEKey } from '../../cose/key/cose-key.js'
-import { stringToUint8Array } from '../../u-uint8-array.js'
+import { CoseKey } from '../../cose/key/cose-key.js'
+import { stringToBytes } from '../../utils/transformers.js'
 import { IssuerSignedItem } from '../issuer-signed-item.js'
-import { fromPEM } from '../utils.js'
+import { fromPem } from '../utils.js'
 import { IssuerAuth } from './issuer-auth.js'
 import { IssuerSignedDocument } from './issuer-signed-document.js'
 import type {
@@ -100,7 +100,7 @@ export class Document {
    * The device public key could be in JWK format or as COSE_Key format.
    */
   addDeviceKeyInfo({ deviceKey }: { deviceKey: JWK | Uint8Array }): Document {
-    const deviceKeyCOSEKey = deviceKey instanceof Uint8Array ? deviceKey : COSEKey.fromJWK(deviceKey).encode()
+    const deviceKeyCOSEKey = deviceKey instanceof Uint8Array ? deviceKey : CoseKey.fromJWK(deviceKey).encode()
     const decodedCoseKey = cborDecode<Map<number, number>>(deviceKeyCOSEKey)
 
     this.#deviceKeyInfo = {
@@ -168,11 +168,11 @@ export class Document {
     }
 
     const issuerPublicKeyBuffer =
-      typeof params.issuerCertificate === 'string' ? fromPEM(params.issuerCertificate) : params.issuerCertificate
+      typeof params.issuerCertificate === 'string' ? fromPem(params.issuerCertificate) : params.issuerCertificate
 
-    const issuerPrivateKeyJWK =
+    const issuerPrivateKeyJwk =
       params.issuerPrivateKey instanceof Uint8Array
-        ? COSEKey.import(params.issuerPrivateKey).toJWK()
+        ? CoseKey.import(params.issuerPrivateKey).toJWK()
         : params.issuerPrivateKey
 
     const valueDigests = new Map(
@@ -201,8 +201,8 @@ export class Document {
 
     const payload = cborEncode(DataItem.fromData(mso))
 
-    const _kid = params.kid ?? issuerPrivateKeyJWK.kid
-    const kid = typeof _kid === 'string' ? stringToUint8Array(_kid) : _kid
+    const _kid = params.kid ?? issuerPrivateKeyJwk.kid
+    const kid = typeof _kid === 'string' ? stringToBytes(_kid) : _kid
     const headers = new Map(
       kid
         ? [
@@ -221,7 +221,7 @@ export class Document {
 
     const signature = await ctx.cose.sign1.sign({
       sign1: issuerAuth,
-      jwk: issuerPrivateKeyJWK,
+      jwk: issuerPrivateKeyJwk,
     })
     issuerAuth.signature = signature
 

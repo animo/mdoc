@@ -1,4 +1,4 @@
-export class MDLError extends Error {
+export class MdlError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = new.target.name
@@ -6,7 +6,7 @@ export class MDLError extends Error {
   }
 }
 
-export class MDLParseError extends Error {
+export class MdlParseError extends Error {
   constructor(message?: string) {
     super(message)
     this.name = new.target.name

@@ -1,21 +1,18 @@
 import { compareVersions } from 'compare-versions'
-import type { MDoc } from './model/mdoc.js'
-
-import { calculateDeviceAutenticationBytes } from './utils.js'
-
-import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
-import { defaultCallback, onCategoryCheck } from './check-callback.js'
-
 import type { JWK } from 'jose'
-import type { MdocContext, X509Context } from '../c-mdoc.js'
-import { COSEKey, COSEKeyToRAW } from '../cose/key/cose-key.js'
+import type { MdocContext, X509Context } from '../context.js'
+import { COSEKeyToRAW, CoseKey } from '../cose/key/cose-key.js'
 import { Sign1 } from '../cose/sign1.js'
+import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
+import { defaultVerificationCallback, onCategoryCheck } from './check-callback.js'
 import { MDL_NAMESPACE } from './issuer-signed-item.js'
 import { DeviceSignedDocument } from './model/device-signed-document.js'
 import type { IssuerAuth } from './model/issuer-auth.js'
 import type { IssuerSignedDocument } from './model/issuer-signed-document.js'
+import type { MDoc } from './model/mdoc.js'
 import type { DiagnosticInformation } from './model/types.js'
 import { parseDeviceResponse } from './parser.js'
+import { calculateDeviceAutenticationBytes } from './utils.js'
 
 const DIGEST_ALGS = {
   'SHA-256': 'sha256',
@@ -39,7 +36,7 @@ export class Verifier {
     ctx: { x509: X509Context; cose: MdocContext['cose'] }
   ) {
     const { issuerAuth, disableCertificateChainValidation, onCheckG } = input
-    const onCheck = onCategoryCheck(onCheckG ?? defaultCallback, 'ISSUER_AUTH')
+    const onCheck = onCategoryCheck(onCheckG ?? defaultVerificationCallback, 'ISSUER_AUTH')
     const { certificateChain } = issuerAuth
     const countryName = issuerAuth.getIssuingCountry(ctx)
 
@@ -141,7 +138,7 @@ export class Verifier {
     }
   ) {
     const { deviceSigned, sessionTranscriptBytes, ephemeralPrivateKey } = input
-    const onCheck = onCategoryCheck(input.onCheckG ?? defaultCallback, 'DEVICE_AUTH')
+    const onCheck = onCategoryCheck(input.onCheckG ?? defaultVerificationCallback, 'DEVICE_AUTH')
 
     const { deviceAuth, nameSpaces } = deviceSigned.deviceSigned
     const { docType } = deviceSigned
@@ -177,7 +174,7 @@ export class Verifier {
     }
 
     if (deviceAuth.deviceSignature) {
-      const deviceKey = COSEKey.import(deviceKeyCoseKey)
+      const deviceKey = CoseKey.import(deviceKeyCoseKey)
 
       // ECDSA/EdDSA authentication
       try {
@@ -245,15 +242,16 @@ export class Verifier {
         privateKey:
           ephemeralPrivateKey instanceof Uint8Array
             ? ephemeralPrivateKey
-            : COSEKeyToRAW(COSEKey.fromJWK(ephemeralPrivateKey).encode()),
+            : COSEKeyToRAW(CoseKey.fromJWK(ephemeralPrivateKey).encode()),
         publicKey: deviceKeyRaw,
         sessionTranscriptBytes,
       })
 
+      deviceAuth.deviceMac.detachedContent = deviceAuthenticationBytes
+
       const isValid = await ctx.cose.mac0.verify({
         mac0: deviceAuth.deviceMac,
         jwk: ephemeralMacKeyJwk,
-        options: { detachedPayload: deviceAuthenticationBytes },
       })
 
       onCheck({
@@ -281,7 +279,7 @@ export class Verifier {
     const { issuerAuth } = mdoc.issuerSigned
     const { valueDigests, digestAlgorithm } = issuerAuth.mso
 
-    const onCheck = onCategoryCheck(onCheckG ?? defaultCallback, 'DATA_INTEGRITY')
+    const onCheck = onCategoryCheck(onCheckG ?? defaultVerificationCallback, 'DATA_INTEGRITY')
 
     onCheck({
       status: digestAlgorithm && DIGEST_ALGS[digestAlgorithm] ? 'PASSED' : 'FAILED',
@@ -390,7 +388,7 @@ export class Verifier {
     }
   ): Promise<MDoc> {
     const { encodedDeviceResponse, now, trustedCertificates } = input
-    const onCheck = input.onCheck ?? defaultCallback
+    const onCheck = input.onCheck ?? defaultVerificationCallback
 
     const dr = parseDeviceResponse(encodedDeviceResponse)
 
@@ -522,7 +520,7 @@ export class Verifier {
     if (document.issuerSigned.issuerAuth) {
       const { deviceKeyInfo } = document.issuerSigned.issuerAuth.mso
       if (deviceKeyInfo?.deviceKey) {
-        deviceKey = COSEKey.import(deviceKeyInfo.deviceKey).toJWK()
+        deviceKey = CoseKey.import(deviceKeyInfo.deviceKey).toJWK()
       }
     }
     const disclosedAttributes = attributes.filter((attr) => attr.isValid).length

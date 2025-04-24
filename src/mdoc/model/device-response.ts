@@ -1,13 +1,13 @@
 import type { JWK } from 'jose'
-import type { MdocContext } from '../../c-mdoc.js'
 import { DataItem, cborEncode } from '../../cbor/index.js'
-import { Algorithm, Header, MacAlgorithm } from '../../cose/headers.js'
+import type { MdocContext } from '../../context.js'
+import { Algorithm, Header, MacAlgorithm } from '../../cose/headers/defaults.js'
 import { ProtectedHeaders } from '../../cose/headers/protected-headers.js'
 import { UnprotectedHeaders } from '../../cose/headers/unprotected-headers.js'
-import { COSEKey, COSEKeyToRAW } from '../../cose/key/cose-key.js'
+import { COSEKeyToRAW, CoseKey } from '../../cose/key/cose-key.js'
 import { Mac0 } from '../../cose/mac0.js'
 import { Sign1 } from '../../cose/sign1.js'
-import { stringToUint8Array } from '../../u-uint8-array.js'
+import { stringToBytes } from '../../utils/transformers.js'
 import type { IssuerSignedItem } from '../issuer-signed-item.js'
 import { parseDeviceResponse } from '../parser.js'
 import { calculateDeviceAutenticationBytes } from '../utils.js'
@@ -390,8 +390,8 @@ export class DeviceResponse {
 
     const { kid } = this.devicePrivateKey
     const ephemeralMacKeyJwk = await ctx.crypto.calculateEphemeralMacKeyJwk({
-      privateKey: COSEKeyToRAW(COSEKey.fromJWK(this.devicePrivateKey).encode()),
-      publicKey: COSEKeyToRAW(COSEKey.fromJWK(this.ephemeralPublicKey).encode()),
+      privateKey: COSEKeyToRAW(CoseKey.fromJWK(this.devicePrivateKey).encode()),
+      publicKey: COSEKeyToRAW(CoseKey.fromJWK(this.ephemeralPublicKey).encode()),
 
       sessionTranscriptBytes: sessionTranscriptBytes,
     })
@@ -403,7 +403,7 @@ export class DeviceResponse {
     })
 
     const unprotectedHeaders = kid
-      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToUint8Array(kid)]]) })
+      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToBytes(kid)]]) })
       : undefined
 
     const mac0 = new Mac0({ protectedHeaders, unprotectedHeaders, detachedContent: deviceAuthenticationBytes })
@@ -428,7 +428,7 @@ export class DeviceResponse {
 
     const { kid } = this.devicePrivateKey
     const unprotectedHeaders = kid
-      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToUint8Array(kid)]]) })
+      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToBytes(kid)]]) })
       : undefined
     const protectedHeaders = new ProtectedHeaders({
       protectedHeaders: new Map([[Header.Algorithm, Algorithm[this.alg]]]),

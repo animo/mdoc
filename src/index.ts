@@ -1,13 +1,13 @@
-export * from './c-mdoc.js'
+export * from './context.js'
 export {
   DateOnly,
   DataItem,
   cborDecode,
   cborEncode,
-} from './cbor/index'
-export { COSEKey, COSEKeyToRAW } from './cose/key/cose-key.js'
+} from './cbor'
+export { CoseKey as COSEKey, COSEKeyToRAW } from './cose/key/cose-key.js'
 export {
-  defaultCallback,
+  defaultVerificationCallback as defaultCallback,
   type VerificationAssessment,
   type VerificationCallback,
 } from './mdoc/check-callback.js'
@@ -34,6 +34,3 @@ export {
   parseIssuerSigned,
 } from './mdoc/parser.js'
 export { Verifier } from './mdoc/verifier.js'
-export { uint8ArrayToBase64Url } from './u-base64.js'
-export { hexToUint8Array, uint8ArrayToHex } from './u-hex.js'
-export { areEqualUint8Array, stringToUint8Array } from './u-uint8-array.js'

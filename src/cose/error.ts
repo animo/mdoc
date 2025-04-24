@@ -72,6 +72,7 @@ export type COSE_ERROR_CODE =
   | 'COSE_UNSUPPORTED_ALG'
   | 'COSE_PAYLOAD_MUST_BE_NULL'
   | 'COSE_PAYLOAD_MUST_BE_DEFINED'
+  | 'COSE_INVALID_TYPE_FOR_KEY'
 
 export class CoseError extends Error {
   // @ts-ignore override doesn't work in all environments due to "This member cannot have an 'override' modifier because it is not declared in the base class 'Error'"

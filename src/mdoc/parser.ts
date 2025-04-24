@@ -2,7 +2,7 @@ import { compareVersions } from 'compare-versions'
 import { cborDecode } from '../cbor/index.js'
 import { Mac0 } from '../cose/mac0.js'
 import { Sign1 } from '../cose/sign1.js'
-import { MDLParseError } from './errors.js'
+import { MdlParseError } from './errors.js'
 import { IssuerSignedItem } from './issuer-signed-item.js'
 import { DeviceSignedDocument } from './model/device-signed-document.js'
 import { IssuerAuth } from './model/issuer-auth.js'
@@ -24,11 +24,11 @@ const parseIssuerAuthElement = (rawIssuerAuth: RawIssuerAuth, expectedDocType?: 
   const { docType, version } = issuerAuth.mso
 
   if (expectedDocType && docType !== expectedDocType) {
-    throw new MDLParseError(`The issuerAuth docType must be ${expectedDocType}`)
+    throw new MdlParseError(`The issuerAuth docType must be ${expectedDocType}`)
   }
 
   if (!version || compareVersions(version, '1.0') !== 0) {
-    throw new MDLParseError("The issuerAuth version must be '1.0'")
+    throw new MdlParseError("The issuerAuth version must be '1.0'")
   }
 
   return issuerAuth
@@ -43,7 +43,7 @@ const parseDeviceAuthElement = (rawDeviceAuth: RawDeviceAuth): DeviceAuth => {
     return { deviceMac: new Mac0(...deviceMac) }
   }
 
-  throw new MDLParseError(`Invalid deviceAuth element. Missing 'deviceSignature' and 'deviceMac'`)
+  throw new MdlParseError(`Invalid deviceAuth element. Missing 'deviceSignature' and 'deviceMac'`)
 }
 
 const namespaceToArray = (entries: RawIndexedDataItem): IssuerSignedItem[] =>
@@ -69,7 +69,7 @@ export const parseIssuerSigned = (
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     issuerSignedDecoded = issuerSigned instanceof Map ? issuerSigned : (cborDecode(issuerSigned) as Map<string, any>)
   } catch (err) {
-    throw new MDLParseError(
+    throw new MdlParseError(
       `Unable to decode issuer signed document: ${err instanceof Error ? err.message : 'Unknown error'}`
     )
   }
@@ -105,7 +105,7 @@ export const parseDeviceSigned = (
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     deviceSignedDecoded = deviceSigned instanceof Map ? deviceSigned : (cborDecode(deviceSigned) as Map<string, any>)
   } catch (err) {
-    throw new MDLParseError(
+    throw new MdlParseError(
       `Unable to decode device signed document : ${err instanceof Error ? err.message : 'Unknown error'}`
     )
   }
@@ -133,7 +133,7 @@ export const parseDeviceResponse = (encoded: Uint8Array): MDoc => {
   try {
     deviceResponse = cborDecode(encoded) as Map<string, unknown>
   } catch (err) {
-    throw new MDLParseError(`Unable to decode device response: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    throw new MdlParseError(`Unable to decode device response: ${err instanceof Error ? err.message : 'Unknown error'}`)
   }
 
   const { version, documents, status } = Object.fromEntries(deviceResponse)

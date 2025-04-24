@@ -1,12 +1,4 @@
-/**
- * Creates a new map with the keys and values of the given map swapped.
- *
- * @param map {Map<K, V>} the original map
- * @returns {Map<V, K>} the new map
- */
-export const reverseMap = <K, V>(map: Map<K, V>): Map<V, K> => new Map(Array.from(map).map(([k, v]) => [v, k]))
-
-export enum COSEKeyParam {
+export enum CoseKeyParam {
   KeyType = 1,
   KeyID = 2,
   Algorithm = 3,
@@ -19,36 +11,41 @@ export enum COSEKeyParam {
   k = -1,
 }
 
-export enum JWKParam {
-  kty = COSEKeyParam.KeyType,
-  kid = COSEKeyParam.KeyID,
-  alg = COSEKeyParam.Algorithm,
-  key_ops = COSEKeyParam.KeyOps,
-  base_iv = COSEKeyParam.BaseIV,
-  crv = COSEKeyParam.Curve,
-  x = COSEKeyParam.x,
-  y = COSEKeyParam.y,
-  d = COSEKeyParam.d,
-  k = COSEKeyParam.k,
+export enum JwkParam {
+  kty = CoseKeyParam.KeyType,
+  kid = CoseKeyParam.KeyID,
+  alg = CoseKeyParam.Algorithm,
+  key_ops = CoseKeyParam.KeyOps,
+  base_iv = CoseKeyParam.BaseIV,
+  crv = CoseKeyParam.Curve,
+  x = CoseKeyParam.x,
+  y = CoseKeyParam.y,
+  d = CoseKeyParam.d,
+  k = CoseKeyParam.k,
 }
 
-export const KTYSpecificJWKParams: Record<string, Map<number, string> | undefined> = {
-  EC: new Map([
+export const KtySpecificJwkParams: Record<string, Map<number, string> | undefined> = {
+  Ec: new Map([
     [-1, 'crv'],
     [-2, 'x'],
     [-3, 'y'],
     [-4, 'd'],
   ]),
-  OKP: new Map([
+  Okp: new Map([
     [-1, 'crv'],
     [-2, 'x'],
     [-3, 'y'],
     [-4, 'd'],
   ]),
-  oct: new Map([[-1, 'k']]),
+  Oct: new Map([[-1, 'k']]),
 }
 
-export const KTYSpecificJWKParamsRev = Object.fromEntries(
-  // biome-ignore lint/style/noNonNullAssertion:
-  Object.entries(KTYSpecificJWKParams).map(([k, v]) => [k, reverseMap(v!)])
+/**
+ * Creates a new map with the keys and values of the given map swapped.
+ */
+export const reverseMap = <K, V>(map: Map<K, V>): Map<V, K> => new Map(Array.from(map).map(([k, v]) => [v, k]))
+
+export const KtySpecificJwkParamsReveverse = Object.fromEntries(
+  // biome-ignore lint/style/noNonNullAssertion: <explanation>
+  Object.entries(KtySpecificJwkParams).map(([k, v]) => [k, reverseMap(v!)])
 )

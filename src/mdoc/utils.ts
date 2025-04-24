@@ -1,7 +1,12 @@
 import { DataItem } from '../cbor/data-item.js'
 import { cborDecode, cborEncode } from '../cbor/index.js'
-import { base64ToUint8Array } from '../u-base64.js'
+import { base64 } from '../utils/transformers.js'
 
+/**
+ *
+ * @todo transform this into a class
+ *
+ */
 export const calculateDeviceAutenticationBytes = (
   sessionTranscript: Uint8Array | unknown,
   docType: string,
@@ -27,7 +32,7 @@ export const calculateDeviceAutenticationBytes = (
   return result
 }
 
-export function fromPEM(pem: string): Uint8Array {
-  const base64 = pem.replace(/-{5}(BEGIN|END) .*-{5}/gm, '').replace(/\s/gm, '')
-  return base64ToUint8Array(base64)
+export function fromPem(pem: string): Uint8Array {
+  const strippedPem = pem.replace(/-{5}(BEGIN|END) .*-{5}/gm, '').replace(/\s/gm, '')
+  return base64.decode(strippedPem)
 }
