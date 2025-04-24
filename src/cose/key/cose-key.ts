@@ -1,7 +1,7 @@
 import type { JWK } from 'jose'
 import { cborDecode, cborEncode } from '../../cbor/index.js'
 import { base64url, bytesToString, concatBytes } from '../../utils/transformers.js'
-import { CoseError } from '../error.js'
+import { CoseInvalidTypeForKey, CoseInvalidValueForKty } from '../error.js'
 import { Algorithm } from '../headers'
 import { TypedMap } from '../typed-map.js'
 import { Curve } from './curve.js'
@@ -115,11 +115,13 @@ export const COSEKeyToRAW = (key: Map<number, Uint8Array | number> | Uint8Array)
   const decodedKey = key instanceof Uint8Array ? cborDecode<Map<number, Uint8Array | number>>(key) : key
 
   const kty = decodedKey.get(CoseKeyParam.KeyType)
+
   if (kty !== 2) {
-    throw new Error(`Expected COSE Key type: EC2 (2), got: ${kty}`)
+    throw new CoseInvalidValueForKty()
   }
 
   const d = decodedKey.get(CoseKeyParam.d)
+
   if (d && d instanceof Uint8Array) {
     return d
   }
@@ -128,17 +130,11 @@ export const COSEKeyToRAW = (key: Map<number, Uint8Array | number> | Uint8Array)
   const y = decodedKey.get(CoseKeyParam.y)
 
   if (!(x instanceof Uint8Array)) {
-    throw new CoseError({
-      code: 'COSE_INVALID_TYPE_FOR_KEY',
-      message: `Cose key x and y value are not a byte array. Received ${x}`,
-    })
+    throw new CoseInvalidTypeForKey()
   }
 
   if (!(y instanceof Uint8Array)) {
-    throw new CoseError({
-      code: 'COSE_INVALID_TYPE_FOR_KEY',
-      message: `Cose key x and y value are not a byte array. Received ${y}`,
-    })
+    throw new CoseInvalidTypeForKey()
   }
 
   return concatBytes([Uint8Array.from([0x04]), x, y])

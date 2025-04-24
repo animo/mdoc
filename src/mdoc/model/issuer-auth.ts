@@ -1,6 +1,6 @@
 import { type CborDecodeOptions, cborDecode } from '../../cbor/index.js'
 import type { X509Context } from '../../context.js'
-import { CoseError } from '../../cose/error.js'
+import { CosePayloadMustBeDefined } from '../../cose/error.js'
 import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
 import { Mso } from './mso.js'
 
@@ -14,10 +14,7 @@ export type IssuerAuthOptions = Sign1Options
 export class IssuerAuth extends Sign1 {
   public get mso(): Mso {
     if (!this.payload) {
-      throw new CoseError({
-        code: 'COSE_PAYLOAD_MUST_BE_DEFINED',
-        message: 'Payload must be defined on the issuer auth object',
-      })
+      throw new CosePayloadMustBeDefined()
     }
 
     const mso = Mso.decode(this.payload)

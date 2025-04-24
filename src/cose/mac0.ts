@@ -1,7 +1,7 @@
 import { CborStructure } from '../cbor/cbor-structure.js'
 import { type CborDecodeOptions, addExtension } from '../cbor/index.js'
 import { cborDecode, cborEncode } from '../cbor/parser.js'
-import { CoseError } from './error.js'
+import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
 import { type Algorithm, AlgorithmNames, Header } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
@@ -62,10 +62,7 @@ export class Mac0 extends CborStructure {
     const payload = this.detachedContent ?? this.payload
 
     if (!payload) {
-      throw new CoseError({
-        code: 'COSE_PAYLOAD_MUST_BE_DEFINED',
-        message: 'Payload was not provided, nor was detached content',
-      })
+      throw new CosePayloadMustBeDefined()
     }
 
     const toBeAuthenticated: Array<unknown> = ['MAC0', this.protectedHeaders]
@@ -80,19 +77,17 @@ export class Mac0 extends CborStructure {
   public get signatureAlgorithmName() {
     const algorithm =
       this.protectedHeaders.headers?.get(Header.Algorithm) ?? this.unprotectedHeaders.headers?.get(Header.Algorithm)
+
     if (!algorithm) {
-      throw new CoseError({
-        code: 'COSE_INVALID_ALG',
-        message: 'Could not find the algorithm in the protected or unprotected headers',
-      })
+      throw new CoseInvalidAlgorithm()
     }
+
     const algorithmName = AlgorithmNames.get(algorithm as Algorithm)
+
     if (!algorithmName) {
-      throw new CoseError({
-        code: 'COSE_INVALID_ALG',
-        message: `Found algorithm with id '${algorithm}', but could not map this to a name`,
-      })
+      throw new CoseInvalidAlgorithm()
     }
+
     return algorithmName
   }
 
