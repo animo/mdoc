@@ -1,7 +1,7 @@
 import type { JWK } from 'jose'
 import { DataItem, cborDecode, cborEncode } from '../../cbor/index.js'
 import type { MdocContext } from '../../context.js'
-import { SignatureAlgorithm, Header } from '../../cose/headers/defaults.js'
+import { Header, SignatureAlgorithm } from '../../cose/headers/defaults.js'
 import { ProtectedHeaders } from '../../cose/headers/protected-headers.js'
 import { UnprotectedHeaders } from '../../cose/headers/unprotected-headers.js'
 import { CoseKey } from '../../cose/key/cose-key.js'

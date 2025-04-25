@@ -1,7 +1,7 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { CborDecodeError } from '../../cbor/error'
 import { Document, type DocumentStructure } from './document-2'
-import type { DocumentError } from './mdoc'
+import { DocumentError, type DocumentErrorStructure } from './document-error'
 
 export type DeviceResponseStructure = {
   version: string
@@ -55,15 +55,22 @@ export class DeviceResponse2 extends CborStructure {
     const documents = map.get('documents') as undefined | Array<Map<string, unknown>>
 
     if (documents && !Array.isArray(documents)) {
-      throw new CborDecodeError('Document is found on device response, but not an array')
+      throw new CborDecodeError('documents is found on device response, but not an array')
     }
 
     const decodedDocuments = documents?.map(Document.fromEncodedStructure)
 
+    const documentErrors = map.get('documentErrors') as undefined | Array<DocumentErrorStructure>
+    if (documentErrors && !Array.isArray(documentErrors)) {
+      throw new CborDecodeError('documentErrors is found on device response, but not an array')
+    }
+
+    const decodedDocumentErrors = documentErrors?.map(DocumentError.fromEncodedStructure)
+
     return new DeviceResponse2({
       version: map.get('version') as string,
       documents: decodedDocuments,
-      documentErrors: map.get('documentErrors') as undefined,
+      documentErrors: decodedDocumentErrors,
       status: map.get('status') as number,
     })
   }

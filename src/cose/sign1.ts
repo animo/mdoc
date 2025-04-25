@@ -1,7 +1,7 @@
 import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
-import { type SignatureAlgorithm, SignatureAlgorithmNames, Header } from './headers/defaults.js'
+import { Header, type SignatureAlgorithm, SignatureAlgorithmNames } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
 

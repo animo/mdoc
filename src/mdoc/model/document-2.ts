@@ -1,7 +1,7 @@
 import { CborStructure } from '../../cbor'
 import { DeviceSigned, type DeviceSignedStructure } from './device-signed'
 import type { DocType } from './doctype'
-import type { ErrorItem } from './error-item'
+import type { ErrorItems } from './error-items'
 import { IssuerSigned, type IssuerSignedStructure } from './issuer-signed'
 import type { Namespace } from './namespace'
 
@@ -9,21 +9,21 @@ export type DocumentStructure = {
   docType: DocType
   issuerSigned: IssuerSignedStructure
   deviceSigned: DeviceSignedStructure
-  errors?: Map<Namespace, ErrorItem>
+  errors?: Map<Namespace, ErrorItems>
 }
 
 export type DocumentOptions = {
   docType: DocType
   issuerSigned: IssuerSigned
   deviceSigned: DeviceSigned
-  errors?: Map<Namespace, ErrorItem>
+  errors?: Map<Namespace, ErrorItems>
 }
 
 export class Document extends CborStructure {
   public docType: DocType
   public issuerSigned: IssuerSigned
   public deviceSigned: DeviceSigned
-  public errors?: Map<Namespace, ErrorItem>
+  public errors?: Map<Namespace, ErrorItems>
 
   public constructor(options: DocumentOptions) {
     super()

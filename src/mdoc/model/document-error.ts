@@ -1,7 +1,26 @@
 import { CborStructure } from '../../cbor'
+import type { DocType } from './doctype'
+import type { ErrorCode } from './mdoc'
+
+export type DocumentErrorStructure = Map<DocType, ErrorCode>
+
+export type DocumentErrorOptions = {
+  documentError: Map<DocType, ErrorCode>
+}
 
 export class DocumentError extends CborStructure {
-  public encodedStructure(): unknown {
-    throw new Error('Method not implemented.')
+  public documentError: Map<DocType, ErrorCode>
+
+  public constructor(options: DocumentErrorOptions) {
+    super()
+    this.documentError = options.documentError
+  }
+
+  public encodedStructure(): DocumentErrorStructure {
+    return this.documentError
+  }
+
+  public static override fromEncodedStructure(encodedStructure: DocumentErrorStructure): DocumentError {
+    return new DocumentError({ documentError: encodedStructure })
   }
 }
