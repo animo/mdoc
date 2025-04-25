@@ -5,13 +5,13 @@ import { cborDecode, cborEncode } from '../cbor/parser.js'
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
 import { Header, type MacAlgorithm, MacAlgorithmNames } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
-import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
+import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
 
 export type Mac0Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
 export type Mac0Options = {
   protectedHeaders: ProtectedHeaders | ProtectedHeaderOptions['protectedHeaders']
-  unprotectedHeaders: UnprotectedHeaders | UnprotectedHeaderOptions['unprotectedHeaders']
+  unprotectedHeaders: UnprotectedHeaders | UnprotectedHeadersOptions['unprotectedHeaders']
   payload?: Uint8Array | null
   tag?: Uint8Array
   externalAad?: Uint8Array

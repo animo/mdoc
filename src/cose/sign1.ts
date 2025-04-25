@@ -3,13 +3,13 @@ import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEn
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
 import { Header, type SignatureAlgorithm, SignatureAlgorithmNames } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
-import { type UnprotectedHeaderOptions, UnprotectedHeaders } from './headers/unprotected-headers.js'
+import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
 
 export type Sign1Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
 export type Sign1Options = {
   protectedHeaders: ProtectedHeaders | ProtectedHeaderOptions['protectedHeaders']
-  unprotectedHeaders: UnprotectedHeaders | UnprotectedHeaderOptions['unprotectedHeaders']
+  unprotectedHeaders: UnprotectedHeaders | UnprotectedHeadersOptions['unprotectedHeaders']
   payload?: Uint8Array | null
   signature?: Uint8Array
 

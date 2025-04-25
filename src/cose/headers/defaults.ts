@@ -41,23 +41,19 @@ export enum EncryptionAlgorithm {
   Direct = -6,
 }
 
-export type Direct = -6
-
-export type SupportedEncryptionAlgorithm = 'A128GCM' | 'A192GCM' | 'A256GCM'
-
-export const EncryptionAlgorithmNames = new Map<EncryptionAlgorithm, SupportedEncryptionAlgorithm>([
+export const EncryptionAlgorithmNames = new Map<EncryptionAlgorithm, string>([
   [EncryptionAlgorithm.A128GCM, 'A128GCM'],
   [EncryptionAlgorithm.A192GCM, 'A192GCM'],
   [EncryptionAlgorithm.A256GCM, 'A256GCM'],
 ])
 
-export const MacAlgorithmNames = new Map<MacAlgorithm, SupportedMacAlgorithms>([
+export const MacAlgorithmNames = new Map<MacAlgorithm, string>([
   [MacAlgorithm.HS256, 'HS256'],
   [MacAlgorithm.HS384, 'HS384'],
   [MacAlgorithm.HS512, 'HS512'],
 ])
 
-export const SignatureAlgorithmNames = new Map<SignatureAlgorithm, SupportedSignatureAlgorithms>([
+export const SignatureAlgorithmNames = new Map<SignatureAlgorithm, string>([
   [SignatureAlgorithm.EdDSA, 'EdDSA'],
   [SignatureAlgorithm.ES256, 'ES256'],
   [SignatureAlgorithm.ES384, 'ES384'],
@@ -69,18 +65,3 @@ export const SignatureAlgorithmNames = new Map<SignatureAlgorithm, SupportedSign
   [SignatureAlgorithm.RS384, 'RS384'],
   [SignatureAlgorithm.RS512, 'RS512'],
 ])
-
-// @todo remove these?
-export type SupportedMacAlgorithms = 'HS256' | 'HS384' | 'HS512'
-
-export type SupportedSignatureAlgorithms =
-  | 'EdDSA'
-  | 'ES256'
-  | 'ES384'
-  | 'ES512'
-  | 'PS256'
-  | 'PS384'
-  | 'PS512'
-  | 'RS256'
-  | 'RS384'
-  | 'RS512'

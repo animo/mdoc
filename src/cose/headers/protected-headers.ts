@@ -1,5 +1,7 @@
-import { CborStructure } from '../../cbor/cbor-structure.js'
+import { type CborDecodeOptions, CborStructure } from '../../cbor/cbor-structure.js'
 import { cborDecode, cborEncode } from '../../cbor/parser.js'
+
+export type ProtectedHeadersStructure = Uint8Array
 
 export type ProtectedHeaderOptions = {
   protectedHeaders?: Map<unknown, unknown> | Uint8Array
@@ -18,7 +20,16 @@ export class ProtectedHeaders extends CborStructure {
     }
   }
 
-  public encodedStructure(): Uint8Array {
+  public encodedStructure(): ProtectedHeadersStructure {
     return cborEncode(this.headers) ?? new Uint8Array()
+  }
+
+  public static override fromEncodedStructure(encodedStructure: ProtectedHeadersStructure): ProtectedHeaders {
+    return new ProtectedHeaders({ protectedHeaders: encodedStructure })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): ProtectedHeaders {
+    const map = cborDecode<ProtectedHeadersStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return ProtectedHeaders.fromEncodedStructure(map)
   }
 }
