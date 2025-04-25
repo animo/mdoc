@@ -1,32 +1,50 @@
-/**
- *
- * @todo Make all the properties also classes here, instead of just a byte array
- * If we just accept a byte array, we would have to check if it is encapsulated in a data item, or not
- *
- * @todo make specific session transcripts for webAPI, OID4VPDCApi, OID4VP
- */
+import { CborStructure, type DataItem, cborDecode } from '../../cbor'
+import { EReaderKey, type EReaderKeyStructure } from './e-reader-key'
+import { NfcHandover, type NfcHandoverStructure } from './nfc-handover'
+import { QrHandover, type QrHandoverStructure } from './qr-handover'
 
-import { DataItem, cborEncode } from '../../cbor'
-import type { Handover } from './handover'
+export type SessionTranscriptStructure = [Uint8Array, Uint8Array, QrHandoverStructure | NfcHandoverStructure]
 
-type SessionTranscriptOptions = {
-  deviceEngagementBytes: Uint8Array | null
-  eReaderKeyBytes: Uint8Array | null
-  handover: Handover
+export type SessionTranscriptOptions = {
+  deviceEngagement: DeviceEngagement
+  eReaderKey: EReaderKey
+  handover: QrHandover | NfcHandover
 }
 
-export class SessionTranscript {
-  public deviceEngagementBytes: Uint8Array | null
-  public eReaderKeyBytes: Uint8Array | null
-  public handover: Handover
+export class SessionTranscript extends CborStructure {
+  public deviceEngagement: DeviceEngagement
+  public eReaderKey: EReaderKey
+  public handover: QrHandover | NfcHandover
 
   public constructor(options: SessionTranscriptOptions) {
+    super()
+    this.deviceEngagement = options.deviceEngagement
+    this.eReaderKey = options.eReaderKey
     this.handover = options.handover
-    this.eReaderKeyBytes = options.eReaderKeyBytes
-    this.deviceEngagementBytes = options.deviceEngagementBytes
   }
 
-  public get encode() {
-    return cborEncode(DataItem.fromData([this.deviceEngagementBytes, this.eReaderKeyBytes, this.handover.encode()]))
+  public encodedStructure(): SessionTranscriptStructure {
+    return [
+      this.deviceEngagement.encode({ asDataItem: true }),
+      this.eReaderKey.encode({ asDataItem: true }),
+      this.handover.encodedStructure(),
+    ]
+  }
+
+  public static override fromEncodedStructure(encodedStructure: SessionTranscriptStructure): SessionTranscript {
+    const deviceEngagementStructure = cborDecode<DataItem<DeviceEngagementStructure>>(encodedStructure[0]).data
+    const eReaderKeyStructure = cborDecode<DataItem<EReaderKeyStructure>>(encodedStructure[1]).data
+    const handoverStructure = encodedStructure[2] as QrHandoverStructure | NfcHandoverStructure
+
+    const handover =
+      handoverStructure === null
+        ? QrHandover.fromEncodedStructure(handoverStructure)
+        : NfcHandover.fromEncodedStructure(handoverStructure)
+
+    return new SessionTranscript({
+      deviceEngagement: DeviceEngagement.fromEncodedStructure(deviceEngagementStructure),
+      eReaderKey: EReaderKey.fromEncodedStructure(eReaderKeyStructure),
+      handover,
+    })
   }
 }
