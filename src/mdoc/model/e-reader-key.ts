@@ -1,27 +1,20 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import { CoseKey, type CoseKeyOptions, type CoseKeyStructure } from '../../cose/key'
 
-// TODO
-type CoseKey = Map<unknown, unknown>
+export type EReaderKeyStructure = CoseKeyStructure
 
-export type EReaderKeyStructure = CoseKey
+export type EReaderKeyOptions = CoseKeyOptions
 
-export type EReaderKeyOptions = {
-  coseKey: CoseKey
-}
-
-export class EReaderKey extends CborStructure {
-  public coseKey: CoseKey
-
-  public constructor(options: EReaderKeyOptions) {
-    super()
-    this.coseKey = options.coseKey
+export class EReaderKey extends CoseKey {
+  public static override fromEncodedStructure(
+    encodedStructure: EReaderKeyStructure | Map<unknown, unknown>
+  ): EReaderKey {
+    const key = CoseKey.fromEncodedStructure(encodedStructure)
+    return new EReaderKey(key)
   }
 
-  public encodedStructure(): EReaderKeyStructure {
-    return this.coseKey
-  }
-
-  public static override fromEncodedStructure(encodedStructure: EReaderKeyStructure): EReaderKey {
-    return new EReaderKey({ coseKey: encodedStructure })
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): EReaderKey {
+    const structure = cborDecode<Map<unknown, unknown>>(bytes, options)
+    return EReaderKey.fromEncodedStructure(structure)
   }
 }

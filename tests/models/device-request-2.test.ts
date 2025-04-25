@@ -14,7 +14,11 @@ describe('device request', () => {
     expect(deviceRequest.docRequests[0].readerAuth).toBeDefined()
     expect(deviceRequest.docRequests[0].itemsRequest.docType).toStrictEqual('org.iso.18013.5.1.mDL')
     expect(deviceRequest.docRequests[0].itemsRequest.nameSpaces.has('org.iso.18013.5.1')).toBeTruthy()
-    expect(deviceRequest.docRequests[0].itemsRequest.nameSpaces.get('org.iso.18013.5.1')?.get('family_name')).toStrictEqual(true)
-    expect(deviceRequest.docRequests[0].itemsRequest.nameSpaces.get('org.iso.18013.5.1')?.get('portrait')).toStrictEqual(false)
+    expect(
+      deviceRequest.docRequests[0].itemsRequest.nameSpaces.get('org.iso.18013.5.1')?.get('family_name')
+    ).toStrictEqual(true)
+    expect(
+      deviceRequest.docRequests[0].itemsRequest.nameSpaces.get('org.iso.18013.5.1')?.get('portrait')
+    ).toStrictEqual(false)
   })
 })

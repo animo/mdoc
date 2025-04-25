@@ -1,15 +1,20 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import { CoseKey, type CoseKeyOptions, type CoseKeyStructure } from '../../cose/key'
 
-export type EDeviceKeyStructure = never
+export type EDeviceKeyStructure = CoseKeyStructure
 
-export type EDeviceKeyOptions = never
+export type EDeviceKeyOptions = CoseKeyOptions
 
-export class EDeviceKey extends CborStructure {
-  public encodedStructure(): EDeviceKeyStructure {
-    throw new Error('Method not implemented.')
+export class EDeviceKey extends CoseKey {
+  public static override fromEncodedStructure(
+    encodedStructure: EDeviceKeyStructure | Map<unknown, unknown>
+  ): EDeviceKey {
+    const key = CoseKey.fromEncodedStructure(encodedStructure)
+    return new EDeviceKey(key)
   }
 
-  public static override fromEncodedStructure(encodedStructure: EDeviceKeyStructure): EDeviceKey {
-    return new EDeviceKey()
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): EDeviceKey {
+    const structure = cborDecode<Map<unknown, unknown>>(bytes, options)
+    return EDeviceKey.fromEncodedStructure(structure)
   }
 }

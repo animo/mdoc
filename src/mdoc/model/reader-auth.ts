@@ -6,7 +6,6 @@ export type ReaderAuthStructure = Sign1Structure
 export class ReaderAuth extends Sign1 {
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): ReaderAuth {
     const data = cborDecode<ReaderAuthStructure>(bytes, options)
-
     return ReaderAuth.fromEncodedStructure(data)
   }
 
