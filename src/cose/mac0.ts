@@ -96,10 +96,6 @@ export class Mac0 extends CborStructure {
     return algorithmName
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
-    return cborDecode<Mac0>(bytes, options)
-  }
-
   public static override fromEncodedStructure(encodedStructure: Mac0Structure): Mac0 {
     return new Mac0({
       protectedHeaders: encodedStructure[0],
@@ -107,6 +103,11 @@ export class Mac0 extends CborStructure {
       payload: encodedStructure[2],
       tag: encodedStructure[3],
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Mac0 {
+    const structure = cborDecode<Mac0Structure>(bytes, options)
+    return Mac0.fromEncodedStructure(structure)
   }
 }
 

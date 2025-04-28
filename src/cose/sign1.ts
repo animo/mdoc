@@ -94,10 +94,6 @@ export class Sign1 extends CborStructure {
     return algorithmName
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
-    return cborDecode<Sign1>(bytes, options)
-  }
-
   public static override fromEncodedStructure(encodedStructure: Sign1Structure): Sign1 {
     return new Sign1({
       protectedHeaders: encodedStructure[0],
@@ -105,6 +101,11 @@ export class Sign1 extends CborStructure {
       payload: encodedStructure[2],
       signature: encodedStructure[3],
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Sign1 {
+    const structure = cborDecode<Sign1Structure>(bytes, options)
+    return Sign1.fromEncodedStructure(structure)
   }
 }
 
