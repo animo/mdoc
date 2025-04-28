@@ -8,3 +8,7 @@ export class CosePayloadMustBeNull extends CoseError {}
 export class CosePayloadMustBeDefined extends CoseError {}
 export class CoseInvalidTypeForKey extends CoseError {}
 export class CoseInvalidValueForKty extends CoseError {}
+export class CoseInvalidKtyForRaw extends CoseError {}
+export class CoseXNotDefined extends CoseError {}
+export class CoseYNotDefined extends CoseError {}
+export class CoseDNotDefined extends CoseError {}

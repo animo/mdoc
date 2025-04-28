@@ -1,4 +1,6 @@
+import { concatBytes } from '@noble/curves/abstract/utils'
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../cbor'
+import { CoseDNotDefined, CoseInvalidKtyForRaw, CoseXNotDefined } from './error'
 
 export enum KeyOps {
   Sign = 1,
@@ -96,6 +98,7 @@ export class CoseKey extends CborStructure {
     this.curve = options.curve
     this.x = options.x
     this.y = options.y
+    this.d = options.d
   }
 
   public encodedStructure(): CoseKeyStructure {
@@ -159,5 +162,33 @@ export class CoseKey extends CborStructure {
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): CoseKey {
     const structure = cborDecode<Map<unknown, unknown>>(bytes, options)
     return CoseKey.fromEncodedStructure(structure)
+  }
+
+  public get publicKey() {
+    if (this.keyType !== KeyType.Ec) {
+      throw new CoseInvalidKtyForRaw()
+    }
+
+    if (!this.x) {
+      throw new CoseXNotDefined()
+    }
+
+    if (!this.y) {
+      throw new CoseXNotDefined()
+    }
+
+    return concatBytes(Uint8Array.from([0x04]), this.x, this.y)
+  }
+
+  public get privateKey() {
+    if (this.keyType !== KeyType.Ec) {
+      throw new CoseInvalidKtyForRaw()
+    }
+
+    if (!this.d) {
+      throw new CoseDNotDefined()
+    }
+
+    return this.d
   }
 }
