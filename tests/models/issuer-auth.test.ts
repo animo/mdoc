@@ -17,8 +17,6 @@ describe('issuer auth', () => {
     const encodedIssuerAuth = issuerAuth.encode()
     const encodedIssuerAuthInHex = hex.encode(encodedIssuerAuth)
 
-    console.log(hex.encode(issuerAuth.mso.encode()))
-
     expect(encodedIssuerAuthInHex).toStrictEqual(cbor)
   })
 })

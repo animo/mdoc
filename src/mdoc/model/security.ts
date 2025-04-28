@@ -1,4 +1,4 @@
-import { CborStructure, DataItem } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, DataItem, cborDecode } from '../../cbor'
 import { EDeviceKey, type EDeviceKeyStructure } from './e-device-key'
 
 export type SecurityStructure = [number, DataItem<EDeviceKeyStructure>]
@@ -30,5 +30,10 @@ export class Security extends CborStructure {
       cipherSuiteIdentifier: encodedStructure[0],
       eDeviceKey: EDeviceKey.fromEncodedStructure(eDeviceKeyStructure),
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Security {
+    const structure = cborDecode<SecurityStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return Security.fromEncodedStructure(structure)
   }
 }

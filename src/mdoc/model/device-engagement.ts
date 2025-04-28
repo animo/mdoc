@@ -18,7 +18,7 @@ export type DeviceEngagementOptions = {
   deviceRetrievalMethods?: Array<DeviceRetrievalMethod>
   serverRetrievalMethods?: Array<ServerRetrievalMethod>
   protocolInfo?: ProtocolInfo
-  extra?: Record<number, unknown>
+  extra?: Record<string, unknown>
 }
 
 export class DeviceEngagement extends CborStructure {
@@ -27,7 +27,7 @@ export class DeviceEngagement extends CborStructure {
   public deviceRetrievalMethods?: Array<DeviceRetrievalMethod>
   public serverRetrievalMethods?: Array<ServerRetrievalMethod>
   public protocolInfo?: ProtocolInfo
-  public extra?: Record<number, unknown>
+  public extra?: Record<string, unknown>
 
   public constructor(options: DeviceEngagementOptions) {
     super()
@@ -64,32 +64,34 @@ export class DeviceEngagement extends CborStructure {
     return structure
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceEngagement {
-    const map = cborDecode<Map<number, unknown>>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+  public static override fromEncodedStructure(
+    encodedStructure: DeviceEngagementStructure | Map<unknown, unknown>
+  ): DeviceEngagement {
+    let structure = encodedStructure as DeviceEngagementStructure
 
-    const version = map.get(0) as string
-    const securityStructure = map.get(1) as SecurityStructure
-    const deviceRetrievalMethodsStructure = map.get(2) as Array<DeviceRetrievalMethodStructure> | undefined
-    const serverRetrievalMethodsStructure = map.get(3) as Array<ServerRetrievalMethodStructure> | undefined
-    const protocolInfoStructure = map.get(4) as ProtocolInfoStructure | undefined
+    if (encodedStructure instanceof Map) {
+      structure = Object.fromEntries(encodedStructure.entries()) as DeviceEngagementStructure
+    }
 
-    const deviceRetrievalMethods = deviceRetrievalMethodsStructure?.map(DeviceRetrievalMethod.fromEncodedStructure)
-    const serverRetrievalMethods = serverRetrievalMethodsStructure?.map(ServerRetrievalMethod.fromEncodedStructure)
-
-    const definedKeys = [0, 1, 2, 3, 4]
-    const extras: Record<number, unknown> = {}
-    map.forEach((v, k) => {
-      if (definedKeys.includes(k)) return
+    const definedKeys = ['0', '1', '2', '3', '4']
+    const extras: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(structure)) {
+      if (definedKeys.includes(k)) continue
       extras[k] = v
-    })
+    }
 
     return new DeviceEngagement({
-      version,
-      security: Security.fromEncodedStructure(securityStructure),
-      deviceRetrievalMethods,
-      serverRetrievalMethods,
-      protocolInfo: protocolInfoStructure ? ProtocolInfo.fromEncodedStructure(protocolInfoStructure) : undefined,
+      version: structure[0],
+      security: Security.fromEncodedStructure(structure[1]),
+      deviceRetrievalMethods: structure[2] ? structure[2].map(DeviceRetrievalMethod.fromEncodedStructure) : undefined,
+      serverRetrievalMethods: structure[3] ? structure[3].map(ServerRetrievalMethod.fromEncodedStructure) : undefined,
+      protocolInfo: structure[4] ? ProtocolInfo.fromEncodedStructure(structure[4]) : undefined,
       extra: extras,
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceEngagement {
+    const structure = cborDecode<DeviceEngagementStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return DeviceEngagement.fromEncodedStructure(structure)
   }
 }

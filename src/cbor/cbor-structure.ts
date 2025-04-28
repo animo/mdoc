@@ -1,6 +1,6 @@
 import type { Options as CborXParserOptions } from './cbor-x'
 import { DataItem } from './data-item'
-import { cborDecode, cborEncode } from './parser'
+import { cborEncode } from './parser'
 
 export type CborEncodeOptions = {
   asDataItem?: boolean
@@ -27,7 +27,7 @@ export abstract class CborStructure {
    *
    */
   public static decode(bytes: Uint8Array, options?: CborDecodeOptions) {
-    return cborDecode(bytes, options)
+    throw new Error('decode must be implemented')
   }
 
   public static fromEncodedStructure(_encodedStructure: unknown): CborStructure {

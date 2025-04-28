@@ -1,5 +1,6 @@
-import { describe, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { DeviceEngagement } from '../../src/mdoc/model/device-engagement'
+import { Security } from '../../src/mdoc/model/security'
 import { hex } from '../../src/utils'
 
 const cbor =
@@ -8,6 +9,9 @@ const cbor =
 describe('device engagement', () => {
   test('parse', () => {
     const deviceEngagement = DeviceEngagement.decode(hex.decode(cbor))
-    console.log(deviceEngagement)
+
+    expect(deviceEngagement.version).toStrictEqual('1.0')
+    expect(deviceEngagement.security).toBeInstanceOf(Security)
+    expect(deviceEngagement.deviceRetrievalMethods).toBeDefined()
   })
 })

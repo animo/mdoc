@@ -1,4 +1,4 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { MdlError } from '../errors'
 import { DeviceMac, type DeviceMacStructure } from './device-mac'
 import { DeviceSignature, type DeviceSignatureStructure } from './device-signature'
@@ -72,5 +72,11 @@ export class DeviceAuth extends CborStructure {
         : undefined,
       deviceMac: structure.deviceMac ? DeviceMac.fromEncodedStructure(structure.deviceMac) : undefined,
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceAuth {
+    const structure = cborDecode<DeviceAuthStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+
+    return DeviceAuth.fromEncodedStructure(structure)
   }
 }

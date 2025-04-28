@@ -1,4 +1,4 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { CborEncodeError } from '../../cbor/error'
 import { BleOptions } from './ble-options'
 import { NfcOptions } from './nfc-options'
@@ -60,5 +60,10 @@ export class DeviceRetrievalMethod extends CborStructure {
         retrievalOptions as Map<number, unknown>
       ) as RetrievalOptions,
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceRetrievalMethod {
+    const structure = cborDecode<DeviceRetrievalMethodStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return DeviceRetrievalMethod.fromEncodedStructure(structure)
   }
 }
