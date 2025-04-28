@@ -6,7 +6,7 @@ export type CborEncodeOptions = {
   asDataItem?: boolean
 }
 
-export type CborDecodeOptions = never & CborXParserOptions
+export type CborDecodeOptions = CborXParserOptions
 
 export abstract class CborStructure {
   public abstract encodedStructure(): unknown

@@ -1,23 +1,25 @@
-import { type CborDecodeOptions, cborDecode } from '../../cbor/index.js'
+import { type CborDecodeOptions, DataItem, cborDecode } from '../../cbor/index.js'
 import type { X509Context } from '../../context.js'
-import { CosePayloadMustBeDefined } from '../../cose/error.js'
+import { CosePayloadInvalidStructure, CosePayloadMustBeDefined } from '../../cose/error.js'
 import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
-import { Mso } from './mso.js'
+import { MobileSecurityObject, type MobileSecurityObjectStructure } from './mobile-security-object.js'
 
 export type IssuerAuthStructure = Sign1Structure
 export type IssuerAuthOptions = Sign1Options
 
-/**
- * The IssuerAuth which is a COSE_Sign1 message
- * as defined in https://www.iana.org/assignments/cose/cose.xhtml#messages
- */
 export class IssuerAuth extends Sign1 {
-  public get mso(): Mso {
+  public get mso(): MobileSecurityObject {
     if (!this.payload) {
       throw new CosePayloadMustBeDefined()
     }
 
-    const mso = Mso.decode(this.payload)
+    const dataItem = cborDecode<DataItem<MobileSecurityObjectStructure>>(this.payload)
+
+    if (!(dataItem instanceof DataItem)) {
+      throw new CosePayloadInvalidStructure()
+    }
+
+    const mso = MobileSecurityObject.decode(dataItem.buffer)
 
     return mso
   }

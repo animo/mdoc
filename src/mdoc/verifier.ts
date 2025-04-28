@@ -1,7 +1,7 @@
 import { compareVersions } from 'compare-versions'
 import type { JWK } from 'jose'
 import type { MdocContext, X509Context } from '../context.js'
-import { COSEKeyToRAW, CoseKey } from '../cose/key/cose-key.js'
+import { CoseKey } from '../cose/key.js'
 import { Sign1 } from '../cose/sign1.js'
 import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
 import { defaultVerificationCallback, onCategoryCheck } from './check-callback.js'

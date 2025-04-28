@@ -15,5 +15,5 @@ export const cborDecode = <T>(input: Uint8Array, options: Options = encoderDefau
 export const cborEncode = (obj: unknown, options: Options = encoderDefaults): Uint8Array => {
   const params = { ...encoderDefaults, ...options }
   const enc = new Encoder(params)
-  return enc.encode(obj)
+  return Uint8Array.from(enc.encode(obj))
 }
