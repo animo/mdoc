@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { DeviceEngagement } from '../../src/mdoc/model/device-engagement'
-import { Security } from '../../src/mdoc/model/security'
+import { DeviceEngagement } from '../../src/mdoc/models/device-engagement'
+import { Security } from '../../src/mdoc/models/security'
 import { hex } from '../../src/utils'
 
 const cbor =

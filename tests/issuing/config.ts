@@ -1,4 +1,4 @@
-import { DeviceRequest } from '../../src'
+import { DeviceRequest, DocRequest, ItemsRequest } from '../../src'
 //  All the keys here are randomly generated for the purpose of this test.
 export const DEVICE_JWK = {
   kty: 'EC',
@@ -104,34 +104,37 @@ export const PRESENTATION_DEFINITION_1 = {
   ],
 }
 
-export const deviceRequest = DeviceRequest.from('1.0', [
-  {
-    itemsRequestData: {
-      docType: 'org.iso.18013.5.1.mDL',
-      nameSpaces: new Map([
-        [
-          'org.iso.18013.5.1',
-          new Map(
-            Object.entries({
-              family_name: false,
-              given_name: true,
-              birth_date: true,
-              issue_date: true,
-              expiry_date: true,
-              issuing_country: true,
-              issuing_authority: true,
-              issuing_jurisdiction: true,
-              document_number: true,
-              portrait: true,
-              driving_privileges: true,
-              un_distinguishing_sign: true,
-            })
-          ),
-        ],
-      ]),
-    },
-  },
-])
+export const deviceRequest = new DeviceRequest({
+  version: '1.0',
+  docRequests: [
+    new DocRequest({
+      itemsRequest: new ItemsRequest({
+        docType: 'org.iso.18013.5.1.mDL',
+        namespaces: new Map([
+          [
+            'org.iso.18013.5.1',
+            new Map(
+              Object.entries({
+                family_name: false,
+                given_name: true,
+                birth_date: true,
+                issue_date: true,
+                expiry_date: true,
+                issuing_country: true,
+                issuing_authority: true,
+                issuing_jurisdiction: true,
+                document_number: true,
+                portrait: true,
+                driving_privileges: true,
+                un_distinguishing_sign: true,
+              })
+            ),
+          ],
+        ]),
+      }),
+    }),
+  ],
+})
 
 export const PRESENTATION_DEFINITION_2 = {
   id: 'mdl-test-age-over-18',

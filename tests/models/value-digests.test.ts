@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { ValueDigests } from '../../src/mdoc/model/value-digests'
+import { ValueDigests } from '../../src/mdoc/models/value-digests'
 import { hex } from '../../src/utils'
 
 const cbor =

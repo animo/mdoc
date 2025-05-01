@@ -1,6 +1,6 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { CborDecodeError } from '../../cbor/error'
-import { Document, type DocumentStructure } from './document-2'
+import { Document, type DocumentStructure } from './document'
 import { DocumentError, type DocumentErrorStructure } from './document-error'
 
 export type DeviceResponseStructure = {
@@ -17,7 +17,7 @@ export type DeviceResponseOptions = {
   status: number
 }
 
-export class DeviceResponse2 extends CborStructure {
+export class DeviceResponse extends CborStructure {
   public version: string
   public documents?: Array<Document>
   public documentErrors?: Array<DocumentError>
@@ -67,7 +67,7 @@ export class DeviceResponse2 extends CborStructure {
 
     const decodedDocumentErrors = documentErrors?.map(DocumentError.fromEncodedStructure)
 
-    return new DeviceResponse2({
+    return new DeviceResponse({
       version: map.get('version') as string,
       documents: decodedDocuments,
       documentErrors: decodedDocumentErrors,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { mdocContext } from '.'
 import { Verifier, hex } from '../src'
+import { mdocContext } from './context'
 
 describe.skip('verifier', () => {
   describe('parseDeviceResponse', () => {

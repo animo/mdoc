@@ -4,14 +4,14 @@ import type { DataElementValue } from './data-element-value'
 
 export type DeviceSignedItemsStructure = Map<DataElementIdentifier, DataElementValue>
 
-export type DeviceSignedOptions = {
+export type DeviceSignedItemsOptions = {
   deviceSignedItems: Map<DataElementIdentifier, DataElementValue>
 }
 
 export class DeviceSignedItems extends CborStructure {
   deviceSignedItems: Map<DataElementIdentifier, DataElementValue>
 
-  public constructor(options: DeviceSignedOptions) {
+  public constructor(options: DeviceSignedItemsOptions) {
     super()
     this.deviceSignedItems = options.deviceSignedItems
   }

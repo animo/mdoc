@@ -2,8 +2,8 @@ import { DataItem } from '../cbor/data-item.js'
 import { cborEncode } from '../cbor/index.js'
 import type { MdocContext, X509Context } from '../context.js'
 import { compareBytes } from '../utils/transformers.js'
-import type { IssuerAuth } from './model/issuer-auth.js'
-import type { DigestAlgorithm } from './model/types.js'
+import type { IssuerAuth } from './models/issuer-auth.js'
+import type { DigestAlgorithm } from './models/types.js'
 
 export const MDL_NAMESPACE = 'org.iso.18013.5.1'
 

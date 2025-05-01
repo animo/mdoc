@@ -1,8 +1,8 @@
 import type { JWK } from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { mdocContext } from '..'
 import type { MDoc } from '../../src'
 import { hex, parseDeviceResponse } from '../../src'
+import { mdocContext } from '../context'
 
 describe.skip('parse DeviceResponse Example 1', () => {
   describe('parse', () => {

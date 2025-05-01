@@ -11,23 +11,23 @@ export type ItemsRequestStructure = {
 
 export type ItemsRequestOptions = {
   docType: DocType
-  nameSpaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+  namespaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
 }
 
 export class ItemsRequest extends CborStructure {
   public docType: DocType
-  public nameSpaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+  public namespaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
 
   public constructor(options: ItemsRequestOptions) {
     super()
     this.docType = options.docType
-    this.nameSpaces = options.nameSpaces
+    this.namespaces = options.namespaces
   }
 
   public encodedStructure(): ItemsRequestStructure {
     return {
       docType: this.docType,
-      nameSpaces: this.nameSpaces,
+      nameSpaces: this.namespaces,
     }
   }
 
@@ -42,7 +42,7 @@ export class ItemsRequest extends CborStructure {
 
     return new ItemsRequest({
       docType: structure.docType,
-      nameSpaces: structure.nameSpaces,
+      namespaces: structure.nameSpaces,
     })
   }
 }

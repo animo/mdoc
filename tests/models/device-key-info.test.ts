@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { DeviceKey } from '../../src/mdoc/model/device-key'
-import { DeviceKeyInfo } from '../../src/mdoc/model/device-key-info'
+import { DeviceKey } from '../../src/mdoc/models/device-key'
+import { DeviceKeyInfo } from '../../src/mdoc/models/device-key-info'
 import { hex } from '../../src/utils'
 
 const cbor =

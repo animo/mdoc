@@ -1,6 +1,6 @@
 import { DataItem } from '../../cbor/data-item.js'
 import { IssuerSignedDocument } from './issuer-signed-document.js'
-import type { DeviceSigned, DocType, IssuerSigned, MdocNameSpaces } from './types.js'
+import type { DeviceSignedOld, DocTypeOld, IssuerSignedOld, MdocNameSpaces } from './types.js'
 
 /**
  * Represents a device signed document.
@@ -10,9 +10,9 @@ import type { DeviceSigned, DocType, IssuerSigned, MdocNameSpaces } from './type
  */
 export class DeviceSignedDocument extends IssuerSignedDocument {
   constructor(
-    docType: DocType,
-    issuerSigned: IssuerSigned,
-    public readonly deviceSigned: DeviceSigned
+    docType: DocTypeOld,
+    issuerSigned: IssuerSignedOld,
+    public readonly deviceSigned: DeviceSignedOld
   ) {
     super(docType, issuerSigned)
   }

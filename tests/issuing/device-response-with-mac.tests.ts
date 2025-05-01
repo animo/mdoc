@@ -3,9 +3,9 @@ import { X509Certificate } from '@peculiar/x509'
 import type { JWK } from 'jose'
 import * as jose from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { mdocContext } from '..'
 import type { DeviceSignedDocument } from '../../src'
-import { DeviceResponse, Document, MDoc, Verifier, parseDeviceResponse } from '../../src'
+import { DeviceResponseOld, Document, MDoc, Verifier, parseDeviceResponse } from '../../src'
+import { mdocContext } from '../context'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK, PRESENTATION_DEFINITION_1 } from './config.js'
 const { d, ...publicKeyJWK } = DEVICE_JWK
 
@@ -89,7 +89,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
 
     beforeAll(async () => {
       //  This is the Device side
-      const deviceResponseMDoc = await DeviceResponse.from(mdoc)
+      const deviceResponseMDoc = await DeviceResponseOld.from(mdoc)
         .usingPresentationDefinition(PRESENTATION_DEFINITION_1)
         .usingSessionTranscriptForOID4VP({
           mdocGeneratedNonce,
@@ -113,7 +113,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForOID4VP({
+          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
             context: mdocContext,
             clientId,
             responseUri,
@@ -144,7 +144,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
                 encodedDeviceResponse,
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForOID4VP({
+                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
                   context: mdocContext,
                   clientId: values.clientId,
                   responseUri: values.responseUri,
@@ -198,7 +198,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
 
       //  This is the Device side
       {
-        const deviceResponseMDoc = await DeviceResponse.from(mdoc)
+        const deviceResponseMDoc = await DeviceResponseOld.from(mdoc)
           .usingPresentationDefinition(PRESENTATION_DEFINITION_1)
           .usingSessionTranscriptForWebAPI({
             deviceEngagementBytes,
@@ -222,7 +222,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
           encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForWebApi({
+          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
             context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
@@ -253,7 +253,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 encodedDeviceResponse,
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForWebApi({
+                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
                   context: mdocContext,
                   readerEngagementBytes: values.readerEngagementBytes,
                   deviceEngagementBytes: values.deviceEngagementBytes,

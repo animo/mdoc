@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { DeviceResponse2 } from '../../src/mdoc/model/device-response-2'
+import { DeviceResponse } from '../../src/mdoc/models/device-response'
 import { hex } from '../../src/utils'
 
 const cbor =
@@ -7,7 +7,7 @@ const cbor =
 
 describe('device response', () => {
   test('parse', () => {
-    const deviceResponse = DeviceResponse2.decode(hex.decode(cbor))
+    const deviceResponse = DeviceResponse.decode(hex.decode(cbor))
 
     expect(deviceResponse.status).toStrictEqual(0)
     expect(deviceResponse.version).toStrictEqual('1.0')

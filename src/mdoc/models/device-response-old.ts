@@ -11,17 +11,17 @@ import { stringToBytes } from '../../utils/transformers.js'
 import type { IssuerSignedItem } from '../issuer-signed-item.js'
 import { parseDeviceResponse } from '../parser.js'
 import { calculateDeviceAutenticationBytes } from '../utils.js'
-import type { DeviceRequest, DocRequest } from './device-request.js'
+import type { DeviceRequestOld, DocRequestOld } from './device-request-old.js'
 import { DeviceSignedDocument } from './device-signed-document.js'
 import type { IssuerSignedDocument } from './issuer-signed-document.js'
-import { MDoc } from './mdoc.js'
+import { MDocOld } from './mdoc.js'
 import {
   findMdocMatchingDocType,
   limitDisclosureToDeviceRequestNameSpaces,
   limitDisclosureToInputDescriptor,
 } from './pex-limit-disclosure.js'
 import type { InputDescriptor, PresentationDefinition } from './presentation-definition.js'
-import type { DeviceAuth, DeviceSigned, MacSupportedAlgs, SupportedAlgs } from './types.js'
+import type { DeviceAuthOld, DeviceSignedOld, MacSupportedAlgs, SupportedAlgs } from './types.js'
 
 type SessionTranscriptCallback = (context: {
   crypto: MdocContext['crypto']
@@ -30,10 +30,10 @@ type SessionTranscriptCallback = (context: {
 /**
  * A builder class for creating a device response.
  */
-export class DeviceResponse {
-  private mdoc: MDoc
+export class DeviceResponseOld {
+  private mdoc: MDocOld
   private pd?: PresentationDefinition
-  private deviceRequest?: DeviceRequest
+  private deviceRequest?: DeviceRequestOld
   private sessionTranscriptBytes?: Uint8Array
   private sessionTranscriptCallback?: SessionTranscriptCallback
   private useMac = true
@@ -43,30 +43,18 @@ export class DeviceResponse {
   private macAlg?: MacSupportedAlgs
   private ephemeralPublicKey?: JWK
 
-  /**
-   * Create a DeviceResponse builder.
-   *
-   * @param {MDoc | Uint8Array} mdoc - The mdoc to use as a base for the device response.
-   *                                   It can be either a parsed MDoc or a CBOR encoded MDoc.
-   * @returns {DeviceResponse} - A DeviceResponse builder.
-   */
-  public static from(mdoc: MDoc | Uint8Array): DeviceResponse {
+  public static from(mdoc: MDocOld | Uint8Array): DeviceResponseOld {
     if (mdoc instanceof Uint8Array) {
-      return new DeviceResponse(parseDeviceResponse(mdoc))
+      return new DeviceResponseOld(parseDeviceResponse(mdoc))
     }
-    return new DeviceResponse(mdoc)
+    return new DeviceResponseOld(mdoc)
   }
 
-  constructor(mdoc: MDoc) {
+  constructor(mdoc: MDocOld) {
     this.mdoc = mdoc
   }
 
-  /**
-   *
-   * @param pd - The presentation definition to use for the device response.
-   * @returns {DeviceResponse}
-   */
-  public usingPresentationDefinition(pd: PresentationDefinition): DeviceResponse {
+  public usingPresentationDefinition(pd: PresentationDefinition): DeviceResponseOld {
     if (!pd.input_descriptors.length) {
       throw new Error('The Presentation Definition must have at least one Input Descriptor object.')
     }
@@ -82,12 +70,7 @@ export class DeviceResponse {
     return this
   }
 
-  /**
-   *
-   * @param deviceRequest - The device request
-   * @returns {DeviceResponse}
-   */
-  public usingDeviceRequest(deviceRequest: DeviceRequest): DeviceResponse {
+  public usingDeviceRequest(deviceRequest: DeviceRequestOld): DeviceResponseOld {
     if (!deviceRequest.docRequests.length) {
       throw new Error('The deviceRequest must have at least one docRequest object.')
     }
@@ -96,20 +79,7 @@ export class DeviceResponse {
     return this
   }
 
-  /**
-   * Set the session transcript data to use for the device response.
-   *
-   * This is arbitrary and should match the session transcript as it will be calculated by the verifier.
-   * The transcript must be a CBOR encoded DataItem of an array, there is no further requirement.
-   *
-   * Example: `usingSessionTranscriptBytes(cborEncode(DataItem.fromData([a,b,c])))` where `a`, `b` and `c` can be anything including `null`.
-   *
-   * It is preferable to use {@link usingSessionTranscriptForOID4VP} or {@link usingSessionTranscriptForWebAPI} when possible.
-   *
-   * @param {Uint8Array} sessionTranscriptBytes - The sessionTranscriptBytes data to use in the session transcript.
-   * @returns {DeviceResponse}
-   */
-  public usingSessionTranscriptBytes(sessionTranscriptBytes: Uint8Array): DeviceResponse {
+  public usingSessionTranscriptBytes(sessionTranscriptBytes: Uint8Array): DeviceResponseOld {
     if (this.sessionTranscriptBytes || this.sessionTranscriptCallback) {
       throw new Error(
         'A session transcript has already been set, either with .usingSessionTranscriptForOID4VP, .usingSessionTranscriptForWebAPI or .usingSessionTranscriptBytes'
@@ -119,7 +89,7 @@ export class DeviceResponse {
     return this
   }
 
-  private usingSessionTranscriptCallback(sessionTranscriptCallback: SessionTranscriptCallback): DeviceResponse {
+  private usingSessionTranscriptCallback(sessionTranscriptCallback: SessionTranscriptCallback): DeviceResponseOld {
     if (this.sessionTranscriptBytes || this.sessionTranscriptCallback) {
       throw new Error(
         'A session transcript has already been set, either with .usingSessionTranscriptForOID4VP, .usingSessionTranscriptForWebAPI or .usingSessionTranscriptBytes'
@@ -140,9 +110,9 @@ export class DeviceResponse {
     clientId: string
     responseUri: string
     verifierGeneratedNonce: string
-  }): DeviceResponse {
+  }): DeviceResponseOld {
     this.usingSessionTranscriptCallback((context) =>
-      DeviceResponse.calculateSessionTranscriptBytesForOID4VP({ ...input, context })
+      DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({ ...input, context })
     )
     return this
   }
@@ -211,9 +181,9 @@ export class DeviceResponse {
     origin: string
     clientId: string
     verifierGeneratedNonce: string
-  }): DeviceResponse {
+  }): DeviceResponseOld {
     this.usingSessionTranscriptCallback((context) =>
-      DeviceResponse.calculateSessionTranscriptBytesForOID4VPDCApi({ ...input, context })
+      DeviceResponseOld.calculateSessionTranscriptBytesForOID4VPDCApi({ ...input, context })
     )
     return this
   }
@@ -227,9 +197,9 @@ export class DeviceResponse {
     deviceEngagementBytes: Uint8Array
     readerEngagementBytes: Uint8Array
     eReaderKeyBytes: Uint8Array
-  }): DeviceResponse {
+  }): DeviceResponseOld {
     this.usingSessionTranscriptCallback((context) =>
-      DeviceResponse.calculateSessionTranscriptBytesForWebApi({ ...input, context })
+      DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({ ...input, context })
     )
     return this
   }
@@ -261,7 +231,10 @@ export class DeviceResponse {
   /**
    * Add a namespace to the device response.
    */
-  public addDeviceNameSpace(nameSpace: string, data: Map<string, unknown> | Record<string, unknown>): DeviceResponse {
+  public addDeviceNameSpace(
+    nameSpace: string,
+    data: Map<string, unknown> | Record<string, unknown>
+  ): DeviceResponseOld {
     this.nameSpaces.set(nameSpace, data instanceof Map ? data : new Map(Object.entries(data)))
     return this
   }
@@ -269,7 +242,7 @@ export class DeviceResponse {
   /**
    * Set the device's private key to be used for signing the device response.
    */
-  public authenticateWithSignature(devicePrivateKey: JWK, alg: SupportedAlgs): DeviceResponse {
+  public authenticateWithSignature(devicePrivateKey: JWK, alg: SupportedAlgs): DeviceResponseOld {
     this.devicePrivateKey = devicePrivateKey
     this.alg = alg
     this.useMac = false
@@ -279,7 +252,7 @@ export class DeviceResponse {
   /**
    * Set the reader shared key to be used for signing the device response with MAC.
    */
-  public authenticateWithMAC(devicePrivateKey: JWK, ephemeralPublicKey: JWK, alg: MacSupportedAlgs): DeviceResponse {
+  public authenticateWithMAC(devicePrivateKey: JWK, ephemeralPublicKey: JWK, alg: MacSupportedAlgs): DeviceResponseOld {
     this.devicePrivateKey = devicePrivateKey
     this.ephemeralPublicKey = ephemeralPublicKey
     this.macAlg = alg
@@ -293,7 +266,7 @@ export class DeviceResponse {
   public async sign(ctx: {
     crypto: MdocContext['crypto']
     cose: MdocContext['cose']
-  }): Promise<MDoc> {
+  }): Promise<MDocOld> {
     const requests = this.pd?.input_descriptors ?? this.deviceRequest?.docRequests
     if (!requests) {
       throw new Error(
@@ -316,7 +289,7 @@ export class DeviceResponse {
 
     const limitedDeviceSignedDocuments = await Promise.all(
       requests.map(async (request) => {
-        const isDeviceRequest = (r: InputDescriptor | DocRequest): r is DocRequest => 'itemsRequest' in request
+        const isDeviceRequest = (r: InputDescriptor | DocRequestOld): r is DocRequestOld => 'itemsRequest' in request
 
         let mdoc: IssuerSignedDocument
         let disclosedNameSpaces: Map<string, IssuerSignedItem[]>
@@ -340,7 +313,7 @@ export class DeviceResponse {
       })
     )
 
-    return new MDoc(limitedDeviceSignedDocuments)
+    return new MDocOld(limitedDeviceSignedDocuments)
   }
 
   private async getDeviceSigned(
@@ -350,21 +323,21 @@ export class DeviceResponse {
       cose: MdocContext['cose']
       crypto: MdocContext['crypto']
     }
-  ): Promise<DeviceSigned> {
+  ): Promise<DeviceSignedOld> {
     const deviceAuthenticationBytes = calculateDeviceAutenticationBytes(
       sessionTranscriptBytes,
       docType,
       this.nameSpaces
     )
 
-    let deviceAuth: DeviceAuth
+    let deviceAuth: DeviceAuthOld
     if (this.useMac) {
       deviceAuth = await this.getDeviceAuthMac(deviceAuthenticationBytes, sessionTranscriptBytes, ctx)
     } else {
       deviceAuth = await this.getDeviceAuthSign(deviceAuthenticationBytes, ctx)
     }
 
-    const deviceSigned: DeviceSigned = {
+    const deviceSigned: DeviceSignedOld = {
       nameSpaces: this.nameSpaces,
       deviceAuth,
     }
@@ -379,7 +352,7 @@ export class DeviceResponse {
       cose: Pick<MdocContext['cose'], 'mac0'>
       crypto: MdocContext['crypto']
     }
-  ): Promise<DeviceAuth> {
+  ): Promise<DeviceAuthOld> {
     if (!this.devicePrivateKey) {
       throw new Error('Missing devicePrivateKey for getDeviceAuthMac')
     }
@@ -419,7 +392,7 @@ export class DeviceResponse {
       crypto: MdocContext['crypto']
       cose: MdocContext['cose']
     }
-  ): Promise<DeviceAuth> {
+  ): Promise<DeviceAuthOld> {
     if (!this.devicePrivateKey) throw new Error('Missing devicePrivateKey')
 
     if (!this.alg) {

@@ -1,25 +1,25 @@
 import { cborEncode } from '../../cbor/index.js'
 import type { IssuerSignedDocument } from './issuer-signed-document.js'
 
-export type ErrorCode = number
-export type ErrorItems = Record<string, ErrorCode>
-export interface DocumentError {
-  DocType: ErrorCode
+export type ErrorCodeOld = number
+export type ErrorItemsOld = Record<string, ErrorCodeOld>
+export interface DocumentErrorOld {
+  DocType: ErrorCodeOld
 }
 
-export enum MDocStatus {
+export enum MDocStatusOld {
   OK = 0,
   GeneralError = 10,
   CBORDecodingError = 11,
   CBORValidationError = 12,
 }
 
-export class MDoc {
+export class MDocOld {
   constructor(
     public readonly documents: IssuerSignedDocument[] = [],
     public readonly version = '1.0',
-    public readonly status: MDocStatus = MDocStatus.OK,
-    public readonly documentErrors: DocumentError[] = []
+    public readonly status: MDocStatusOld = MDocStatusOld.OK,
+    public readonly documentErrors: DocumentErrorOld[] = []
   ) {}
 
   addDocument(document: IssuerSignedDocument) {

@@ -1,9 +1,10 @@
 import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
-import { Header, type SignatureAlgorithm, SignatureAlgorithmNames } from './headers/defaults.js'
+import { Header, type SignatureAlgorithm } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
+import { coseKeyToJwk } from './key/jwk.js'
 
 export type Sign1Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
@@ -68,30 +69,43 @@ export class Sign1 extends CborStructure {
       throw new CosePayloadMustBeDefined()
     }
 
-    const toBeSigned: Array<unknown> = ['Signature1', this.protectedHeaders]
-
-    if (this.externalAad) toBeSigned.push(this.externalAad)
-
-    toBeSigned.push(payload)
+    const toBeSigned: Array<unknown> = [
+      'Signature1',
+      this.protectedHeaders.encode(),
+      this.externalAad ?? new Uint8Array(),
+      payload,
+    ]
 
     return cborEncode(toBeSigned)
   }
 
-  public get signatureAlgorithmName() {
-    const algorithm =
-      this.protectedHeaders.headers?.get(Header.Algorithm) ?? this.unprotectedHeaders.headers?.get(Header.Algorithm)
+  public get signatureAlgorithmName(): string {
+    const algorithm = (this.protectedHeaders.headers?.get(Header.Algorithm) ??
+      this.unprotectedHeaders.headers?.get(Header.Algorithm)) as SignatureAlgorithm | undefined
 
     if (!algorithm) {
       throw new CoseInvalidAlgorithm()
     }
 
-    const algorithmName = SignatureAlgorithmNames.get(algorithm as SignatureAlgorithm)
+    const algorithmName = coseKeyToJwk.algorithm(algorithm)
 
     if (!algorithmName) {
       throw new CoseInvalidAlgorithm()
     }
 
     return algorithmName
+  }
+
+  public get x5chain() {
+    const x5chain =
+      (this.protectedHeaders.headers?.get(Header.X5Chain) as Uint8Array | Uint8Array[] | undefined) ??
+      (this.unprotectedHeaders.headers?.get(Header.X5Chain) as Uint8Array | Uint8Array[] | undefined)
+
+    if (!x5chain?.[0]) {
+      return undefined
+    }
+
+    return Array.isArray(x5chain) ? x5chain : [x5chain]
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {

@@ -13,7 +13,9 @@ export class IssuerAuth extends Sign1 {
       throw new CosePayloadMustBeDefined()
     }
 
-    const dataItem = cborDecode<DataItem<MobileSecurityObjectStructure>>(this.payload)
+    const dataItem = cborDecode<DataItem<MobileSecurityObjectStructure>>(this.payload, {
+      unwrapToplevelDataItem: false,
+    })
 
     if (!(dataItem instanceof DataItem)) {
       throw new CosePayloadInvalidStructure()
@@ -24,13 +26,8 @@ export class IssuerAuth extends Sign1 {
     return mso
   }
 
-  /**
-   *
-   * @todo the original method seems very weird here...
-   *
-   */
   public get certificateChain() {
-    return [] as Array<Uint8Array>
+    return this.x5chain ?? []
   }
 
   public get certificate() {

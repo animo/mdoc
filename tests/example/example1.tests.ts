@@ -1,8 +1,8 @@
 import fs from 'node:fs'
 import { X509Certificate } from '@peculiar/x509'
 import { describe, it } from 'vitest'
-import { mdocContext } from '..'
 import { Verifier, defaultCallback, hex } from '../../src'
+import { mdocContext } from '../context'
 
 export const ISSUER_CERTIFICATE = fs.readFileSync(`${__dirname}/issuer.pem`, 'utf-8')
 

@@ -1,9 +1,9 @@
 import type { IssuerSignedItem } from '../issuer-signed-item.js'
-import type { DeviceRequestNameSpaces } from './device-request.js'
+import type { DeviceRequestNameSpaces } from './device-request-old.js'
 import type { IssuerSignedDocument } from './issuer-signed-document.js'
-import type { MDoc } from './mdoc.js'
+import type { MDocOld } from './mdoc.js'
 import type { InputDescriptor } from './presentation-definition.js'
-import type { DocType, IssuerNameSpaces } from './types.js'
+import type { DocTypeOld, IssuerNameSpaces } from './types.js'
 
 export const limitDisclosureToDeviceRequestNameSpaces = (
   mdoc: IssuerSignedDocument,
@@ -110,7 +110,7 @@ const handleAgeOverNN = (request: string, attributes: IssuerSignedItem[]): Issue
   return attributes[item.index]
 }
 
-export const findMdocMatchingDocType = (mdoc: MDoc, docType: DocType) => {
+export const findMdocMatchingDocType = (mdoc: MDocOld, docType: DocTypeOld) => {
   const matchingMdoc = mdoc.documents.filter((document) => document.docType === docType)
 
   if (!matchingMdoc[0]) {

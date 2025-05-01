@@ -2,26 +2,28 @@ import { describe, expect, it } from 'vitest'
 import { DataItem, cborDecode, cborEncode } from '../src'
 import { compareBytes, hex } from '../src/utils'
 
-describe.skip('cbor', () => {
-  it('should properly decode a nested map', () => {
+describe('cbor', () => {
+  it('should properly decode a nested map and unwrap a data item', () => {
     const decodedHex = hex.decode('d81855b9000163666f6fd8184bb90001636261726362617a')
-    const decoded = cborDecode<Map<string, DataItem<Map<string, string>>>>(decodedHex)
-    expect(decoded).toBeInstanceOf(DataItem)
+
+    const decoded = cborDecode<Map<string, DataItem<Map<string, string>>>>(decodedHex, { unwrapToplevelDataItem: true })
+
+    expect(decoded).toBeInstanceOf(Map)
     expect(decoded.get('foo')).toBeInstanceOf(DataItem)
     expect(decoded.get('foo')?.data.get('bar')).toBe('baz')
   })
 
   it('should properly encoded and decoded maps', () => {
     const encoded = cborEncode(DataItem.fromData({ foo: 'baz' }))
-    const decoded = cborDecode(encoded)
+    const decoded = cborDecode(encoded, { unwrapToplevelDataItem: false })
     const reEncode = cborEncode(decoded)
     expect(compareBytes(reEncode, encoded)).toBeTruthy()
   })
 
   it('should properly encoded and decoded with arrays', () => {
     const encoded = cborEncode(DataItem.fromData({ foo: DataItem.fromData([1, 2, 3, 4, 5]) }))
-    const decoded = cborDecode<Map<string, DataItem<number[]>>>(encoded)
-    expect(decoded.get('foo')?.data).toStrictEqual([1, 2, 3, 4, 5])
+    const decoded = cborDecode<DataItem<Map<string, DataItem<number[]>>>>(encoded, { unwrapToplevelDataItem: false })
+    expect(decoded.data.get('foo')?.data).toStrictEqual([1, 2, 3, 4, 5])
     const reEncode = cborEncode(decoded)
     expect(compareBytes(reEncode, encoded)).toBeTruthy()
   })
@@ -29,8 +31,8 @@ describe.skip('cbor', () => {
   it('should properly encoded and decoded with buffers', () => {
     const buffer = new Uint8Array(Buffer.from('abcdefghijk', 'utf-8'))
     const encoded = cborEncode(DataItem.fromData({ foo: DataItem.fromData(buffer) }))
-    const decoded = cborDecode<Map<string, DataItem<Uint8Array>>>(encoded)
-    expect(decoded.get('foo')?.data).toBeInstanceOf(Uint8Array)
+    const decoded = cborDecode<DataItem<Map<string, DataItem<Uint8Array>>>>(encoded, { unwrapToplevelDataItem: false })
+    expect(decoded.data.get('foo')?.data).toBeInstanceOf(Uint8Array)
     const reEncode = cborEncode(decoded)
     expect(compareBytes(reEncode, encoded)).toBeTruthy()
   })

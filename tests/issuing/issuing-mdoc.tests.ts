@@ -1,9 +1,9 @@
 import { X509Certificate } from '@peculiar/x509'
 import type { JWK } from 'jose'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { mdocContext } from '..'
 import type { DeviceSignedDocument, IssuerSignedDocument } from '../../src'
 import { CoseKey, DateOnly, Document, MDoc, Verifier, defaultCallback, parseDeviceResponse } from '../../src'
+import { mdocContext } from '../context'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from './config.js'
 const { d, ...publicKeyJWK } = DEVICE_JWK as JWK
 

@@ -1,6 +1,6 @@
 import { DataItem } from '../cbor/data-item.js'
 import { cborDecode } from '../cbor/index.js'
-import type { DeviceRequestNameSpaces } from './model/device-request.js'
+import type { DeviceRequestNameSpaces } from './models/device-request-old.js'
 
 export interface ItemsRequestData {
   docType: string
@@ -10,7 +10,7 @@ export interface ItemsRequestData {
 
 export type ItemsRequestDataItem = DataItem<ItemsRequestData>
 
-export class ItemsRequest {
+export class ItemsRequestOld {
   #dataRecord?: ItemsRequestData
   readonly #dataItem: ItemsRequestDataItem
 
@@ -45,12 +45,12 @@ export class ItemsRequest {
     docType: string,
     nameSpaces: DeviceRequestNameSpaces,
     requestInfo?: Record<string, unknown>
-  ): ItemsRequest {
+  ): ItemsRequestOld {
     const dataItem = DataItem.fromData({
       docType,
       nameSpaces,
       requestInfo,
     }) as unknown as ItemsRequestDataItem
-    return new ItemsRequest(dataItem)
+    return new ItemsRequestOld(dataItem)
   }
 }

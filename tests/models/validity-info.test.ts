@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { ValidityInfo } from '../../src/mdoc/model/validity-info'
+import { ValidityInfo } from '../../src/mdoc/models/validity-info'
 import { hex } from '../../src/utils'
 
 const cbor =

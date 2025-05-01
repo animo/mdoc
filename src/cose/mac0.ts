@@ -3,9 +3,10 @@ import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, addExtension } from '../cbor/index.js'
 import { cborDecode, cborEncode } from '../cbor/parser.js'
 import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
-import { Header, type MacAlgorithm, MacAlgorithmNames } from './headers/defaults.js'
+import { Header, type MacAlgorithm } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
+import { coseKeyToJwk } from './key/jwk.js'
 
 export type Mac0Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
@@ -80,14 +81,14 @@ export class Mac0 extends CborStructure {
   }
 
   public get signatureAlgorithmName() {
-    const algorithm =
-      this.protectedHeaders.headers?.get(Header.Algorithm) ?? this.unprotectedHeaders.headers?.get(Header.Algorithm)
+    const algorithm = (this.protectedHeaders.headers?.get(Header.Algorithm) ??
+      this.unprotectedHeaders.headers?.get(Header.Algorithm)) as MacAlgorithm | undefined
 
     if (!algorithm) {
       throw new CoseInvalidAlgorithm()
     }
 
-    const algorithmName = MacAlgorithmNames.get(algorithm as MacAlgorithm)
+    const algorithmName = coseKeyToJwk.algorithm(algorithm)
 
     if (!algorithmName) {
       throw new CoseInvalidAlgorithm()

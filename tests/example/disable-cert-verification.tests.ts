@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { mdocContext } from '..'
 import { Verifier, hex } from '../../src'
+import { mdocContext } from '../context'
 
 describe.skip('example 1: valid device response with full disclosure', () => {
   const ephemeralReaderKey = hex.decode('534b526561646572')

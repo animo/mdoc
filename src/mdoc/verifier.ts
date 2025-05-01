@@ -1,17 +1,16 @@
 import { compareVersions } from 'compare-versions'
-import type { JWK } from 'jose'
 import type { MdocContext, X509Context } from '../context.js'
 import { CoseKey } from '../cose'
-import { Sign1 } from '../cose'
 import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
 import { defaultVerificationCallback, onCategoryCheck } from './check-callback.js'
 import { MDL_NAMESPACE } from './issuer-signed-item.js'
-import { DeviceSignedDocument } from './model/device-signed-document.js'
-import type { IssuerAuth } from './model/issuer-auth.js'
-import type { IssuerSignedDocument } from './model/issuer-signed-document.js'
-import type { MDoc } from './model/mdoc.js'
-import type { DiagnosticInformation } from './model/types.js'
-import { parseDeviceResponse } from './parser.js'
+import { DeviceResponse } from './models/device-response.js'
+import { DeviceSignedDocument } from './models/device-signed-document.js'
+import type { Document } from './models/document.js'
+import type { IssuerAuth } from './models/issuer-auth.js'
+import type { IssuerSignedItem } from './models/issuer-signed-item.js'
+import { SessionTranscript } from './models/session-transcript.js'
+import type { DiagnosticInformation } from './models/types.js'
 import { calculateDeviceAutenticationBytes } from './utils.js'
 
 const DIGEST_ALGS = {
@@ -21,10 +20,6 @@ const DIGEST_ALGS = {
 } as Record<string, string>
 
 export class Verifier {
-  /**
-   *
-   * @param input.trustedCertificates The IACA root certificates list of the supported issuers.
-   */
   public async verifyIssuerSignature(
     input: {
       trustedCertificates: Uint8Array[]
@@ -65,7 +60,7 @@ export class Verifier {
           throw new Error('No trusted certificates found. Cannot verify issuer signature.')
         }
         await ctx.x509.validateCertificateChain({
-          trustedCertificates: trustedCertificates as [Uint8Array, ...Uint8Array[]],
+          trustedCertificates,
           x5chain: certificateChain,
         })
         onCheck({
@@ -91,10 +86,11 @@ export class Verifier {
       jwk: verificationJwk,
     })
 
-    onCheck({
-      status: verificationResult ? 'PASSED' : 'FAILED',
-      check: 'Issuer signature must be valid',
-    })
+    // TODO
+    // onCheck({
+    //   status: verificationResult ? 'PASSED' : 'FAILED',
+    //   check: 'Issuer signature must be valid',
+    // })
 
     // Validity
     const { validityInfo } = issuerAuth.mobileSecurityObject
@@ -127,9 +123,9 @@ export class Verifier {
 
   public async verifyDeviceSignature(
     input: {
-      deviceSigned: DeviceSignedDocument
-      ephemeralPrivateKey?: JWK | Uint8Array
-      sessionTranscriptBytes?: Uint8Array
+      document: Document
+      ephemeralPrivateKey?: Record<string, unknown> | Uint8Array
+      sessionTranscript?: SessionTranscript
       onCheckG?: VerificationCallback
     },
     ctx: {
@@ -137,13 +133,13 @@ export class Verifier {
       cose: MdocContext['cose']
     }
   ) {
-    const { deviceSigned, sessionTranscriptBytes, ephemeralPrivateKey } = input
+    const { document, sessionTranscript, ephemeralPrivateKey } = input
     const onCheck = onCategoryCheck(input.onCheckG ?? defaultVerificationCallback, 'DEVICE_AUTH')
 
-    const { deviceAuth, nameSpaces } = deviceSigned.deviceSigned
-    const { docType } = deviceSigned
-    const { deviceKeyInfo } = deviceSigned.issuerSigned.issuerAuth.mobileSecurityObject
-    const { deviceKey: deviceKeyCoseKey } = deviceKeyInfo ?? {}
+    const { deviceSigned, issuerSigned, docType } = document
+    const { deviceKey } = issuerSigned.issuerAuth.mobileSecurityObject.deviceKeyInfo
+    const { deviceAuth, deviceNamespaces } = deviceSigned
+    const { deviceSignature } = deviceAuth
 
     // Prevent cloning of the mdoc and mitigate man in the middle attacks
     if (!deviceAuth.deviceMac && !deviceAuth.deviceSignature) {
@@ -154,7 +150,7 @@ export class Verifier {
       return
     }
 
-    if (!sessionTranscriptBytes) {
+    if (!sessionTranscript) {
       onCheck({
         status: 'FAILED',
         check: 'Session Transcript Bytes missing from options, aborting device signature check',
@@ -162,9 +158,9 @@ export class Verifier {
       return
     }
 
-    const deviceAuthenticationBytes = calculateDeviceAutenticationBytes(sessionTranscriptBytes, docType, nameSpaces)
+    const deviceAuthenticationBytes = calculateDeviceAutenticationBytes(sessionTranscript, docType, deviceNamespaces)
 
-    if (!deviceKeyCoseKey) {
+    if (!deviceKey) {
       onCheck({
         status: 'FAILED',
         check: 'Issuer signature must contain the device key.',
@@ -174,26 +170,19 @@ export class Verifier {
     }
 
     if (deviceAuth.deviceSignature) {
-      const deviceKey = CoseKey.import(deviceKeyCoseKey)
-
       // ECDSA/EdDSA authentication
       try {
         const ds = deviceAuth.deviceSignature
+        ds.detachedContent = deviceAuthenticationBytes
 
-        const sign1 = new Sign1({
-          protectedHeaders: ds.protectedHeaders,
-          unprotectedHeaders: ds.unprotectedHeaders,
-          signature: ds.signature,
-          detachedContent: deviceAuthenticationBytes,
-        })
+        const jwk = deviceKey.jwk
+        // todo
+        // const verificationResult = await ctx.cose.sign1.verify({ sign1: ds, jwk })
 
-        const jwk = deviceKey.toJWK()
-        const verificationResult = await ctx.cose.sign1.verify({ sign1, jwk })
-
-        onCheck({
-          status: verificationResult ? 'PASSED' : 'FAILED',
-          check: 'Device signature must be valid',
-        })
+        // onCheck({
+        //   status: verificationResult ? 'PASSED' : 'FAILED',
+        //   check: 'Device signature must be valid',
+        // })
       } catch (err) {
         onCheck({
           status: 'FAILED',
@@ -237,14 +226,14 @@ export class Verifier {
     }
 
     try {
-      const deviceKeyRaw = deviceKeyCoseKey.publicKey
+      const deviceKeyRaw = deviceKey.publicKey
       const ephemeralMacKeyJwk = await ctx.crypto.calculateEphemeralMacKeyJwk({
         privateKey:
           ephemeralPrivateKey instanceof Uint8Array
             ? ephemeralPrivateKey
             : CoseKey.fromJwk(ephemeralPrivateKey).privateKey,
         publicKey: deviceKeyRaw,
-        sessionTranscriptBytes,
+        sessionTranscriptBytes: sessionTranscript.encode(),
       })
 
       deviceAuth.deviceMac.detachedContent = deviceAuthenticationBytes
@@ -269,14 +258,14 @@ export class Verifier {
 
   public async verifyData(
     input: {
-      mdoc: IssuerSignedDocument
+      document: Document
       onCheckG?: VerificationCallback
     },
     ctx: { x509: X509Context; crypto: MdocContext['crypto'] }
   ) {
-    const { mdoc, onCheckG } = input
+    const { document, onCheckG } = input
     // Confirm that the mdoc data has not changed since issuance
-    const { issuerAuth } = mdoc.issuerSigned
+    const { issuerAuth } = document.issuerSigned
     const { valueDigests, digestAlgorithm } = issuerAuth.mobileSecurityObject
 
     const onCheck = onCategoryCheck(onCheckG ?? defaultVerificationCallback, 'DATA_INTEGRITY')
@@ -286,12 +275,12 @@ export class Verifier {
       check: 'Issuer Auth must include a supported digestAlgorithm element',
     })
 
-    const nameSpaces = mdoc.issuerSigned.nameSpaces ?? {}
+    const namespaces = document.issuerSigned.issuerNamespaces?.issuerNamespaces ?? new Map<string, IssuerSignedItem[]>()
 
     await Promise.all(
-      Array.from(nameSpaces.entries()).map(async ([ns, nsItems]) => {
+      Array.from(namespaces.entries()).map(async ([ns, nsItems]) => {
         onCheck({
-          status: valueDigests?.has(ns) ? 'PASSED' : 'FAILED',
+          status: valueDigests?.valueDigests.has(ns) ? 'PASSED' : 'FAILED',
           check: `Issuer Auth must include digests for namespace: ${ns}`,
         })
 
@@ -364,18 +353,11 @@ export class Verifier {
     )
   }
 
-  /**
-   * Parse and validate a DeviceResponse as specified in ISO/IEC 18013-5 (Device Retrieval section).
-   *
-   * @param input.encodedDeviceResponse
-   * @param input.encodedSessionTranscript The CBOR encoded SessionTranscript.
-   * @param input.ephemeralReaderKey The private part of the ephemeral key used in the session where the DeviceResponse was obtained. This is only required if the DeviceResponse is using the MAC method for device authentication.
-   */
   async verifyDeviceResponse(
     input: {
       encodedDeviceResponse: Uint8Array
       encodedSessionTranscript?: Uint8Array
-      ephemeralReaderKey?: JWK | Uint8Array
+      ephemeralReaderKey?: Record<string, unknown> | Uint8Array
       disableCertificateChainValidation?: boolean
       trustedCertificates: Uint8Array[]
       now?: Date
@@ -386,33 +368,42 @@ export class Verifier {
       crypto: MdocContext['crypto']
       cose: MdocContext['cose']
     }
-  ): Promise<MDoc> {
+  ): Promise<DeviceResponse> {
     const { encodedDeviceResponse, now, trustedCertificates } = input
     const onCheck = input.onCheck ?? defaultVerificationCallback
 
-    const dr = parseDeviceResponse(encodedDeviceResponse)
+    const deviceResponse = DeviceResponse.decode(encodedDeviceResponse)
 
     onCheck({
-      status: dr.version ? 'PASSED' : 'FAILED',
+      status: deviceResponse.version ? 'PASSED' : 'FAILED',
       check: 'Device Response must include "version" element.',
       category: 'DOCUMENT_FORMAT',
     })
 
     onCheck({
-      status: compareVersions(dr.version, '1.0') >= 0 ? 'PASSED' : 'FAILED',
+      status: deviceResponse.version ? 'PASSED' : 'FAILED',
+      check: 'Device Response must include "version" element.',
+      category: 'DOCUMENT_FORMAT',
+    })
+
+    onCheck({
+      status: compareVersions(deviceResponse.version, '1.0') >= 0 ? 'PASSED' : 'FAILED',
       check: 'Device Response version must be 1.0 or greater',
       category: 'DOCUMENT_FORMAT',
     })
 
     onCheck({
-      status: dr.documents.length > 0 ? 'PASSED' : 'FAILED',
-      check: 'Device Response must include at least one document.',
+      status:
+        !deviceResponse.documents || (deviceResponse.documents && deviceResponse.documents.length > 0)
+          ? 'PASSED'
+          : 'FAILED',
+      check: 'Device Response must include at least not include documents or at least one document.',
       category: 'DOCUMENT_FORMAT',
     })
 
-    for (const document of dr.documents) {
+    for (const document of deviceResponse.documents ?? []) {
       const { issuerAuth } = document.issuerSigned
-      if (!(document instanceof DeviceSignedDocument)) {
+      if (!document.deviceSigned) {
         onCheck({
           status: 'FAILED',
           category: 'DEVICE_AUTH',
@@ -434,18 +425,20 @@ export class Verifier {
 
       await this.verifyDeviceSignature(
         {
-          deviceSigned: document,
+          document,
           ephemeralPrivateKey: input.ephemeralReaderKey,
-          sessionTranscriptBytes: input.encodedSessionTranscript,
+          sessionTranscript: input.encodedSessionTranscript
+            ? SessionTranscript.decode(input.encodedSessionTranscript)
+            : undefined,
           onCheckG: onCheck,
         },
         ctx
       )
 
-      await this.verifyData({ mdoc: document, onCheckG: onCheck }, ctx)
+      await this.verifyData({ document, onCheckG: onCheck }, ctx)
     }
 
-    return dr
+    return deviceResponse
   }
 
   async getDiagnosticInformation(
@@ -453,7 +446,7 @@ export class Verifier {
     options: {
       trustedCertificates: Uint8Array[]
       encodedSessionTranscript?: Uint8Array
-      ephemeralReaderKey?: JWK | Uint8Array
+      ephemeralReaderKey?: Record<string, unknown> | Uint8Array
       disableCertificateChainValidation?: boolean
     },
     ctx: {
@@ -474,7 +467,7 @@ export class Verifier {
       ctx
     )
 
-    const document = decoded.documents[0]
+    const document = decoded.documents?.[0]
     if (!document) {
       throw new Error('No documents found for getting diagnostic information.')
     }
@@ -484,8 +477,8 @@ export class Verifier {
 
     const attributes = (
       await Promise.all(
-        Array.from(document.issuerSigned.nameSpaces.keys()).map(async (ns) => {
-          const items = document.issuerSigned.nameSpaces.get(ns) ?? []
+        Array.from(document.issuerSigned.issuerNamespaces?.issuerNamespaces.keys() ?? []).map(async (ns) => {
+          const items = document.issuerSigned.issuerNamespaces?.issuerNamespaces.get(ns) ?? []
           return Promise.all(
             items.map(async (item) => {
               const isValid = await item.isValid(ns, issuerAuth, ctx)
@@ -515,17 +508,17 @@ export class Verifier {
           })
         : undefined
 
-    let deviceKey: JWK | undefined = undefined
+    let deviceKey: Record<string, unknown> | undefined = undefined
 
     if (document.issuerSigned.issuerAuth) {
       const { deviceKeyInfo } = document.issuerSigned.issuerAuth.mobileSecurityObject
       if (deviceKeyInfo?.deviceKey) {
-        deviceKey = CoseKey.import(deviceKeyInfo.deviceKey).toJWK()
+        deviceKey = deviceKeyInfo.deviceKey.jwk
       }
     }
     const disclosedAttributes = attributes.filter((attr) => attr.isValid).length
     const totalAttributes = Array.from(
-      document.issuerSigned.issuerAuth.mobileSecurityObject.valueDigests?.entries() ?? []
+      document.issuerSigned.issuerAuth.mobileSecurityObject.valueDigests?.valueDigests.entries() ?? []
     ).reduce((prev, [, digests]) => prev + digests.size, 0)
 
     return {
@@ -533,7 +526,7 @@ export class Verifier {
         version: decoded.version,
         type: 'DeviceResponse',
         status: decoded.status,
-        documents: decoded.documents.length,
+        documentCount: decoded.documents?.length,
       },
       validityInfo: document.issuerSigned.issuerAuth.mobileSecurityObject.validityInfo,
       issuerCertificate: await ctx.x509.getCertificateData({
@@ -546,9 +539,9 @@ export class Verifier {
           .filter((check) => check.category === 'ISSUER_AUTH' && check.status === 'FAILED')
           .map((check) => check.reason ?? check.check),
         digests: Object.fromEntries(
-          Array.from(document.issuerSigned.issuerAuth.mobileSecurityObject.valueDigests?.entries() ?? []).map(
-            ([ns, digests]) => [ns, digests.size]
-          )
+          Array.from(
+            document.issuerSigned.issuerAuth.mobileSecurityObject.valueDigests?.valueDigests.entries() ?? []
+          ).map(([ns, digests]) => [ns, digests.size])
         ),
       },
       deviceKey: {

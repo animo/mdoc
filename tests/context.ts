@@ -82,7 +82,7 @@ export const mdocContext: MdocContext = {
         extractable: true,
       })
 
-      return await exportJWK(key)
+      return (await exportJWK(key)) as unknown as Record<string, unknown>
     },
 
     validateCertificateChain: async (input: {

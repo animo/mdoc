@@ -4,17 +4,21 @@ import { EReaderKey, type EReaderKeyStructure } from './e-reader-key'
 import { NfcHandover, type NfcHandoverStructure } from './nfc-handover'
 import { QrHandover, type QrHandoverStructure } from './qr-handover'
 
-export type SessionTranscriptStructure = [Uint8Array, Uint8Array, QrHandoverStructure | NfcHandoverStructure]
+export type SessionTranscriptStructure = [
+  Uint8Array | null,
+  Uint8Array | null,
+  QrHandoverStructure | NfcHandoverStructure,
+]
 
 export type SessionTranscriptOptions = {
-  deviceEngagement: DeviceEngagement
-  eReaderKey: EReaderKey
+  deviceEngagement: DeviceEngagement | null
+  eReaderKey: EReaderKey | null
   handover: QrHandover | NfcHandover
 }
 
 export class SessionTranscript extends CborStructure {
-  public deviceEngagement: DeviceEngagement
-  public eReaderKey: EReaderKey
+  public deviceEngagement: DeviceEngagement | null
+  public eReaderKey: EReaderKey | null
   public handover: QrHandover | NfcHandover
 
   public constructor(options: SessionTranscriptOptions) {
@@ -26,15 +30,17 @@ export class SessionTranscript extends CborStructure {
 
   public encodedStructure(): SessionTranscriptStructure {
     return [
-      this.deviceEngagement.encode({ asDataItem: true }),
-      this.eReaderKey.encode({ asDataItem: true }),
+      this.deviceEngagement ? this.deviceEngagement.encode({ asDataItem: true }) : null,
+      this.eReaderKey ? this.eReaderKey.encode({ asDataItem: true }) : null,
       this.handover.encodedStructure(),
     ]
   }
 
   public static override fromEncodedStructure(encodedStructure: SessionTranscriptStructure): SessionTranscript {
-    const deviceEngagementStructure = cborDecode<DeviceEngagementStructure>(encodedStructure[0])
-    const eReaderKeyStructure = cborDecode<EReaderKeyStructure>(encodedStructure[1])
+    const deviceEngagementStructure = encodedStructure[0]
+      ? cborDecode<DeviceEngagementStructure>(encodedStructure[0])
+      : null
+    const eReaderKeyStructure = encodedStructure[1] ? cborDecode<EReaderKeyStructure>(encodedStructure[1]) : null
     const handoverStructure = encodedStructure[2] as QrHandoverStructure | NfcHandoverStructure
 
     const handover =
@@ -43,8 +49,10 @@ export class SessionTranscript extends CborStructure {
         : NfcHandover.fromEncodedStructure(handoverStructure)
 
     return new SessionTranscript({
-      deviceEngagement: DeviceEngagement.fromEncodedStructure(deviceEngagementStructure),
-      eReaderKey: EReaderKey.fromEncodedStructure(eReaderKeyStructure),
+      deviceEngagement: deviceEngagementStructure
+        ? DeviceEngagement.fromEncodedStructure(deviceEngagementStructure)
+        : null,
+      eReaderKey: eReaderKeyStructure ? EReaderKey.fromEncodedStructure(eReaderKeyStructure) : null,
       handover,
     })
   }

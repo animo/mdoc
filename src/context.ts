@@ -1,7 +1,6 @@
-import type { JWK } from 'jose'
 import type { Mac0 } from './cose/mac0.js'
 import type { Sign1 } from './cose/sign1.js'
-import type { DigestAlgorithm } from './mdoc/model/types.js'
+import type { DigestAlgorithm } from './mdoc/models/types.js'
 
 type MaybePromise<T> = Promise<T> | T
 
@@ -14,7 +13,7 @@ export interface X509Context {
   getPublicKey: (input: {
     certificate: Uint8Array
     alg: string
-  }) => MaybePromise<JWK>
+  }) => MaybePromise<Record<string, unknown>>
 
   validateCertificateChain: (input: {
     trustedCertificates: Uint8Array[]
@@ -43,25 +42,25 @@ export interface MdocContext {
       privateKey: Uint8Array
       publicKey: Uint8Array
       sessionTranscriptBytes: Uint8Array
-    }) => MaybePromise<JWK>
+    }) => MaybePromise<Record<string, unknown>>
   }
 
   cose: {
     sign1: {
-      sign: (input: { sign1: Sign1; jwk: JWK }) => MaybePromise<Uint8Array>
+      sign: (input: { sign1: Sign1; jwk: Record<string, unknown> }) => MaybePromise<Uint8Array>
 
       verify(input: {
-        jwk: JWK
+        jwk: Record<string, unknown>
         sign1: Sign1
       }): MaybePromise<boolean>
     }
 
     mac0: {
-      sign: (input: { jwk: JWK; mac0: Mac0 }) => MaybePromise<Uint8Array>
+      sign: (input: { jwk: Record<string, unknown>; mac0: Mac0 }) => MaybePromise<Uint8Array>
 
       verify(input: {
         mac0: Mac0
-        jwk: JWK
+        jwk: Record<string, unknown>
       }): MaybePromise<boolean>
     }
   }

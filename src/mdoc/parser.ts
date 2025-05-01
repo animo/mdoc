@@ -4,20 +4,20 @@ import { Mac0 } from '../cose/mac0.js'
 import { Sign1 } from '../cose/sign1.js'
 import { MdlParseError } from './errors.js'
 import { IssuerSignedItem } from './issuer-signed-item.js'
-import { DeviceSignedDocument } from './model/device-signed-document.js'
-import { IssuerAuth } from './model/issuer-auth.js'
-import { IssuerSignedDocument } from './model/issuer-signed-document.js'
-import { MDoc } from './model/mdoc.js'
+import { DeviceSignedDocument } from './models/device-signed-document.js'
+import { IssuerAuth } from './models/issuer-auth.js'
+import { IssuerSignedDocument } from './models/issuer-signed-document.js'
+import { MDocOld } from './models/mdoc.js'
 import type {
-  DeviceAuth,
-  DeviceSigned,
+  DeviceAuthOld,
+  DeviceSignedOld,
   IssuerNameSpaces,
-  IssuerSigned,
+  IssuerSignedOld,
   RawDeviceAuth,
   RawIndexedDataItem,
   RawIssuerAuth,
   RawNameSpaces,
-} from './model/types.js'
+} from './models/types.js'
 
 const parseIssuerAuthElement = (rawIssuerAuth: RawIssuerAuth, expectedDocType?: string): IssuerAuth => {
   const issuerAuth = new IssuerAuth(...rawIssuerAuth)
@@ -34,7 +34,7 @@ const parseIssuerAuthElement = (rawIssuerAuth: RawIssuerAuth, expectedDocType?: 
   return issuerAuth
 }
 
-const parseDeviceAuthElement = (rawDeviceAuth: RawDeviceAuth): DeviceAuth => {
+const parseDeviceAuthElement = (rawDeviceAuth: RawDeviceAuth): DeviceAuthOld => {
   const { deviceSignature, deviceMac } = Object.fromEntries(rawDeviceAuth)
   if (deviceSignature) {
     return { deviceSignature: new Sign1(...deviceSignature) }
@@ -52,12 +52,6 @@ const namespaceToArray = (entries: RawIndexedDataItem): IssuerSignedItem[] =>
 const mapIssuerNameSpaces = (namespace: RawNameSpaces): IssuerNameSpaces =>
   new Map(Array.from(namespace.entries()).map(([nameSpace, entries]) => [nameSpace, namespaceToArray(entries)]))
 
-/**
- * Parse a IssuerSignedDocument
- *
- * @param issuerSigned - The cbor encoded or decoded IssuerSigned Structure
- * @returns {Promise<IssuerSignedDocument>} - The parsed IssuerSigned document
- */
 export const parseIssuerSigned = (
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   issuerSigned: Uint8Array | Map<string, any>,
@@ -76,7 +70,7 @@ export const parseIssuerSigned = (
 
   const issuerAuth = parseIssuerAuthElement(issuerSignedDecoded.get('issuerAuth'), expectedDocType)
 
-  const parsedIssuerSigned: IssuerSigned = {
+  const parsedIssuerSigned: IssuerSignedOld = {
     ...issuerSignedDecoded,
     nameSpaces: mapIssuerNameSpaces(issuerSignedDecoded.get('nameSpaces')),
     issuerAuth,
@@ -85,13 +79,6 @@ export const parseIssuerSigned = (
   return new IssuerSignedDocument(issuerAuth.mobileSecurityObject.docType, parsedIssuerSigned)
 }
 
-/**
- * Parse a DeviceSignedDocument
- *
- * @param deviceSigned - The cbor encoded or decoded DeviceSigned Structure
- * @param issuerSigned - The cbor encoded or decoded IssuerSigned Structure
- * @returns {Promise<DeviceSignedDocument>} - The parsed DeviceSigned document
- */
 export const parseDeviceSigned = (
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   deviceSigned: Uint8Array | Map<string, any>,
@@ -110,7 +97,7 @@ export const parseDeviceSigned = (
     )
   }
 
-  const deviceSignedParsed: DeviceSigned = {
+  const deviceSignedParsed: DeviceSignedOld = {
     ...deviceSignedDecoded,
     nameSpaces: deviceSignedDecoded.get('nameSpaces').data,
     deviceAuth: parseDeviceAuthElement(deviceSignedDecoded.get('deviceAuth')),
@@ -121,13 +108,7 @@ export const parseDeviceSigned = (
   return new DeviceSignedDocument(issuerSignedDocument.docType, issuerSignedDocument.issuerSigned, deviceSignedParsed)
 }
 
-/**
- * Parse an mdoc
- *
- * @param encoded - The cbor encoded mdoc
- * @returns {Promise<MDoc>} - The parsed device response
- */
-export const parseDeviceResponse = (encoded: Uint8Array): MDoc => {
+export const parseDeviceResponse = (encoded: Uint8Array): MDocOld => {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   let deviceResponse: Map<string, any>
   try {
@@ -150,5 +131,5 @@ export const parseDeviceResponse = (encoded: Uint8Array): MDoc => {
     return parseIssuerSigned(issuerSigned, docType)
   })
 
-  return new MDoc(parsedDocuments, version, status)
+  return new MDocOld(parsedDocuments, version, status)
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { DeviceRequest } from '../../src/mdoc/model/device-request-2'
+import { DeviceRequest } from '../../src/mdoc/models/device-request'
 import { hex } from '../../src/utils'
 
 const cbor =
@@ -13,12 +13,12 @@ describe('device request', () => {
     expect(deviceRequest.docRequests.length).toStrictEqual(1)
     expect(deviceRequest.docRequests[0].readerAuth).toBeDefined()
     expect(deviceRequest.docRequests[0].itemsRequest.docType).toStrictEqual('org.iso.18013.5.1.mDL')
-    expect(deviceRequest.docRequests[0].itemsRequest.nameSpaces.has('org.iso.18013.5.1')).toBeTruthy()
+    expect(deviceRequest.docRequests[0].itemsRequest.namespaces.has('org.iso.18013.5.1')).toBeTruthy()
     expect(
-      deviceRequest.docRequests[0].itemsRequest.nameSpaces.get('org.iso.18013.5.1')?.get('family_name')
+      deviceRequest.docRequests[0].itemsRequest.namespaces.get('org.iso.18013.5.1')?.get('family_name')
     ).toStrictEqual(true)
     expect(
-      deviceRequest.docRequests[0].itemsRequest.nameSpaces.get('org.iso.18013.5.1')?.get('portrait')
+      deviceRequest.docRequests[0].itemsRequest.namespaces.get('org.iso.18013.5.1')?.get('portrait')
     ).toStrictEqual(false)
   })
 })

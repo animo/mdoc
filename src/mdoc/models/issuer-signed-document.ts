@@ -1,4 +1,4 @@
-import type { DocType, IssuerSigned, MdocNameSpaces } from './types.js'
+import type { DocTypeOld, IssuerSignedOld, MdocNameSpaces } from './types.js'
 
 /**
  * Represents an issuer signed document.
@@ -8,8 +8,8 @@ import type { DocType, IssuerSigned, MdocNameSpaces } from './types.js'
  */
 export class IssuerSignedDocument {
   constructor(
-    public readonly docType: DocType,
-    public readonly issuerSigned: IssuerSigned
+    public readonly docType: DocTypeOld,
+    public readonly issuerSigned: IssuerSignedOld
   ) {}
 
   /**

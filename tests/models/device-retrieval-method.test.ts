@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { BleOptions } from '../../src/mdoc/model/ble-options'
-import { DeviceRetrievalMethod, DeviceRetrievalMethodType } from '../../src/mdoc/model/device-retrieval-method'
+import { BleOptions } from '../../src/mdoc/models/ble-options'
+import { DeviceRetrievalMethod, DeviceRetrievalMethodType } from '../../src/mdoc/models/device-retrieval-method'
 import { hex } from '../../src/utils'
 
 const cbor = '830201b900036130f46131f56231315045efef742b2c4837a9a3b0e1d05a6917'

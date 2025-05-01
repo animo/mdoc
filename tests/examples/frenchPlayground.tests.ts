@@ -1,8 +1,7 @@
 import { X509Certificate } from '@peculiar/x509'
 import { describe, it } from 'vitest'
-import { mdocContext } from '.'
-import { DeviceResponse } from '../src/mdoc/model/device-response'
-import { Verifier } from '../src/mdoc/verifier'
+import { DeviceResponseOld, Verifier } from '../../src/'
+import { mdocContext } from '../context'
 
 const ISSUER_CERTIFICATE = `-----BEGIN CERTIFICATE-----
 MIIB7zCCAZWgAwIBAgIUPEQW7teE87QT5I9W8HWr+m2H64QwCgYIKoZIzj0EAwIw
@@ -33,7 +32,7 @@ describe.skip('French playground mdoc implementation', () => {
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
         encodedDeviceResponse: deviceResponse,
-        encodedSessionTranscript: await DeviceResponse.calculateSessionTranscriptBytesForOID4VP({
+        encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
           context: mdocContext,
           clientId,
           responseUri,

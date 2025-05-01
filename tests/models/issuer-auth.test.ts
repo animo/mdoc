@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { IssuerAuth } from '../../src/mdoc/model/issuer-auth'
+import { IssuerAuth } from '../../src/mdoc/models/issuer-auth'
 import { hex } from '../../src/utils'
 
 const cbor =

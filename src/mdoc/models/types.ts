@@ -4,7 +4,7 @@ import type { Sign1 } from '../../cose/sign1.js'
 import type { IssuerSignedDataItem, IssuerSignedItem } from '../issuer-signed-item.js'
 import type { IssuerAuth } from './issuer-auth.js'
 
-export interface ValidityInfo {
+export interface ValidityInfoOld {
   signed: Date
   validFrom: Date
   validUntil: Date
@@ -15,17 +15,17 @@ export type IssuerNameSpaces = Map<string, IssuerSignedItem[]>
 
 export type MdocNameSpaces = Map<string, Map<string, unknown>>
 
-export interface IssuerSigned {
+export interface IssuerSignedOld {
   issuerAuth: IssuerAuth
   nameSpaces: IssuerNameSpaces
 }
 
-export type DeviceAuth =
+export type DeviceAuthOld =
   | ({ deviceMac: Mac0 } & { deviceSignature?: never })
   | ({ deviceMac?: never } & { deviceSignature: Sign1 })
 
-export interface DeviceSigned {
-  deviceAuth: DeviceAuth
+export interface DeviceSignedOld {
+  deviceAuth: DeviceAuthOld
   nameSpaces: Map<string, Map<string, unknown>>
 }
 
@@ -48,7 +48,7 @@ export interface DiagnosticInformation {
     status: number
     documents: number
   }
-  validityInfo: ValidityInfo
+  validityInfo: ValidityInfoOld
   attributes: {
     ns: string
     id: string
@@ -90,7 +90,7 @@ export interface DiagnosticInformation {
   }
 }
 
-export interface DeviceKeyInfo {
+export interface DeviceKeyInfoOld {
   deviceKey: Map<number, number | Uint8Array>
   [key: string]: unknown
 }
@@ -100,16 +100,16 @@ export interface MSO {
   docType: string
   version: string
 
-  validityInfo: ValidityInfo
+  validityInfo: ValidityInfoOld
 
   valueDigests?: Map<string, Map<number, Uint8Array>>
 
   validityDigests?: Record<string, Map<number, Uint8Array>>
 
-  deviceKeyInfo?: DeviceKeyInfo
+  deviceKeyInfo?: DeviceKeyInfoOld
 }
 
-export type DocType = 'org.iso.18013.5.1.mDL' | (string & {})
+export type DocTypeOld = 'org.iso.18013.5.1.mDL' | (string & {})
 
 export type SupportedAlgs = 'ES256' | 'ES384' | 'ES512' | 'EdDSA'
 

@@ -1,13 +1,13 @@
 import { cborDecode, cborEncode } from '../../cbor'
 import type { ItemsRequestData } from '../items-request'
-import { ItemsRequest } from '../items-request'
+import { ItemsRequestOld } from '../items-request'
 
-export interface DocRequest {
-  itemsRequest: ItemsRequest
-  readerAuth?: ReaderAuth
+export interface DocRequestOld {
+  itemsRequest: ItemsRequestOld
+  readerAuth?: ReaderAuthOld
 }
 
-export type ReaderAuth = [
+export type ReaderAuthOld = [
   Uint8Array | undefined,
   Uint8Array | undefined,
   Uint8Array | undefined,
@@ -16,25 +16,25 @@ export type ReaderAuth = [
 
 export type DeviceRequestNameSpaces = Map<string, Map<string, boolean>>
 
-export class DeviceRequest {
+export class DeviceRequestOld {
   constructor(
     public version: string,
-    public docRequests: DocRequest[]
+    public docRequests: DocRequestOld[]
   ) {}
 
   public static from(
     version: string,
     docRequests: {
       itemsRequestData: ItemsRequestData
-      readerAuth?: ReaderAuth
+      readerAuth?: ReaderAuthOld
     }[]
   ) {
-    return new DeviceRequest(
+    return new DeviceRequestOld(
       version,
       docRequests.map((docRequest) => {
         return {
           ...docRequest,
-          itemsRequest: ItemsRequest.create(
+          itemsRequest: ItemsRequestOld.create(
             docRequest.itemsRequestData.docType,
             docRequest.itemsRequestData.nameSpaces,
             docRequest.itemsRequestData.requestInfo
@@ -54,8 +54,8 @@ export class DeviceRequest {
 
     const { version, docRequests } = res
 
-    const parsedDocRequests: DocRequest[] = docRequests.map((docRequest) => {
-      const itemsRequest = new ItemsRequest(docRequest.itemsRequest)
+    const parsedDocRequests: DocRequestOld[] = docRequests.map((docRequest) => {
+      const itemsRequest = new ItemsRequestOld(docRequest.itemsRequest)
 
       return {
         ...docRequest,
@@ -63,10 +63,10 @@ export class DeviceRequest {
       }
     })
 
-    return new DeviceRequest(version, parsedDocRequests)
+    return new DeviceRequestOld(version, parsedDocRequests)
   }
 
-  public static encodeDocRequest(r: DocRequest) {
+  public static encodeDocRequest(r: DocRequestOld) {
     // biome-ignore lint/suspicious/noExplicitAny:
     return new Map<string, any>([
       ['itemsRequest', r.itemsRequest.dataItem],
@@ -77,7 +77,7 @@ export class DeviceRequest {
   encode() {
     return cborEncode({
       version: this.version,
-      docRequests: this.docRequests.map(DeviceRequest.encodeDocRequest),
+      docRequests: this.docRequests.map(DeviceRequestOld.encodeDocRequest),
     })
   }
 }

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { DeviceKeyInfo } from '../../src/mdoc/model/device-key-info'
-import { MobileSecurityObject } from '../../src/mdoc/model/mobile-security-object'
-import { ValidityInfo } from '../../src/mdoc/model/validity-info'
-import { ValueDigests } from '../../src/mdoc/model/value-digests'
+import { DeviceKeyInfo } from '../../src/mdoc/models/device-key-info'
+import { MobileSecurityObject } from '../../src/mdoc/models/mobile-security-object'
+import { ValidityInfo } from '../../src/mdoc/models/validity-info'
+import { ValueDigests } from '../../src/mdoc/models/value-digests'
 import { hex } from '../../src/utils'
 
 const cbor =

@@ -1,4 +1,3 @@
-import type { JWK } from 'jose'
 import { DataItem, cborDecode, cborEncode } from '../../cbor/index.js'
 import type { MdocContext } from '../../context.js'
 import { Header, SignatureAlgorithm } from '../../cose/headers/defaults.js'
@@ -11,13 +10,13 @@ import { fromPem } from '../utils.js'
 import { IssuerAuth } from './issuer-auth.js'
 import { IssuerSignedDocument } from './issuer-signed-document.js'
 import type {
-  DeviceKeyInfo,
+  DeviceKeyInfoOld,
   DigestAlgorithm,
-  DocType,
+  DocTypeOld,
   IssuerNameSpaces,
   MSO,
   SupportedAlgs,
-  ValidityInfo,
+  ValidityInfoOld,
 } from './types.js'
 function isObjectLike(value: unknown) {
   return typeof value === 'object' && value !== null
@@ -48,11 +47,11 @@ const addYears = (date: Date, years: number): Date => {
  *
  * This class allow you to build a document and sign it with the issuer's private key.
  */
-export class Document {
-  readonly docType: DocType
+export class DocumentOld {
+  readonly docType: DocTypeOld
   #issuerNameSpaces: IssuerNameSpaces = new Map()
-  #deviceKeyInfo?: DeviceKeyInfo
-  #validityInfo: ValidityInfo = {
+  #deviceKeyInfo?: DeviceKeyInfoOld
+  #validityInfo: ValidityInfoOld = {
     signed: new Date(),
     validFrom: new Date(),
     validUntil: addYears(new Date(), 1),
@@ -60,7 +59,7 @@ export class Document {
   #digestAlgorithm: DigestAlgorithm = 'SHA-256'
   ctx: { crypto: MdocContext['crypto'] }
 
-  constructor(doc: DocType, ctx: { crypto: MdocContext['crypto'] }) {
+  constructor(doc: DocTypeOld, ctx: { crypto: MdocContext['crypto'] }) {
     this.docType = doc
     this.ctx = ctx
   }
@@ -68,7 +67,7 @@ export class Document {
   /**
    * Add a namespace to an unsigned document.
    */
-  addIssuerNameSpace(namespace: 'org.iso.18013.5.1' | (string & {}), values: Record<string, unknown>): Document {
+  addIssuerNameSpace(namespace: 'org.iso.18013.5.1' | (string & {}), values: Record<string, unknown>): DocumentOld {
     const namespaceRecord = this.#issuerNameSpaces.get(namespace) ?? []
 
     const addAttribute = (key: string, value: unknown) => {
@@ -86,21 +85,14 @@ export class Document {
     return this
   }
 
-  /**
-   * Get the values in a namespace.
-   */
   getIssuerNameSpace(namespace: string): Record<string, unknown> | undefined {
     const nameSpace = this.#issuerNameSpaces.get(namespace)
     if (!nameSpace) return undefined
     return Object.fromEntries(nameSpace.map((item) => [item.elementIdentifier, item.elementValue]))
   }
 
-  /**
-   * Add the device public key which will be include in the issuer signature.
-   * The device public key could be in JWK format or as COSE_Key format.
-   */
-  addDeviceKeyInfo({ deviceKey }: { deviceKey: JWK | Uint8Array }): Document {
-    const deviceKeyCOSEKey = deviceKey instanceof Uint8Array ? deviceKey : CoseKey.fromJWK(deviceKey).encode()
+  addDeviceKeyInfo({ deviceKey }: { deviceKey: Record<string, unknown> | Uint8Array }): DocumentOld {
+    const deviceKeyCOSEKey = deviceKey instanceof Uint8Array ? deviceKey : CoseKey.fromJwk(deviceKey).encode()
     const decodedCoseKey = cborDecode<Map<number, number>>(deviceKeyCOSEKey)
 
     this.#deviceKeyInfo = {
@@ -109,18 +101,7 @@ export class Document {
 
     return this
   }
-
-  /**
-   * Add validity info to the document that will be used in the issuer signature.
-   *
-   * @param info - the validity info
-   * @param {Date} [info.signed] - The date the document is signed. default: now
-   * @param {Date} [info.validFrom] - The date the document is valid from. default: signed
-   * @param {Date} [info.validUntil] - The date the document is valid until. default: signed + 1 year
-   * @param {Date} [info.expectedUpdate] - The date the document is expected to be updated. default: null
-   * @returns
-   */
-  addValidityInfo(info: Partial<ValidityInfo> = {}): Document {
+  addValidityInfo(info: Partial<ValidityInfoOld> = {}): DocumentOld {
     const signed = info.signed ?? new Date()
     const validFrom = info.validFrom ?? signed
     const validUntil = info.validUntil ?? addYears(signed, 1)
@@ -143,7 +124,7 @@ export class Document {
    *
    * The default is SHA-256.
    */
-  useDigestAlgorithm(digestAlgorithm: DigestAlgorithm): Document {
+  useDigestAlgorithm(digestAlgorithm: DigestAlgorithm): DocumentOld {
     this.#digestAlgorithm = digestAlgorithm
     return this
   }
@@ -153,7 +134,7 @@ export class Document {
    */
   async sign(
     params: {
-      issuerPrivateKey: JWK
+      issuerPrivateKey: Record<string, unknown>
       issuerCertificate: string | Uint8Array
       alg: SupportedAlgs
       kid?: string | Uint8Array
@@ -170,10 +151,7 @@ export class Document {
     const issuerPublicKeyBuffer =
       typeof params.issuerCertificate === 'string' ? fromPem(params.issuerCertificate) : params.issuerCertificate
 
-    const issuerPrivateKeyJwk =
-      params.issuerPrivateKey instanceof Uint8Array
-        ? CoseKey.import(params.issuerPrivateKey).toJWK()
-        : params.issuerPrivateKey
+    const issuerPrivateKeyJwk = CoseKey.fromJwk(params.issuerPrivateKey).jwk
 
     const valueDigests = new Map(
       await Promise.all(

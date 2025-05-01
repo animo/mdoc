@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { Header } from '../../src/cose/headers/defaults'
-import { ReaderAuth } from '../../src/mdoc/model/reader-auth'
+import { ReaderAuth } from '../../src/mdoc/models/reader-auth'
 import { hex } from '../../src/utils'
 
 const cbor =

@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { DeviceEngagement } from '../../src/mdoc/model/device-engagement'
-import { EReaderKey } from '../../src/mdoc/model/e-reader-key'
-import { NfcHandover } from '../../src/mdoc/model/nfc-handover'
-import { SessionTranscript } from '../../src/mdoc/model/session-transcript'
+import { DeviceEngagement } from '../../src/mdoc/models/device-engagement'
+import { EReaderKey } from '../../src/mdoc/models/e-reader-key'
+import { NfcHandover } from '../../src/mdoc/models/nfc-handover'
+import { SessionTranscript } from '../../src/mdoc/models/session-transcript'
 import { hex } from '../../src/utils'
 
 const cbor =

@@ -1,6 +1,9 @@
 import { DataItem } from '../cbor/data-item.js'
-import { cborDecode, cborEncode } from '../cbor/index.js'
+import { cborEncode } from '../cbor/index.js'
 import { base64 } from '../utils/transformers.js'
+import type { DeviceNamespaces } from './models/device-namespaces.js'
+import type { DocType } from './models/doctype.js'
+import type { SessionTranscript } from './models/session-transcript.js'
 
 /**
  *
@@ -8,28 +11,18 @@ import { base64 } from '../utils/transformers.js'
  *
  */
 export const calculateDeviceAutenticationBytes = (
-  sessionTranscript: Uint8Array | unknown,
-  docType: string,
-  nameSpaces: Map<string, Map<string, unknown>>
+  sessionTranscript: SessionTranscript,
+  docType: DocType,
+  namespaces: DeviceNamespaces
 ): Uint8Array => {
-  let decodedSessionTranscript: unknown
-  if (sessionTranscript instanceof Uint8Array) {
-    // assume is encoded in a DataItem
-    decodedSessionTranscript = (cborDecode(sessionTranscript) as DataItem).data
-  } else {
-    decodedSessionTranscript = sessionTranscript
-  }
-
   const encode = DataItem.fromData([
     'DeviceAuthentication',
-    decodedSessionTranscript,
+    sessionTranscript.encode(),
     docType,
-    DataItem.fromData(nameSpaces),
+    DataItem.fromData(namespaces),
   ])
 
-  const result = cborEncode(encode)
-
-  return result
+  return cborEncode(encode)
 }
 
 export function fromPem(pem: string): Uint8Array {

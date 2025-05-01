@@ -1,2 +1,5 @@
 export * from './key'
 export * from './jwk'
+export * from './curve'
+export * from './key-type'
+export * from './key-operation'

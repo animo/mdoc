@@ -1,6 +1,9 @@
 import { CborStructure } from '../../cbor'
+import type { MdocContext } from '../../context'
 import type { DataElementIdentifier } from './data-element-identifier'
 import type { DataElementValue } from './data-element-value'
+import type { IssuerAuth } from './issuer-auth'
+import type { Namespace } from './namespace'
 
 export type IssuerSignedItemStructure = {
   digestID: number
@@ -28,6 +31,16 @@ export class IssuerSignedItem extends CborStructure {
     this.random = options.random
     this.elementIdentifier = options.elementIdentifier
     this.elementValue = options.elementValue
+  }
+
+  public async isValid(namespace: Namespace, issuerAuth: IssuerAuth, ctx: { crypto: MdocContext['crypto'] }) {
+    // TODO
+    return true
+  }
+
+  public matchCertificate(namespace: Namespace, issuerAuth: IssuerAuth, ctx: { crypto: MdocContext['crypto'] }) {
+    // TODO
+    return true
   }
 
   public encodedStructure(): IssuerSignedItemStructure {

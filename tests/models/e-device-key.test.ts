@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { Curve, KeyType } from '../../src/cose/key/key'
-import { EDeviceKey } from '../../src/mdoc/model/e-device-key'
+import { Curve, EDeviceKey, KeyType } from '../../src'
 import { hex } from '../../src/utils'
 
 const cbor =
