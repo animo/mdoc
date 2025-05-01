@@ -34,3 +34,4 @@ export {
   parseIssuerSigned,
 } from './mdoc/parser.js'
 export { Verifier } from './mdoc/verifier.js'
+export * from './utils'

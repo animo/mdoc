@@ -33,9 +33,6 @@ importers:
       '@types/node':
         specifier: ^20.14.11
         version: 20.17.6
-      buffer-tag:
-        specifier: ^1.0.2
-        version: 1.0.2
       jose:
         specifier: ^5.9.3
         version: 5.9.6
@@ -810,9 +807,6 @@ packages:
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
     engines: {node: '>=8'}
-
-  buffer-tag@1.0.2:
-    resolution: {integrity: sha512-9vkiAYT+3X1wE9A3kfrUV+P2qO7O6jefYTkvylkP7+/UUM+tTYxt3fT2BVCXC+0EFJi1P/Z4NRCYgjFcxiAKkQ==}
 
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
@@ -2237,8 +2231,6 @@ snapshots:
   braces@3.0.3:
     dependencies:
       fill-range: 7.1.1
-
-  buffer-tag@1.0.2: {}
 
   buffer@6.0.3:
     dependencies:
