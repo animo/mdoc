@@ -83,7 +83,7 @@ describe.skip('issuing an MDOC', () => {
   })
 
   it('should contain the validity info', () => {
-    const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.decodedPayload
+    const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.mobileSecurityObject
     expect(validityInfo).toBeDefined()
     expect(validityInfo.signed).toEqual(signed)
     expect(validityInfo.validFrom).toEqual(validFrom)
@@ -92,12 +92,12 @@ describe.skip('issuing an MDOC', () => {
   })
 
   it('should use the correct digest alg', () => {
-    const { digestAlgorithm } = parsedDocument.issuerSigned.issuerAuth.decodedPayload
+    const { digestAlgorithm } = parsedDocument.issuerSigned.issuerAuth.mobileSecurityObject
     expect(digestAlgorithm).toEqual('SHA-512')
   })
 
   it('should include the device public key', () => {
-    const { deviceKeyInfo } = parsedDocument.issuerSigned.issuerAuth.decodedPayload
+    const { deviceKeyInfo } = parsedDocument.issuerSigned.issuerAuth.mobileSecurityObject
     expect(deviceKeyInfo?.deviceKey).toBeDefined()
     const actual = typeof deviceKeyInfo !== 'undefined' && CoseKey.import(deviceKeyInfo.deviceKey).toJWK()
     expect(actual).toEqual(publicKeyJWK)

@@ -2,9 +2,8 @@ import { p256 } from '@noble/curves/p256'
 import { hkdf } from '@panva/hkdf'
 import * as x509 from '@peculiar/x509'
 import { X509Certificate } from '@peculiar/x509'
-import { exportJWK, importX509 } from 'jose'
-import type { MdocContext, X509Context } from '../src'
-import { stringToUint8Array, uint8ArrayToBase64Url, uint8ArrayToHex } from '../src'
+import { base64url, exportJWK, importX509 } from 'jose'
+import { type MdocContext, type X509Context, hex, stringToBytes } from '../src'
 
 export const mdocContext: MdocContext = {
   crypto: {
@@ -17,9 +16,9 @@ export const mdocContext: MdocContext = {
     },
     calculateEphemeralMacKeyJwk: async (input) => {
       const { privateKey, publicKey, sessionTranscriptBytes } = input
-      const ikm = p256.getSharedSecret(uint8ArrayToHex(privateKey), uint8ArrayToHex(publicKey), true).slice(1)
+      const ikm = p256.getSharedSecret(hex.encode(privateKey), hex.encode(publicKey), true).slice(1)
       const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', sessionTranscriptBytes))
-      const info = stringToUint8Array('EMacKey')
+      const info = stringToBytes('EMacKey')
       const digest = 'sha256'
       const result = await hkdf(digest, ikm, salt, info, 32)
 
@@ -27,7 +26,7 @@ export const mdocContext: MdocContext = {
         key_ops: ['sign', 'verify'],
         ext: true,
         kty: 'oct',
-        k: uint8ArrayToBase64Url(result),
+        k: base64url.encode(result),
         alg: 'HS256',
       }
     },
@@ -37,15 +36,18 @@ export const mdocContext: MdocContext = {
     mac0: {
       sign: async (input) => {
         const { jwk, mac0 } = input
-        const { data } = mac0.getRawSigningData()
+        const tba = mac0.toBeAuthenticated
         const key = await crypto.subtle.importKey('jwk', jwk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-        return new Uint8Array(await crypto.subtle.sign('HMAC', key, data))
+        return new Uint8Array(await crypto.subtle.sign('HMAC', key, tba))
       },
       verify: async (input) => {
-        const { mac0, jwk, options } = input
-        const { data, signature } = mac0.getRawVerificationData(options)
+        const { mac0, jwk } = input
+        const { tag, toBeAuthenticated } = mac0
+        if (!tag) {
+          throw new Error('tag is required for mac0 verification')
+        }
         const key = await crypto.subtle.importKey('jwk', jwk, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
-        return crypto.subtle.verify('HMAC', key, signature, data)
+        return crypto.subtle.verify('HMAC', key, tag, toBeAuthenticated)
       },
     },
     sign1: {
@@ -58,9 +60,12 @@ export const mdocContext: MdocContext = {
       },
       verify: async (input) => {
         const { sign1, jwk } = input
-        const data = sign1.toBeSigned
+        const { toBeSigned, signature } = sign1
+        if (!signature) {
+          throw new Error('signature is required for sign1 verification')
+        }
         const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
-        return crypto.subtle.verify({ name: 'ECDSA', hash: { name: 'SHA-256' } }, key, sign1.signature, data)
+        return crypto.subtle.verify({ name: 'ECDSA', hash: { name: 'SHA-256' } }, key, signature, toBeSigned)
       },
     },
   },
@@ -81,8 +86,8 @@ export const mdocContext: MdocContext = {
     },
 
     validateCertificateChain: async (input: {
-      trustedCertificates: [Uint8Array, ...Uint8Array[]]
-      x5chain: [Uint8Array, ...Uint8Array[]]
+      trustedCertificates: Array<Uint8Array>
+      x5chain: Array<Uint8Array>
     }) => {
       const { trustedCertificates, x5chain: certificateChain } = input
       if (certificateChain.length === 0) throw new Error('Certificate chain is empty')
@@ -131,7 +136,7 @@ export const mdocContext: MdocContext = {
     getCertificateData: async (input: { certificate: Uint8Array }) => {
       const certificate = new X509Certificate(input.certificate)
       const thumbprint = await certificate.getThumbprint(crypto)
-      const thumbprintHex = uint8ArrayToHex(new Uint8Array(thumbprint))
+      const thumbprintHex = hex.encode(new Uint8Array(thumbprint))
       return {
         issuerName: certificate.issuerName.toString(),
         subjectName: certificate.subjectName.toString(),

@@ -8,7 +8,7 @@ export type IssuerAuthStructure = Sign1Structure
 export type IssuerAuthOptions = Sign1Options
 
 export class IssuerAuth extends Sign1 {
-  public get mso(): MobileSecurityObject {
+  public get mobileSecurityObject(): MobileSecurityObject {
     if (!this.payload) {
       throw new CosePayloadMustBeDefined()
     }

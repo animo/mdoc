@@ -58,7 +58,7 @@ export class IssuerSignedItem {
 
   public async isValid(
     nameSpace: string,
-    { mso: { valueDigests, digestAlgorithm } }: IssuerAuth,
+    { mobileSecurityObject: { valueDigests, digestAlgorithm } }: IssuerAuth,
     ctx: { crypto: MdocContext['crypto'] }
   ): Promise<boolean> {
     if (typeof this.#isValid !== 'undefined') {

@@ -21,7 +21,7 @@ import type {
 
 const parseIssuerAuthElement = (rawIssuerAuth: RawIssuerAuth, expectedDocType?: string): IssuerAuth => {
   const issuerAuth = new IssuerAuth(...rawIssuerAuth)
-  const { docType, version } = issuerAuth.mso
+  const { docType, version } = issuerAuth.mobileSecurityObject
 
   if (expectedDocType && docType !== expectedDocType) {
     throw new MdlParseError(`The issuerAuth docType must be ${expectedDocType}`)
@@ -82,7 +82,7 @@ export const parseIssuerSigned = (
     issuerAuth,
   }
 
-  return new IssuerSignedDocument(issuerAuth.mso.docType, parsedIssuerSigned)
+  return new IssuerSignedDocument(issuerAuth.mobileSecurityObject.docType, parsedIssuerSigned)
 }
 
 /**

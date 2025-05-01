@@ -1,5 +1,5 @@
 import { type CborDecodeOptions, cborDecode } from '../../cbor'
-import { CoseKey, type CoseKeyOptions, type CoseKeyStructure } from '../../cose/key'
+import { CoseKey, type CoseKeyOptions, type CoseKeyStructure } from '../../cose/key/key'
 
 export type EDeviceKeyStructure = CoseKeyStructure
 

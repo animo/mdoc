@@ -1,36 +1,10 @@
 import { concatBytes } from '@noble/curves/abstract/utils'
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../cbor'
-import { CoseDNotDefined, CoseInvalidKtyForRaw, CoseXNotDefined } from './error'
-
-export enum KeyOps {
-  Sign = 1,
-  Verify = 2,
-  Encrypt = 3,
-  Decrypt = 4,
-  WrapKey = 5,
-  UnwrapKey = 6,
-  DeriveKey = 7,
-  DeriveBits = 8,
-  MACCreate = 9,
-  MACVerify = 10,
-}
-
-export enum KeyType {
-  Okp = 1,
-  Ec = 2,
-  Oct = 4,
-  Reserved = 0,
-}
-
-export enum Curve {
-  'P-256' = 1,
-  'P-384' = 2,
-  'P-521' = 3,
-  X25519 = 4,
-  X448 = 5,
-  Ed25519 = 6,
-  Ed448 = 7,
-}
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import { CoseDNotDefined, CoseInvalidKtyForRaw, CoseInvalidValueForKty, CoseXNotDefined } from '../error'
+import type { Curve } from './curve'
+import { coseKeyToJwk, coseOptionsJwkMap, jwkCoseOptionsMap, jwkToCoseKey } from './jwk'
+import type { KeyOps } from './key-operation'
+import { KeyType } from './key-type'
 
 export enum CoseKeyParameter {
   KeyType = 1,
@@ -139,6 +113,25 @@ export class CoseKey extends CborStructure {
     return structure
   }
 
+  public static fromJwk(jwk: Record<string, unknown>) {
+    if (!('kty' in jwk)) {
+      throw new CoseInvalidValueForKty('JWK does not contain required kty value')
+    }
+
+    const options = Object.entries(jwk).reduce(
+      (prev, [key, value]) => ({
+        ...prev,
+        [jwkCoseOptionsMap[key] ?? key]:
+          typeof jwkToCoseKey[key as keyof typeof jwkToCoseKey] === 'function'
+            ? jwkToCoseKey[key as keyof typeof jwkToCoseKey](value)
+            : undefined,
+      }),
+      {} as CoseKeyOptions
+    )
+
+    return new CoseKey(options)
+  }
+
   public static override fromEncodedStructure(encodedStructure: CoseKeyStructure | Map<unknown, unknown>): CoseKey {
     let structure = encodedStructure as CoseKeyStructure
 
@@ -190,5 +183,19 @@ export class CoseKey extends CborStructure {
     }
 
     return this.d
+  }
+
+  public get jwk(): Record<string, unknown> {
+    return Object.entries(this).reduce(
+      (prev, [key, value]) => ({
+        ...prev,
+        [coseOptionsJwkMap[key] ?? key]:
+          typeof coseKeyToJwk[key as keyof typeof coseKeyToJwk] === 'function'
+            ? // @ts-ignore
+              coseKeyToJwk[key as keyof typeof coseKeyToJwk](value)
+            : undefined,
+      }),
+      {}
+    )
   }
 }

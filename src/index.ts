@@ -5,7 +5,7 @@ export {
   cborDecode,
   cborEncode,
 } from './cbor'
-export { CoseKey } from './cose/key.js'
+export * from './cose'
 export {
   defaultVerificationCallback as defaultCallback,
   type VerificationAssessment,

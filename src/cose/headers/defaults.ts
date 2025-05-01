@@ -40,28 +40,3 @@ export enum EncryptionAlgorithm {
   A256GCM = 3,
   Direct = -6,
 }
-
-export const EncryptionAlgorithmNames = new Map<EncryptionAlgorithm, string>([
-  [EncryptionAlgorithm.A128GCM, 'A128GCM'],
-  [EncryptionAlgorithm.A192GCM, 'A192GCM'],
-  [EncryptionAlgorithm.A256GCM, 'A256GCM'],
-])
-
-export const MacAlgorithmNames = new Map<MacAlgorithm, string>([
-  [MacAlgorithm.HS256, 'HS256'],
-  [MacAlgorithm.HS384, 'HS384'],
-  [MacAlgorithm.HS512, 'HS512'],
-])
-
-export const SignatureAlgorithmNames = new Map<SignatureAlgorithm, string>([
-  [SignatureAlgorithm.EdDSA, 'EdDSA'],
-  [SignatureAlgorithm.ES256, 'ES256'],
-  [SignatureAlgorithm.ES384, 'ES384'],
-  [SignatureAlgorithm.ES512, 'ES512'],
-  [SignatureAlgorithm.PS256, 'PS256'],
-  [SignatureAlgorithm.PS384, 'PS384'],
-  [SignatureAlgorithm.PS512, 'PS512'],
-  [SignatureAlgorithm.RS256, 'RS256'],
-  [SignatureAlgorithm.RS384, 'RS384'],
-  [SignatureAlgorithm.RS512, 'RS512'],
-])

@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { CoseKey, Curve, KeyOps, KeyType } from '../../src/cose/key'
+import { CoseKey, SignatureAlgorithm } from '../../src'
+import { Curve } from '../../src/cose/key/curve'
+import { KeyOps } from '../../src/cose/key/key-operation'
+import { KeyType } from '../../src/cose/key/key-type'
 import { base64url } from '../../src/utils'
 
 describe('cose key', () => {
@@ -51,5 +54,47 @@ describe('cose key', () => {
     expect(key.y).toBeUndefined()
     expect(key.d).toBeDefined()
     expect(base64url.encode(key.privateKey)).toStrictEqual('wOSo__ixR1AmrohLvcXpy-q5cK28TFwb4cDasS-qEZo')
+  })
+
+  test('create cose key from jwk', () => {
+    const jwk = {
+      kty: 'EC',
+      d: 'hGc90b8KMIjIpZos81yEFbOMc0Ww3k5ZNWICzDwtFV4',
+      use: 'sig',
+      crv: 'P-256',
+      x: 'eBUFGSPkdYwJ9TqYpcNxhAyr-A8wlWzrLQJppSi3x0E',
+      y: 'Jnf8v4steg6Gr4IEFpg_xcM5xdHKdngbQN9ERJbJvl8',
+      alg: 'ES256',
+    }
+
+    const coseKey = CoseKey.fromJwk(jwk)
+
+    expect(coseKey.keyType).toBeDefined()
+    expect(coseKey.curve).toStrictEqual(Curve['P-256'])
+    expect(coseKey.algorithm).toStrictEqual(SignatureAlgorithm.ES256)
+    expect(coseKey.x).toBeDefined()
+    expect(coseKey.y).toBeDefined()
+    expect(coseKey.d).toBeDefined()
+  })
+
+  test('create jwk from cose key', () => {
+    const jwk = {
+      kty: 'EC',
+      d: 'hGc90b8KMIjIpZos81yEFbOMc0Ww3k5ZNWICzDwtFV4',
+      use: 'sig',
+      crv: 'P-256',
+      x: 'eBUFGSPkdYwJ9TqYpcNxhAyr-A8wlWzrLQJppSi3x0E',
+      y: 'Jnf8v4steg6Gr4IEFpg_xcM5xdHKdngbQN9ERJbJvl8',
+      alg: 'ES256',
+    }
+
+    const newJwk = CoseKey.fromJwk(jwk).jwk
+
+    expect(newJwk.kty).toStrictEqual(jwk.kty)
+    expect(newJwk.d).toStrictEqual(jwk.d)
+    expect(newJwk.crv).toStrictEqual(jwk.crv)
+    expect(newJwk.x).toStrictEqual(jwk.x)
+    expect(newJwk.y).toStrictEqual(jwk.y)
+    expect(newJwk.alg).toStrictEqual(jwk.alg)
   })
 })

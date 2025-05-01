@@ -1,8 +1,8 @@
 import { compareVersions } from 'compare-versions'
 import type { JWK } from 'jose'
 import type { MdocContext, X509Context } from '../context.js'
-import { CoseKey } from '../cose/key.js'
-import { Sign1 } from '../cose/sign1.js'
+import { CoseKey } from '../cose'
+import { Sign1 } from '../cose'
 import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
 import { defaultVerificationCallback, onCategoryCheck } from './check-callback.js'
 import { MDL_NAMESPACE } from './issuer-signed-item.js'
@@ -97,7 +97,7 @@ export class Verifier {
     })
 
     // Validity
-    const { validityInfo } = issuerAuth.mso
+    const { validityInfo } = issuerAuth.mobileSecurityObject
     const now = input.now ?? new Date()
 
     const certificateData = await ctx.x509.getCertificateData({
@@ -142,7 +142,7 @@ export class Verifier {
 
     const { deviceAuth, nameSpaces } = deviceSigned.deviceSigned
     const { docType } = deviceSigned
-    const { deviceKeyInfo } = deviceSigned.issuerSigned.issuerAuth.mso
+    const { deviceKeyInfo } = deviceSigned.issuerSigned.issuerAuth.mobileSecurityObject
     const { deviceKey: deviceKeyCoseKey } = deviceKeyInfo ?? {}
 
     // Prevent cloning of the mdoc and mitigate man in the middle attacks
@@ -237,12 +237,12 @@ export class Verifier {
     }
 
     try {
-      const deviceKeyRaw = COSEKeyToRAW(deviceKeyCoseKey)
+      const deviceKeyRaw = deviceKeyCoseKey.publicKey
       const ephemeralMacKeyJwk = await ctx.crypto.calculateEphemeralMacKeyJwk({
         privateKey:
           ephemeralPrivateKey instanceof Uint8Array
             ? ephemeralPrivateKey
-            : COSEKeyToRAW(CoseKey.fromJWK(ephemeralPrivateKey).encode()),
+            : CoseKey.fromJwk(ephemeralPrivateKey).privateKey,
         publicKey: deviceKeyRaw,
         sessionTranscriptBytes,
       })
@@ -277,7 +277,7 @@ export class Verifier {
     const { mdoc, onCheckG } = input
     // Confirm that the mdoc data has not changed since issuance
     const { issuerAuth } = mdoc.issuerSigned
-    const { valueDigests, digestAlgorithm } = issuerAuth.mso
+    const { valueDigests, digestAlgorithm } = issuerAuth.mobileSecurityObject
 
     const onCheck = onCategoryCheck(onCheckG ?? defaultVerificationCallback, 'DATA_INTEGRITY')
 
@@ -518,16 +518,15 @@ export class Verifier {
     let deviceKey: JWK | undefined = undefined
 
     if (document.issuerSigned.issuerAuth) {
-      const { deviceKeyInfo } = document.issuerSigned.issuerAuth.mso
+      const { deviceKeyInfo } = document.issuerSigned.issuerAuth.mobileSecurityObject
       if (deviceKeyInfo?.deviceKey) {
         deviceKey = CoseKey.import(deviceKeyInfo.deviceKey).toJWK()
       }
     }
     const disclosedAttributes = attributes.filter((attr) => attr.isValid).length
-    const totalAttributes = Array.from(document.issuerSigned.issuerAuth.mso.valueDigests?.entries() ?? []).reduce(
-      (prev, [, digests]) => prev + digests.size,
-      0
-    )
+    const totalAttributes = Array.from(
+      document.issuerSigned.issuerAuth.mobileSecurityObject.valueDigests?.entries() ?? []
+    ).reduce((prev, [, digests]) => prev + digests.size, 0)
 
     return {
       general: {
@@ -536,7 +535,7 @@ export class Verifier {
         status: decoded.status,
         documents: decoded.documents.length,
       },
-      validityInfo: document.issuerSigned.issuerAuth.mso.validityInfo,
+      validityInfo: document.issuerSigned.issuerAuth.mobileSecurityObject.validityInfo,
       issuerCertificate: await ctx.x509.getCertificateData({
         certificate: issuerCert,
       }),
@@ -547,10 +546,9 @@ export class Verifier {
           .filter((check) => check.category === 'ISSUER_AUTH' && check.status === 'FAILED')
           .map((check) => check.reason ?? check.check),
         digests: Object.fromEntries(
-          Array.from(document.issuerSigned.issuerAuth.mso.valueDigests?.entries() ?? []).map(([ns, digests]) => [
-            ns,
-            digests.size,
-          ])
+          Array.from(document.issuerSigned.issuerAuth.mobileSecurityObject.valueDigests?.entries() ?? []).map(
+            ([ns, digests]) => [ns, digests.size]
+          )
         ),
       },
       deviceKey: {

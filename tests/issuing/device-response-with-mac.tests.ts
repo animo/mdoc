@@ -167,7 +167,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
     })
 
     it('should contain the validity info', () => {
-      const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.decodedPayload
+      const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.mobileSecurityObject
       expect(validityInfo).toBeDefined()
       expect(validityInfo.signed).toEqual(signed)
       expect(validityInfo.validFrom).toEqual(signed)
@@ -275,7 +275,7 @@ describe.skip('issuing a device response with MAC authentication', () => {
     })
 
     it('should contain the validity info', () => {
-      const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.decodedPayload
+      const { validityInfo } = parsedDocument.issuerSigned.issuerAuth.mobileSecurityObject
       expect(validityInfo).toBeDefined()
       expect(validityInfo.signed).toEqual(signed)
       expect(validityInfo.validFrom).toEqual(signed)
