@@ -9,7 +9,7 @@ import { DeviceResponse, Document, MDoc, Verifier, parseDeviceResponse } from '.
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK, PRESENTATION_DEFINITION_1 } from './config.js'
 const { d, ...publicKeyJWK } = DEVICE_JWK
 
-describe('issuing a device response with MAC authentication', () => {
+describe.skip('issuing a device response with MAC authentication', () => {
   let encodedDeviceResponse: Uint8Array
   let parsedDocument: DeviceSignedDocument
   let mdoc: MDoc

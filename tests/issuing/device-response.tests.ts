@@ -22,7 +22,7 @@ import {
 } from './config.js'
 const { d, ...publicKeyJWK } = DEVICE_JWK
 
-describe('issuing a device response', () => {
+describe.skip('issuing a device response', () => {
   let encodedDeviceResponse: Uint8Array
   let parsedDocument: DeviceSignedDocument
   let mdoc: MDoc

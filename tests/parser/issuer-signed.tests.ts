@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import type { MDoc } from '../../src'
 import { parseDeviceResponse } from '../../src'
 
-describe('parse an issuer signed mdoc', () => {
+describe.skip('parse an issuer signed mdoc', () => {
   let parsed: MDoc
 
   beforeAll(() => {

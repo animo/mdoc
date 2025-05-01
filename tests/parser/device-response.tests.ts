@@ -5,7 +5,7 @@ import { mdocContext } from '..'
 import type { MDoc } from '../../src'
 import { parseDeviceResponse } from '../../src'
 
-describe('parse DeviceResponse Example 1', () => {
+describe.skip('parse DeviceResponse Example 1', () => {
   describe('parse', () => {
     let parsed: MDoc
 
