@@ -115,8 +115,8 @@ describe.skip('issuing a device response', () => {
       await verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
-          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
+          deviceResponse: encodedDeviceResponse,
+          sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
             context: mdocContext,
             clientId,
             responseUri,
@@ -145,8 +145,8 @@ describe.skip('issuing a device response', () => {
             await verifier.verifyDeviceResponse(
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-                encodedDeviceResponse,
-                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
+                deviceResponse: encodedDeviceResponse,
+                sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
                   context: mdocContext,
                   clientId: values.clientId,
                   responseUri: values.responseUri,
@@ -289,8 +289,8 @@ describe.skip('issuing a device response', () => {
       await verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
-          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VPDCApi({
+          deviceResponse: encodedDeviceResponse,
+          sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VPDCApi({
             context: mdocContext,
             clientId,
             origin,
@@ -317,8 +317,8 @@ describe.skip('issuing a device response', () => {
             await verifier.verifyDeviceResponse(
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-                encodedDeviceResponse,
-                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VPDCApi({
+                deviceResponse: encodedDeviceResponse,
+                sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VPDCApi({
                   context: mdocContext,
                   clientId: values.clientId,
                   origin: values.origin,
@@ -419,8 +419,8 @@ describe.skip('issuing a device response', () => {
       await verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
-          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
+          deviceResponse: encodedDeviceResponse,
+          sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
             context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
@@ -448,8 +448,8 @@ describe.skip('issuing a device response', () => {
             await verifier.verifyDeviceResponse(
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-                encodedDeviceResponse,
-                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
+                deviceResponse: encodedDeviceResponse,
+                sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
                   context: mdocContext,
                   readerEngagementBytes: values.readerEngagementBytes,
                   deviceEngagementBytes: values.deviceEngagementBytes,
@@ -531,8 +531,8 @@ describe.skip('issuing a device response', () => {
       await verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
-          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
+          deviceResponse: encodedDeviceResponse,
+          sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
             context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
@@ -560,8 +560,8 @@ describe.skip('issuing a device response', () => {
             await verifier.verifyDeviceResponse(
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-                encodedDeviceResponse,
-                encodedSessionTranscript: getSessionTranscriptBytes(
+                deviceResponse: encodedDeviceResponse,
+                sessionTranscript: getSessionTranscriptBytes(
                   values.readerEngagementBytes,
                   values.deviceEngagementBytes,
                   values.eReaderKeyBytes

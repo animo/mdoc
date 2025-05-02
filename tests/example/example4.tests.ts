@@ -20,9 +20,9 @@ describe.skip('example 4: device response with device attributes', () => {
     await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         ephemeralReaderKey,
-        encodedSessionTranscript,
+        sessionTranscript: encodedSessionTranscript,
       },
       mdocContext
     )

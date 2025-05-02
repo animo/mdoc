@@ -70,7 +70,7 @@ describe.skip('issuing an MDOC', () => {
     await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         onCheck: (verification) => {
           if (verification.category === 'DEVICE_AUTH') {
             return

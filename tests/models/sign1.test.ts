@@ -11,7 +11,7 @@ describe('sign1', () => {
     const sign1 = Sign1.decode(hex.decode(cbor))
 
     expect(sign1.unprotectedHeaders.headers?.has(Header.Algorithm)).toBeTruthy()
-    expect(sign1.unprotectedHeaders.headers?.has(Header.KeyID)).toBeTruthy()
+    expect(sign1.unprotectedHeaders.headers?.has(Header.KeyId)).toBeTruthy()
     expect(sign1.payload).toBeDefined()
     expect(sign1.signature).toBeDefined()
   })

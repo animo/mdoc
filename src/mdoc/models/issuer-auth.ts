@@ -1,6 +1,6 @@
 import { type CborDecodeOptions, DataItem, cborDecode } from '../../cbor/index.js'
 import type { X509Context } from '../../context.js'
-import { CosePayloadInvalidStructure, CosePayloadMustBeDefined } from '../../cose/error.js'
+import { CosePayloadInvalidStructureError, CosePayloadMustBeDefinedError } from '../../cose/error.js'
 import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
 import { MobileSecurityObject, type MobileSecurityObjectStructure } from './mobile-security-object.js'
 
@@ -10,7 +10,7 @@ export type IssuerAuthOptions = Sign1Options
 export class IssuerAuth extends Sign1 {
   public get mobileSecurityObject(): MobileSecurityObject {
     if (!this.payload) {
-      throw new CosePayloadMustBeDefined()
+      throw new CosePayloadMustBeDefinedError()
     }
 
     const dataItem = cborDecode<DataItem<MobileSecurityObjectStructure>>(this.payload, {
@@ -18,7 +18,7 @@ export class IssuerAuth extends Sign1 {
     })
 
     if (!(dataItem instanceof DataItem)) {
-      throw new CosePayloadInvalidStructure()
+      throw new CosePayloadInvalidStructureError()
     }
 
     const mso = MobileSecurityObject.decode(dataItem.buffer)

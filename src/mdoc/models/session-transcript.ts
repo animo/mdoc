@@ -1,4 +1,5 @@
-import { type CborDecodeOptions, CborStructure, cborDecode, cborEncode } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, DataItem, cborDecode, cborEncode } from '../../cbor'
+import type { MdocContext } from '../../context'
 import { DeviceEngagement, type DeviceEngagementStructure } from './device-engagement'
 import { EReaderKey, type EReaderKeyStructure } from './e-reader-key'
 import { NfcHandover, type NfcHandoverStructure } from './nfc-handover'
@@ -16,6 +17,12 @@ export type SessionTranscriptOptions = {
   handover: QrHandover | NfcHandover
 }
 
+/**
+ *
+ * @todo Structure of the SessionTranscript class is very much based on the proximity flow.
+ *       It should be extensible to work with all the different API's
+ *
+ */
 export class SessionTranscript extends CborStructure {
   public deviceEngagement: DeviceEngagement | null
   public eReaderKey: EReaderKey | null
@@ -34,6 +41,70 @@ export class SessionTranscript extends CborStructure {
       this.eReaderKey ? this.eReaderKey.encode({ asDataItem: true }) : null,
       this.handover.encodedStructure(),
     ]
+  }
+
+  public static async calculateSessionTranscriptBytesForOid4VpDcApi(
+    options: { clientId: string; origin: string; verifierGeneratedNonce: string },
+    context: { crypto: MdocContext['crypto'] }
+  ) {
+    return cborEncode(
+      DataItem.fromData([
+        null,
+        null,
+        [
+          'OpenID4VPDCAPIHandover',
+          await context.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([options.origin, options.clientId, options.verifierGeneratedNonce]),
+          }),
+        ],
+      ])
+    )
+  }
+
+  public static async calculateSessionTranscriptBytesForOid4Vp(
+    options: { clientId: string; responseUri: string; verifierGeneratedNonce: string; mdocGeneratedNonce: string },
+    context: { crypto: MdocContext['crypto'] }
+  ) {
+    return cborEncode(
+      DataItem.fromData([
+        null,
+        null,
+        [
+          await context.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([options.clientId, options.mdocGeneratedNonce]),
+          }),
+          await context.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([options.responseUri, options.mdocGeneratedNonce]),
+          }),
+          options.verifierGeneratedNonce,
+        ],
+      ])
+    )
+  }
+
+  public static async calculateSessionTranscriptBytesForWebApi(
+    options: {
+      deviceEngagement: DeviceEngagement
+      eReaderKey: EReaderKey
+      readerEngagementBytes: Uint8Array
+    },
+    context: { crypto: MdocContext['crypto'] }
+  ) {
+    const readerEngagementBytesHash = await context.crypto.digest({
+      bytes: options.readerEngagementBytes,
+      digestAlgorithm: 'SHA-256',
+    })
+
+    return cborEncode(
+      DataItem.fromData([
+        new DataItem({ buffer: options.deviceEngagement.encode() }),
+        new DataItem({ buffer: options.eReaderKey.encode() }),
+        readerEngagementBytesHash,
+      ])
+    )
   }
 
   public static override fromEncodedStructure(encodedStructure: SessionTranscriptStructure): SessionTranscript {

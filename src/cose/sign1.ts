@@ -1,10 +1,12 @@
 import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
-import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
+import type { MdocContext } from '../context.js'
+import { CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
 import { Header, type SignatureAlgorithm } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
 import { coseKeyToJwk } from './key/jwk.js'
+import type { CoseKey } from './key/key.js'
 
 export type Sign1Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
@@ -66,7 +68,7 @@ export class Sign1 extends CborStructure {
     const payload = this.detachedContent ?? this.payload
 
     if (!payload) {
-      throw new CosePayloadMustBeDefined()
+      throw new CosePayloadMustBeDefinedError()
     }
 
     const toBeSigned: Array<unknown> = [
@@ -84,13 +86,13 @@ export class Sign1 extends CborStructure {
       this.unprotectedHeaders.headers?.get(Header.Algorithm)) as SignatureAlgorithm | undefined
 
     if (!algorithm) {
-      throw new CoseInvalidAlgorithm()
+      throw new CoseInvalidAlgorithmError()
     }
 
     const algorithmName = coseKeyToJwk.algorithm(algorithm)
 
     if (!algorithmName) {
-      throw new CoseInvalidAlgorithm()
+      throw new CoseInvalidAlgorithmError()
     }
 
     return algorithmName
@@ -106,6 +108,20 @@ export class Sign1 extends CborStructure {
     }
 
     return Array.isArray(x5chain) ? x5chain : [x5chain]
+  }
+
+  public async addSignature(options: { key: CoseKey }, context: { cose: MdocContext['cose'] }) {
+    const payload = this.payload ?? this.detachedContent
+    if (!payload) {
+      throw new CosePayloadMustBeDefinedError()
+    }
+
+    const signature = await context.cose.sign1.sign({
+      sign1: this,
+      jwk: options.key.jwk,
+    })
+
+    this.signature = signature
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {

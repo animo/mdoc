@@ -16,9 +16,9 @@ describe.skip('example 1: valid device response with full disclosure', () => {
     await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [],
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         ephemeralReaderKey,
-        encodedSessionTranscript,
+        sessionTranscript: encodedSessionTranscript,
         disableCertificateChainValidation: true,
       },
       mdocContext

@@ -355,8 +355,8 @@ export class Verifier {
 
   async verifyDeviceResponse(
     input: {
-      encodedDeviceResponse: Uint8Array
-      encodedSessionTranscript?: Uint8Array
+      deviceResponse: DeviceResponse | Uint8Array
+      sessionTranscript?: SessionTranscript | Uint8Array
       ephemeralReaderKey?: Record<string, unknown> | Uint8Array
       disableCertificateChainValidation?: boolean
       trustedCertificates: Uint8Array[]
@@ -369,10 +369,12 @@ export class Verifier {
       cose: MdocContext['cose']
     }
   ): Promise<DeviceResponse> {
-    const { encodedDeviceResponse, now, trustedCertificates } = input
     const onCheck = input.onCheck ?? defaultVerificationCallback
 
-    const deviceResponse = DeviceResponse.decode(encodedDeviceResponse)
+    const deviceResponse =
+      input.deviceResponse instanceof DeviceResponse
+        ? input.deviceResponse
+        : DeviceResponse.decode(input.deviceResponse)
 
     onCheck({
       status: deviceResponse.version ? 'PASSED' : 'FAILED',
@@ -416,9 +418,9 @@ export class Verifier {
         {
           issuerAuth,
           disableCertificateChainValidation: input.disableCertificateChainValidation ?? false,
-          now,
+          now: input.now,
           onCheckG: onCheck,
-          trustedCertificates,
+          trustedCertificates: input.trustedCertificates,
         },
         ctx
       )
@@ -427,8 +429,10 @@ export class Verifier {
         {
           document,
           ephemeralPrivateKey: input.ephemeralReaderKey,
-          sessionTranscript: input.encodedSessionTranscript
-            ? SessionTranscript.decode(input.encodedSessionTranscript)
+          sessionTranscript: input.sessionTranscript
+            ? input.sessionTranscript instanceof SessionTranscript
+              ? input.sessionTranscript
+              : SessionTranscript.decode(input.sessionTranscript)
             : undefined,
           onCheckG: onCheck,
         },
@@ -459,7 +463,7 @@ export class Verifier {
     const dr: VerificationAssessment[] = []
     const decoded = await this.verifyDeviceResponse(
       {
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         ...options,
         onCheck: (check) => dr.push(check),
         trustedCertificates,

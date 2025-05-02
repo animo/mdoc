@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest'
-import { DeviceResponseOld, Verifier } from '../../../src/'
+import { SessionTranscript, Verifier } from '../../../src/'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
 import { issuerCertificate } from './issuerCertificate'
@@ -15,14 +15,16 @@ describe('French playground mdoc implementation', () => {
     await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [new Uint8Array(issuerCertificate.rawData)],
-        encodedDeviceResponse: deviceResponse,
-        encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
-          context: mdocContext,
-          clientId,
-          responseUri,
-          verifierGeneratedNonce,
-          mdocGeneratedNonce,
-        }),
+        deviceResponse: deviceResponse,
+        sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
+          {
+            clientId,
+            responseUri,
+            verifierGeneratedNonce,
+            mdocGeneratedNonce,
+          },
+          mdocContext
+        ),
         now: new Date('2021-09-25'),
       },
       mdocContext

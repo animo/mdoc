@@ -1,4 +1,4 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { DeviceSignedItems, type DeviceSignedItemsStructure } from './device-signed-items'
 import type { Namespace } from './namespace'
 
@@ -33,5 +33,10 @@ export class DeviceNamespaces extends CborStructure {
     })
 
     return new DeviceNamespaces({ deviceNamespaces })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceNamespaces {
+    const structure = cborDecode<DeviceNamespacesStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return DeviceNamespaces.fromEncodedStructure(structure)
   }
 }

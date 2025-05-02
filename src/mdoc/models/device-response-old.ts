@@ -376,7 +376,7 @@ export class DeviceResponseOld {
     })
 
     const unprotectedHeaders = kid
-      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToBytes(kid)]]) })
+      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyId, stringToBytes(kid)]]) })
       : undefined
 
     const mac0 = new Mac0({ protectedHeaders, unprotectedHeaders, detachedContent: deviceAuthenticationBytes })
@@ -401,7 +401,7 @@ export class DeviceResponseOld {
 
     const { kid } = this.devicePrivateKey
     const unprotectedHeaders = kid
-      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyID, stringToBytes(kid)]]) })
+      ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyId, stringToBytes(kid)]]) })
       : undefined
     const protectedHeaders = new ProtectedHeaders({
       protectedHeaders: new Map([[Header.Algorithm, SignatureAlgorithm[this.alg]]]),

@@ -1,4 +1,4 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { IssuerAuth, type IssuerAuthStructure } from './issuer-auth'
 import { IssuerNamespace, type IssuerNamespaceStructure } from './issuer-namespace'
 
@@ -50,5 +50,10 @@ export class IssuerSigned extends CborStructure {
       issuerNamespaces: structure.nameSpaces ? IssuerNamespace.fromEncodedStructure(structure.nameSpaces) : undefined,
       issuerAuth: IssuerAuth.fromEncodedStructure(structure.issuerAuth),
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): IssuerSigned {
+    const structure = cborDecode<IssuerSignedStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return IssuerSigned.fromEncodedStructure(structure)
   }
 }

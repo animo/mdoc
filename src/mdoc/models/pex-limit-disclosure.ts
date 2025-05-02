@@ -1,32 +1,50 @@
-import type { IssuerSignedItem } from '../issuer-signed-item.js'
-import type { DeviceRequestNameSpaces } from './device-request-old.js'
-import type { IssuerSignedDocument } from './issuer-signed-document.js'
-import type { MDocOld } from './mdoc.js'
+import type { DataElementIdentifier } from './data-element-identifier.js'
+import type { DataElementValue } from './data-element-value.js'
+import { DeviceNamespaces } from './device-namespaces.js'
+import type { DeviceResponse } from './device-response.js'
+import { DeviceSignedItems } from './device-signed-items.js'
+import type { DocType } from './doctype.js'
+import type { Document } from './document.js'
+import type { IssuerNamespace } from './issuer-namespace.js'
+import type { IssuerSignedItem } from './issuer-signed-item.js'
+import type { IntentToRetain } from './itent-to-retain.js'
+import type { Namespace } from './namespace.js'
 import type { InputDescriptor } from './presentation-definition.js'
-import type { DocTypeOld, IssuerNameSpaces } from './types.js'
 
 export const limitDisclosureToDeviceRequestNameSpaces = (
-  mdoc: IssuerSignedDocument,
-  deviceRequestNameSpaces: DeviceRequestNameSpaces
-): Map<string, IssuerSignedItem[]> => {
-  const nameSpaces: Map<string, IssuerSignedItem[]> = new Map()
+  document: Document,
+  itemsRequestNamespaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+): DeviceNamespaces => {
+  const deviceNamespaces: Map<string, DeviceSignedItems> = new Map()
 
-  for (const [nameSpace, nameSpaceFields] of deviceRequestNameSpaces.entries()) {
-    const nsAttrs = mdoc.issuerSigned.nameSpaces.get(nameSpace) ?? []
-    const digests = Array.from(nameSpaceFields.entries()).map(([elementIdentifier, _]) => {
-      const digest = prepareDigest(elementIdentifier, nsAttrs)
-      if (!digest) {
+  for (const [nameSpace, nameSpaceFields] of itemsRequestNamespaces.entries()) {
+    const nsAttrs = document.issuerSigned.issuerNamespaces?.issuerNamespaces.get(nameSpace) ?? []
+    const issuerSignedItems = Array.from(nameSpaceFields.entries()).map(([elementIdentifier, _]) => {
+      const issuerSignedItem = prepareIssuerSignedItem(elementIdentifier, nsAttrs)
+
+      if (!issuerSignedItem) {
         throw new Error(`No matching field found for '${elementIdentifier}'`)
       }
-      return digest
+
+      return issuerSignedItem
     })
 
-    nameSpaces.set(nameSpace, digests)
+    const deviceSignedItems = new Map<DataElementIdentifier, DataElementValue>()
+
+    for (const issuerSignedItem of issuerSignedItems) {
+      deviceSignedItems.set(issuerSignedItem.elementIdentifier, issuerSignedItem.elementValue)
+    }
+
+    deviceNamespaces.set(nameSpace, new DeviceSignedItems({ deviceSignedItems }))
   }
-  return nameSpaces
+
+  return new DeviceNamespaces({ deviceNamespaces })
 }
 
-const prepareDigest = (elementIdentifier: string, nsAttrs: IssuerSignedItem[]): IssuerSignedItem | null => {
+const prepareIssuerSignedItem = (
+  elementIdentifier: string,
+  nsAttrs: Array<IssuerSignedItem>
+): IssuerSignedItem | null => {
   if (elementIdentifier.startsWith('age_over_')) {
     const digest = handleAgeOverNN(elementIdentifier, nsAttrs)
     return digest
@@ -38,14 +56,14 @@ const prepareDigest = (elementIdentifier: string, nsAttrs: IssuerSignedItem[]): 
 
 const prepareDigestForInputDescriptor = (
   paths: string[],
-  issuerNameSpaces: IssuerNameSpaces
-): { nameSpace: string; digest: IssuerSignedItem } | null => {
+  issuerNameSpaces?: IssuerNamespace
+): { namespace: string; digest: IssuerSignedItem } | null => {
   for (const path of paths) {
-    const { nameSpace, elementIdentifier } = parsePath(path)
-    const nsAttrs = issuerNameSpaces.get(nameSpace) ?? []
+    const { nameSpace: namespace, elementIdentifier } = parsePath(path)
+    const nsAttrs = issuerNameSpaces?.issuerNamespaces.get(namespace) ?? []
 
-    const digest = prepareDigest(elementIdentifier, nsAttrs)
-    if (digest) return { nameSpace, digest }
+    const digest = prepareIssuerSignedItem(elementIdentifier, nsAttrs)
+    if (digest) return { namespace, digest }
   }
   return null
 }
@@ -110,10 +128,10 @@ const handleAgeOverNN = (request: string, attributes: IssuerSignedItem[]): Issue
   return attributes[item.index]
 }
 
-export const findMdocMatchingDocType = (mdoc: MDocOld, docType: DocTypeOld) => {
-  const matchingMdoc = mdoc.documents.filter((document) => document.docType === docType)
+export const findMdocMatchingDocType = (deviceResponse: DeviceResponse, docType: DocType) => {
+  const matchingMdoc = deviceResponse.documents?.filter((document) => document.docType === docType)
 
-  if (!matchingMdoc[0]) {
+  if (!matchingMdoc || !matchingMdoc[0]) {
     throw new Error(`Cannot limit the disclosure. No credential is matching the requested DocType '${docType}'`)
   }
 
@@ -125,27 +143,37 @@ export const findMdocMatchingDocType = (mdoc: MDocOld, docType: DocTypeOld) => {
 }
 
 export const limitDisclosureToInputDescriptor = (
-  mdoc: IssuerSignedDocument,
+  document: Document,
   inputDescriptor: InputDescriptor
-): Map<string, IssuerSignedItem[]> => {
-  const nameSpaces: Map<string, IssuerSignedItem[]> = new Map()
+): DeviceNamespaces => {
+  const deviceNamespaces: Map<string, DeviceSignedItems> = new Map()
 
   for (const field of inputDescriptor.constraints.fields) {
-    const result = prepareDigestForInputDescriptor(field.path, mdoc.issuerSigned.nameSpaces)
+    const result = prepareDigestForInputDescriptor(field.path, document.issuerSigned.issuerNamespaces)
+
     if (!result && field.optional) {
       continue
     }
+
     if (!result) {
       throw new Error(
         `Cannot limit the disclosure to the input descriptor. No matching field found for '${field.path.join('.')}'`
       )
     }
 
-    const { nameSpace, digest } = result
-    const entry = nameSpaces.get(nameSpace)
-    if (!entry) nameSpaces.set(nameSpace, [digest])
-    else entry.push(digest)
+    const { namespace, digest } = result
+    const entry = deviceNamespaces.get(namespace)
+    if (!entry) {
+      deviceNamespaces.set(namespace, issuerSignedItemToDeviceSignedItems(digest))
+    } else {
+      entry.deviceSignedItems.set(digest.elementIdentifier, digest.elementValue)
+    }
   }
 
-  return nameSpaces
+  return new DeviceNamespaces({ deviceNamespaces })
 }
+
+const issuerSignedItemToDeviceSignedItems = (issuerSignedItem: IssuerSignedItem) =>
+  new DeviceSignedItems({
+    deviceSignedItems: new Map([[issuerSignedItem.elementIdentifier, issuerSignedItem.elementValue]]),
+  })

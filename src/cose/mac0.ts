@@ -2,11 +2,14 @@ import { CborStructure } from '../cbor/cbor-structure.js'
 import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, addExtension } from '../cbor/index.js'
 import { cborDecode, cborEncode } from '../cbor/parser.js'
-import { CoseInvalidAlgorithm, CosePayloadMustBeDefined } from './error.js'
+import type { MdocContext } from '../context.js'
+import type { SessionTranscript } from '../mdoc/index.js'
+import { CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
 import { Header, type MacAlgorithm } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
 import { coseKeyToJwk } from './key/jwk.js'
+import type { CoseKey } from './key/key.js'
 
 export type Mac0Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
@@ -68,7 +71,7 @@ export class Mac0 extends CborStructure {
     const payload = this.detachedContent ?? this.payload
 
     if (!payload) {
-      throw new CosePayloadMustBeDefined()
+      throw new CosePayloadMustBeDefinedError()
     }
 
     const toBeAuthenticated: Array<unknown> = ['MAC0', this.protectedHeaders]
@@ -85,16 +88,30 @@ export class Mac0 extends CborStructure {
       this.unprotectedHeaders.headers?.get(Header.Algorithm)) as MacAlgorithm | undefined
 
     if (!algorithm) {
-      throw new CoseInvalidAlgorithm()
+      throw new CoseInvalidAlgorithmError()
     }
 
     const algorithmName = coseKeyToJwk.algorithm(algorithm)
 
     if (!algorithmName) {
-      throw new CoseInvalidAlgorithm()
+      throw new CoseInvalidAlgorithmError()
     }
 
     return algorithmName
+  }
+
+  public async addTag(
+    options: { privateKey: CoseKey; ephemeralKey: CoseKey; sessionTranscript: SessionTranscript },
+    context: { cose: MdocContext['cose']; crypto: MdocContext['crypto'] }
+  ) {
+    const ephemeralMacKeyJwk = await context.crypto.calculateEphemeralMacKeyJwk({
+      privateKey: options.privateKey.encode(),
+      publicKey: options.ephemeralKey.encode(),
+      sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
+    })
+
+    const tag = await context.cose.mac0.sign({ mac0: this, jwk: ephemeralMacKeyJwk })
+    this.tag = tag
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {

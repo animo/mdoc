@@ -19,9 +19,9 @@ describe.skip('verifier', () => {
         verifier.verifyDeviceResponse(
           {
             trustedCertificates: trustedCerts,
-            encodedDeviceResponse,
+            deviceResponse: encodedDeviceResponse,
             ephemeralReaderKey,
-            encodedSessionTranscript,
+            sessionTranscript: encodedSessionTranscript,
           },
           mdocContext
         )
@@ -44,9 +44,9 @@ describe.skip('verifier', () => {
       try {
         await verifier.verifyDeviceResponse(
           {
-            encodedDeviceResponse,
+            deviceResponse: encodedDeviceResponse,
             ephemeralReaderKey,
-            encodedSessionTranscript,
+            sessionTranscript: encodedSessionTranscript,
             trustedCertificates: trustedCerts,
             onCheck: (verification) => {
               if (verification.check.includes('Issuer certificate must be valid') && verification.status === 'FAILED') {

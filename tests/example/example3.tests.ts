@@ -21,9 +21,9 @@ describe.skip('example 3: device response with partial and tampered disclosure',
       verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
+          deviceResponse: encodedDeviceResponse,
           ephemeralReaderKey,
-          encodedSessionTranscript,
+          sessionTranscript: encodedSessionTranscript,
         },
         mdocContext
       )
@@ -36,9 +36,9 @@ describe.skip('example 3: device response with partial and tampered disclosure',
     const { documents } = await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         ephemeralReaderKey,
-        encodedSessionTranscript,
+        sessionTranscript: encodedSessionTranscript,
         onCheck: (v) => {
           if (v.category === 'DATA_INTEGRITY') {
             return

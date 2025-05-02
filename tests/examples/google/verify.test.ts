@@ -1,5 +1,5 @@
 import { describe, it } from 'vitest'
-import { DeviceResponseOld, Verifier } from '../../../src'
+import { SessionTranscript, Verifier } from '../../../src'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
 import { rootCertificate } from './rootCertificate'
@@ -20,13 +20,15 @@ describe('Google CM Wallet mdoc implementation', () => {
           // to trust the signing certificate for now
           new Uint8Array(signingCertificate.rawData),
         ],
-        encodedDeviceResponse: deviceResponse,
-        encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VPDCApi({
-          context: mdocContext,
-          origin,
-          clientId,
-          verifierGeneratedNonce,
-        }),
+        deviceResponse,
+        sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDcApi(
+          {
+            origin,
+            clientId,
+            verifierGeneratedNonce,
+          },
+          mdocContext
+        ),
         now: new Date('2025-02-20'),
       },
       mdocContext

@@ -1,6 +1,11 @@
 import { concatBytes } from '@noble/curves/abstract/utils'
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
-import { CoseDNotDefined, CoseInvalidKtyForRaw, CoseInvalidValueForKty, CoseXNotDefined } from '../error'
+import {
+  CoseDNotDefinedError,
+  CoseInvalidKtyForRawError,
+  CoseInvalidValueForKtyError,
+  CoseXNotDefinedError,
+} from '../error'
 import type { Curve } from './curve'
 import { coseKeyToJwk, coseOptionsJwkMap, jwkCoseOptionsMap, jwkToCoseKey } from './jwk'
 import type { KeyOps } from './key-operation'
@@ -115,7 +120,7 @@ export class CoseKey extends CborStructure {
 
   public static fromJwk(jwk: Record<string, unknown>) {
     if (!('kty' in jwk)) {
-      throw new CoseInvalidValueForKty('JWK does not contain required kty value')
+      throw new CoseInvalidValueForKtyError('JWK does not contain required kty value')
     }
 
     const options = Object.entries(jwk).reduce(
@@ -159,15 +164,15 @@ export class CoseKey extends CborStructure {
 
   public get publicKey() {
     if (this.keyType !== KeyType.Ec) {
-      throw new CoseInvalidKtyForRaw()
+      throw new CoseInvalidKtyForRawError()
     }
 
     if (!this.x) {
-      throw new CoseXNotDefined()
+      throw new CoseXNotDefinedError()
     }
 
     if (!this.y) {
-      throw new CoseXNotDefined()
+      throw new CoseXNotDefinedError()
     }
 
     return concatBytes(Uint8Array.from([0x04]), this.x, this.y)
@@ -175,11 +180,11 @@ export class CoseKey extends CborStructure {
 
   public get privateKey() {
     if (this.keyType !== KeyType.Ec) {
-      throw new CoseInvalidKtyForRaw()
+      throw new CoseInvalidKtyForRawError()
     }
 
     if (!this.d) {
-      throw new CoseDNotDefined()
+      throw new CoseDNotDefinedError()
     }
 
     return this.d

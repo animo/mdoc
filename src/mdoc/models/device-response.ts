@@ -1,12 +1,35 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
-import { CborDecodeError } from '../../cbor/error'
+import type { MdocContext } from '../../context'
+import {
+  CoseEphemeralMacKeyIsRequiredError,
+  CoseInvalidAlgorithmError,
+  type CoseKey,
+  Header,
+  ProtectedHeaders,
+  UnprotectedHeaders,
+} from '../../cose'
+import { PresentationDefinitionOrDocRequestsAreRequiredError } from '../errors'
+import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
+import { DeviceAuthentication } from './device-authentication'
+import { DeviceMac } from './device-mac'
+import type { DeviceNamespaces } from './device-namespaces'
+import { DeviceSignature } from './device-signature'
+import { DeviceSigned } from './device-signed'
+import { DocRequest } from './doc-request'
 import { Document, type DocumentStructure } from './document'
 import { DocumentError, type DocumentErrorStructure } from './document-error'
+import {
+  findMdocMatchingDocType,
+  limitDisclosureToDeviceRequestNameSpaces,
+  limitDisclosureToInputDescriptor,
+} from './pex-limit-disclosure'
+import type { InputDescriptor, PresentationDefinition } from './presentation-definition'
+import type { SessionTranscript } from './session-transcript'
 
 export type DeviceResponseStructure = {
   version: string
   documents?: Array<DocumentStructure>
-  documentErrors?: Array<DocumentError>
+  documentErrors?: Array<DocumentErrorStructure>
   status: number
 }
 
@@ -41,7 +64,7 @@ export class DeviceResponse extends CborStructure {
     }
 
     if (this.documentErrors) {
-      structure.documentErrors = this.documentErrors
+      structure.documentErrors = this.documentErrors?.map((d) => d.encodedStructure())
     }
 
     structure.status = this.status
@@ -49,29 +72,118 @@ export class DeviceResponse extends CborStructure {
     return structure as DeviceResponseStructure
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
-    const map = cborDecode<Map<string, unknown>>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+  public static override fromEncodedStructure(
+    encodedStructure: DeviceResponseStructure | Map<unknown, unknown>
+  ): DeviceResponse {
+    let structure = encodedStructure as DeviceResponseStructure
 
-    const documents = map.get('documents') as undefined | Array<Map<string, unknown>>
-
-    if (documents && !Array.isArray(documents)) {
-      throw new CborDecodeError('documents is found on device response, but not an array')
+    if (encodedStructure instanceof Map) {
+      structure = Object.fromEntries(encodedStructure.entries()) as DeviceResponseStructure
     }
-
-    const decodedDocuments = documents?.map(Document.fromEncodedStructure)
-
-    const documentErrors = map.get('documentErrors') as undefined | Array<DocumentErrorStructure>
-    if (documentErrors && !Array.isArray(documentErrors)) {
-      throw new CborDecodeError('documentErrors is found on device response, but not an array')
-    }
-
-    const decodedDocumentErrors = documentErrors?.map(DocumentError.fromEncodedStructure)
 
     return new DeviceResponse({
-      version: map.get('version') as string,
-      documents: decodedDocuments,
-      documentErrors: decodedDocumentErrors,
-      status: map.get('status') as number,
+      version: structure.version,
+      status: structure.status,
+      documents: structure.documents?.map(Document.fromEncodedStructure),
+      documentErrors: structure.documentErrors?.map(DocumentError.fromEncodedStructure),
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceResponse {
+    const structure = cborDecode<DeviceResponseStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return DeviceResponse.fromEncodedStructure(structure)
+  }
+
+  public async sign(
+    options: {
+      presentationDefinition?: PresentationDefinition
+      docRequests?: Array<DocRequest>
+      sessionTranscript: SessionTranscript
+      useSignature: boolean
+      signingKey: CoseKey
+      ephemeralMacKey?: CoseKey
+    },
+    context: { crypto: MdocContext['crypto']; cose: MdocContext['cose'] }
+  ) {
+    const requests = options.presentationDefinition?.input_descriptors ?? options.docRequests
+
+    if (!requests) {
+      throw new PresentationDefinitionOrDocRequestsAreRequiredError()
+    }
+
+    const isDeviceRequest = (request: InputDescriptor | DocRequest) => request instanceof DocRequest
+
+    await Promise.all(
+      requests.map(async (request) => {
+        let document: Document
+        let deviceNamespaces: DeviceNamespaces
+
+        if (isDeviceRequest(request)) {
+          const { docType } = request.itemsRequest
+          document = findMdocMatchingDocType(this, docType)
+          deviceNamespaces = limitDisclosureToDeviceRequestNameSpaces(document, request.itemsRequest.namespaces)
+        } else {
+          document = findMdocMatchingDocType(this, request.id)
+          deviceNamespaces = limitDisclosureToInputDescriptor(document, request)
+        }
+
+        const deviceAuthenticationBytes = new DeviceAuthentication({
+          sessionTranscript: options.sessionTranscript,
+          docType: document.docType,
+          deviceNamespaces: document.deviceSigned.deviceNamespaces,
+        }).encode({ asDataItem: true })
+
+        const unprotectedHeaders = options.signingKey.keyId
+          ? new UnprotectedHeaders({ unprotectedHeaders: new Map([[Header.KeyId, options.signingKey.keyId]]) })
+          : new UnprotectedHeaders({})
+
+        const protectedHeaders = new ProtectedHeaders({
+          protectedHeaders: new Map([[Header.Algorithm, options.signingKey.algorithm]]),
+        })
+
+        if (!options.signingKey.algorithm) {
+          throw new CoseInvalidAlgorithmError('Algorithm not defined on key, but is required for signing')
+        }
+
+        const deviceAuthOptions: DeviceAuthOptions = {}
+        if (options.useSignature) {
+          const deviceSignature = new DeviceSignature({
+            unprotectedHeaders,
+            protectedHeaders,
+            detachedContent: deviceAuthenticationBytes,
+          })
+
+          await deviceSignature.addSignature({ key: options.signingKey }, context)
+
+          deviceAuthOptions.deviceSignature = deviceSignature
+        } else {
+          if (!options.ephemeralMacKey) {
+            throw new CoseEphemeralMacKeyIsRequiredError()
+          }
+
+          const deviceMac = new DeviceMac({
+            protectedHeaders,
+            unprotectedHeaders,
+            detachedContent: deviceAuthenticationBytes,
+          })
+
+          await deviceMac.addTag(
+            {
+              privateKey: options.signingKey,
+              ephemeralKey: options.ephemeralMacKey,
+              sessionTranscript: options.sessionTranscript,
+            },
+            context
+          )
+
+          deviceAuthOptions.deviceMac = deviceMac
+        }
+
+        document.deviceSigned = new DeviceSigned({
+          deviceNamespaces,
+          deviceAuth: new DeviceAuth(deviceAuthOptions),
+        })
+      })
+    )
   }
 }

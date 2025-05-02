@@ -20,9 +20,9 @@ describe.skip('example 1: valid device response with full disclosure', () => {
     await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         ephemeralReaderKey,
-        encodedSessionTranscript,
+        sessionTranscript: encodedSessionTranscript,
       },
       mdocContext
     )
@@ -32,7 +32,7 @@ describe.skip('example 1: valid device response with full disclosure', () => {
     await verifier.verifyDeviceResponse(
       {
         trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-        encodedDeviceResponse,
+        deviceResponse: encodedDeviceResponse,
         onCheck: (verification) => {
           if (verification.category === 'DEVICE_AUTH') {
             return

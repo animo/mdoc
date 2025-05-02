@@ -111,9 +111,9 @@ describe.skip('issuing a device response with MAC authentication', () => {
       await verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
+          deviceResponse: encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
+          sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
             context: mdocContext,
             clientId,
             responseUri,
@@ -141,10 +141,10 @@ describe.skip('issuing a device response with MAC authentication', () => {
             const verifier = new Verifier()
             await verifier.verifyDeviceResponse(
               {
-                encodedDeviceResponse,
+                deviceResponse: encodedDeviceResponse,
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
+                sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForOID4VP({
                   context: mdocContext,
                   clientId: values.clientId,
                   responseUri: values.responseUri,
@@ -220,9 +220,9 @@ describe.skip('issuing a device response with MAC authentication', () => {
       await verifier.verifyDeviceResponse(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-          encodedDeviceResponse,
+          deviceResponse: encodedDeviceResponse,
           ephemeralReaderKey: ephemeralPrivateKey,
-          encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
+          sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
             context: mdocContext,
             readerEngagementBytes,
             deviceEngagementBytes,
@@ -251,9 +251,9 @@ describe.skip('issuing a device response with MAC authentication', () => {
             await verifier.verifyDeviceResponse(
               {
                 trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-                encodedDeviceResponse,
+                deviceResponse: encodedDeviceResponse,
                 ephemeralReaderKey: ephemeralPrivateKey,
-                encodedSessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
+                sessionTranscript: await DeviceResponseOld.calculateSessionTranscriptBytesForWebApi({
                   context: mdocContext,
                   readerEngagementBytes: values.readerEngagementBytes,
                   deviceEngagementBytes: values.deviceEngagementBytes,

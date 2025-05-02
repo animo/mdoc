@@ -184,7 +184,7 @@ export class DocumentOld {
     const headers = new Map(
       kid
         ? [
-            [Header.KeyID, kid],
+            [Header.KeyId, kid],
             [Header.X5Chain, issuerPublicKeyBuffer],
           ]
         : [[Header.X5Chain, issuerPublicKeyBuffer]]
