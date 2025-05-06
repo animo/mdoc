@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Verifier, hex } from '../src'
 import { mdocContext } from './context'
 
-describe.skip('verifier', () => {
+describe('verifier', () => {
   describe('parseDeviceResponse', () => {
     it('should throw when validating outside validFrom/validTo ', async () => {
       const encodedDeviceResponse = hex.decode(

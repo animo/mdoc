@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Verifier, hex } from '../../src'
 import { mdocContext } from '../context'
 
-describe.skip('example 1: valid device response with full disclosure', () => {
+describe('example 1: valid device response with full disclosure (disabled cert check)', () => {
   const ephemeralReaderKey = hex.decode('534b526561646572')
   const encodedSessionTranscript = hex.decode(
     'd818589e83f6f68466313233343536782b437131616e506238765a55356a354330643768637362754a4c4270496177554a4944515269324562776234785c687474703a2f2f6c6f63616c686f73743a343030302f6170692f70726573656e746174696f6e5f726571756573742f64633839393964662d643665612d346338342d393938352d3337613862383161383265632f63616c6c6261636b6761626364656667'
@@ -25,7 +25,7 @@ describe.skip('example 1: valid device response with full disclosure', () => {
     )
   })
 
-  it('should return blabla ', async () => {
+  it('should return diagnostic information correctly', async () => {
     const diagnostic = await verifier.getDiagnosticInformation(
       encodedDeviceResponse,
       {

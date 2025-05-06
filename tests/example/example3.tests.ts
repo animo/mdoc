@@ -1,12 +1,12 @@
 import fs from 'node:fs'
 import { X509Certificate } from '@peculiar/x509'
 import { describe, expect, it } from 'vitest'
-import { Verifier, defaultCallback, hex } from '../../src'
+import { Verifier, hex } from '../../src'
 import { mdocContext } from '../context'
 
 export const ISSUER_CERTIFICATE = fs.readFileSync(`${__dirname}/issuer.pem`, 'utf-8')
 
-describe.skip('example 3: device response with partial and tampered disclosure', () => {
+describe('example 3: device response with partial and tampered disclosure', () => {
   const ephemeralReaderKey = hex.decode('534b526561646572')
   const encodedSessionTranscript = hex.decode(
     'd818589e83f6f68466313233343536782b437131616e506238765a55356a354330643768637362754a4c4270496177554a4944515269324562776234785c687474703a2f2f6c6f63616c686f73743a343030302f6170692f70726573656e746174696f6e5f726571756573742f64633839393964662d643665612d346338342d393938352d3337613862383161383265632f63616c6c6261636b6761626364656667'
@@ -43,17 +43,16 @@ describe.skip('example 3: device response with partial and tampered disclosure',
           if (v.category === 'DATA_INTEGRITY') {
             return
           }
-          defaultCallback(v)
         },
       },
       mdocContext
     )
-    const issuerAuth = documents[0]?.issuerSigned.issuerAuth
+    const issuerAuth = documents?.[0]?.issuerSigned.issuerAuth
     if (!issuerAuth) throw new Error('IssuerAuth not found')
 
     const ns = 'org.iso.18013.5.1'
     expect(
-      await documents[0]?.issuerSigned.nameSpaces
+      await documents?.[0]?.issuerSigned.issuerNamespaces?.issuerNamespaces
         .get(ns)
         ?.find((f) => f.elementIdentifier === 'family_name')
         ?.isValid(ns, issuerAuth, mdocContext)
@@ -72,43 +71,4 @@ describe.skip('example 3: device response with partial and tampered disclosure',
     )
     expect(di.attributes.find((a) => a.id === 'family_name')?.isValid).toBe(false)
   })
-
-  // it('should be able to verify without ephemeralReaderKey and encodedSessionTrasncript', async () => {
-  //   await verifier.verify(deviceResponse, {
-  //     onCheck: (verification, original) => {
-  //       if (verification.category === 'DEVICE_AUTH') {
-  //         return;
-  //       }
-  //       original(verification);
-  //     },
-  //   });
-  // });
-
-  // it('should contain only the disclosed fields', async () => {
-  //   const { documents } = await verifier.verify(deviceResponse, {
-  //     ephemeralReaderKey,
-  //     encodedSessionTranscript,
-  //   });
-
-  //   const numberOfAttributes = documents[0]
-  //     .issuerSigned
-  //     .nameSpaces['org.iso.18013.5.1']
-  //     .length;
-
-  //   expect(numberOfAttributes).toBe(6);
-  // });
-
-  // it('should validate the digest of all fields', async () => {
-  //   const { documents } = await verifier.verify(deviceResponse, {
-  //     ephemeralReaderKey,
-  //     encodedSessionTranscript,
-  //   });
-
-  //   const allFieldsAreValid = (await Promise.all(documents[0]
-  //     .issuerSigned
-  //     .nameSpaces['org.iso.18013.5.1']
-  //     .map((field) => field.isValid()))).every(Boolean);
-
-  //   expect(allFieldsAreValid).toBe(true);
-  // });
 })

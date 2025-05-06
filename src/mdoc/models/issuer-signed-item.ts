@@ -1,5 +1,6 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
+import { compareBytes } from '../../utils'
 import type { DataElementIdentifier } from './data-element-identifier'
 import type { DataElementValue } from './data-element-value'
 import type { IssuerAuth } from './issuer-auth'
@@ -34,13 +35,33 @@ export class IssuerSignedItem extends CborStructure {
   }
 
   public async isValid(namespace: Namespace, issuerAuth: IssuerAuth, ctx: { crypto: MdocContext['crypto'] }) {
-    // TODO
-    return true
+    const digest = await ctx.crypto.digest({
+      digestAlgorithm: issuerAuth.mobileSecurityObject.digestAlgorithm,
+      bytes: this.encode({ asDataItem: true }),
+    })
+
+    const valueDigests = issuerAuth.mobileSecurityObject.valueDigests.valueDigests
+    const digests = valueDigests.get(namespace)
+
+    if (!digests) {
+      return false
+    }
+
+    const expectedDigest = digests.get(this.digestId)
+
+    return expectedDigest && compareBytes(digest, expectedDigest)
   }
 
-  public matchCertificate(namespace: Namespace, issuerAuth: IssuerAuth, ctx: { crypto: MdocContext['crypto'] }) {
-    // TODO
-    return true
+  public matchCertificate(issuerAuth: IssuerAuth, ctx: { x509: MdocContext['x509'] }) {
+    if (this.elementIdentifier === 'issuing_country') {
+      return this.elementValue === issuerAuth.getIssuingCountry(ctx)
+    }
+
+    if (this.elementIdentifier === 'issuing_jurisdiction') {
+      return this.elementValue === issuerAuth.getIssuingStateOrProvince(ctx)
+    }
+
+    return false
   }
 
   public encodedStructure(): IssuerSignedItemStructure {
@@ -53,17 +74,19 @@ export class IssuerSignedItem extends CborStructure {
   }
 
   public static override fromEncodedStructure(
-    encodedStructure: IssuerSignedItemStructure | Map<string, unknown>
+    encodedStructure: IssuerSignedItemStructure | Map<unknown, unknown>
   ): IssuerSignedItem {
     let structure = encodedStructure as IssuerSignedItemStructure
 
     if (encodedStructure instanceof Map) {
-      structure = {
-        digestID: encodedStructure.get('digestID') as IssuerSignedItemStructure['digestID'],
-        random: encodedStructure.get('random') as IssuerSignedItemStructure['random'],
-        elementIdentifier: encodedStructure.get('elementIdentifier') as IssuerSignedItemStructure['elementIdentifier'],
-        elementValue: encodedStructure.get('elementValue') as IssuerSignedItemStructure['elementValue'],
-      }
+      structure = Object.fromEntries(encodedStructure.entries()) as IssuerSignedItemStructure
+    }
+
+    // Fix for driving_privileges
+    if (structure.elementIdentifier === 'driving_privileges') {
+      structure.elementValue = (structure.elementValue as Array<Map<unknown, unknown>>).map((ev) =>
+        Object.fromEntries(ev.entries())
+      )
     }
 
     return new IssuerSignedItem({
@@ -72,5 +95,10 @@ export class IssuerSignedItem extends CborStructure {
       elementIdentifier: structure.elementIdentifier,
       elementValue: structure.elementValue,
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): IssuerSignedItem {
+    const structure = cborDecode<IssuerSignedItemStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return IssuerSignedItem.fromEncodedStructure(structure)
   }
 }

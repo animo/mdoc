@@ -3,7 +3,6 @@ import type { MdocContext, X509Context } from '../context.js'
 import { CoseKey } from '../cose'
 import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
 import { defaultVerificationCallback, onCategoryCheck } from './check-callback.js'
-import { MDL_NAMESPACE } from './issuer-signed-item.js'
 import { DeviceResponse } from './models/device-response.js'
 import { DeviceSignedDocument } from './models/device-signed-document.js'
 import type { Document } from './models/document.js'
@@ -12,6 +11,8 @@ import type { IssuerSignedItem } from './models/issuer-signed-item.js'
 import { SessionTranscript } from './models/session-transcript.js'
 import type { DiagnosticInformation } from './models/types.js'
 import { calculateDeviceAutenticationBytes } from './utils.js'
+
+const MDL_NAMESPADCE = 'org.iso.18013.5.1'
 
 const DIGEST_ALGS = {
   'SHA-256': 'sha256',
@@ -309,7 +310,7 @@ export class Verifier {
             })
           })
 
-        if (ns === MDL_NAMESPACE) {
+        if (ns === MDL_NAMESPADCE) {
           const certificateData = await ctx.x509.getCertificateData({
             certificate: issuerAuth.certificate,
           })
@@ -324,7 +325,7 @@ export class Verifier {
           } else {
             const invalidCountry = verifications
               .filter((v) => v.ns === ns && v.ev.elementIdentifier === 'issuing_country')
-              .find((v) => !v.isValid || !v.ev.matchCertificate(ns, issuerAuth, ctx))
+              .find((v) => !v.isValid || !v.ev.matchCertificate(issuerAuth, ctx))
 
             onCheck({
               status: invalidCountry ? 'FAILED' : 'PASSED',
@@ -337,7 +338,7 @@ export class Verifier {
 
             const invalidJurisdiction = verifications
               .filter((v) => v.ns === ns && v.ev.elementIdentifier === 'issuing_jurisdiction')
-              .find((v) => !v.isValid || !v.ev.matchCertificate(ns, issuerAuth, ctx))
+              .find((v) => !v.isValid || !v.ev.matchCertificate(issuerAuth, ctx))
 
             onCheck({
               status: invalidJurisdiction ? 'FAILED' : 'PASSED',
@@ -491,7 +492,7 @@ export class Verifier {
                 id: item.elementIdentifier,
                 value: item.elementValue,
                 isValid,
-                matchCertificate: item.matchCertificate(ns, issuerAuth, ctx),
+                matchCertificate: item.matchCertificate(issuerAuth, ctx),
               }
             })
           )

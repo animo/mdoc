@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { SessionTranscript, Verifier } from '../../../src'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
@@ -9,12 +9,12 @@ import { issuerCertificate } from './issuerCertificate'
  * @note issuer signed item seems to be encoded as a map, but it should be an object
  *
  */
-describe('Ubique mdoc implementation', () => {
-  test('verify DeviceResponse from Ubique', async () => {
-    const verifierGeneratedNonce = 'abcdefg'
-    const mdocGeneratedNonce = '123456'
-    const clientId = 'Cq1anPb8vZU5j5C0d7hcsbuJLBpIawUJIDQRi2Ebwb4'
-    const responseUri = 'http://localhost:4000/api/presentation_request/dc8999df-d6ea-4c84-9985-37a8b81a82ec/callback'
+describe('French playground mdoc implementation', () => {
+  it('should verify DeviceResponse from French playground', async () => {
+    const verifierGeneratedNonce = 'abcdefgh1234567890'
+    const mdocGeneratedNonce = ''
+    const clientId = 'example.com'
+    const responseUri = 'https://example.com/12345/response'
 
     const verifier = new Verifier()
     await expect(
@@ -32,7 +32,7 @@ describe('Ubique mdoc implementation', () => {
               },
               mdocContext
             ),
-            now: new Date('2025-02-01'),
+            now: new Date('2021-09-25'),
           },
           mdocContext
         )
