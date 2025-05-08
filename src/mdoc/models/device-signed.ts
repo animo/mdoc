@@ -30,15 +30,12 @@ export class DeviceSigned extends CborStructure {
   }
 
   public static override fromEncodedStructure(
-    encodedStructure: DeviceSignedStructure | Map<string, unknown>
+    encodedStructure: DeviceSignedStructure | Map<unknown, unknown>
   ): DeviceSigned {
     let structure = encodedStructure as DeviceSignedStructure
 
     if (encodedStructure instanceof Map) {
-      structure = {
-        nameSpaces: encodedStructure.get('nameSpaces') as DeviceSignedStructure['nameSpaces'],
-        deviceAuth: encodedStructure.get('deviceAuth') as DeviceSignedStructure['deviceAuth'],
-      }
+      structure = Object.fromEntries(encodedStructure.entries()) as DeviceSignedStructure
     }
 
     return new DeviceSigned({

@@ -1,6 +1,20 @@
 import { Buffer } from 'buffer'
 
-const transformer = (type: BufferEncoding) => ({
+type EncodingTypes =
+  | 'ascii'
+  | 'utf8'
+  | 'utf-8'
+  | 'utf16le'
+  | 'utf-16le'
+  | 'ucs2'
+  | 'ucs-2'
+  | 'base64'
+  | 'base64url'
+  | 'latin1'
+  | 'binary'
+  | 'hex'
+
+const transformer = (type: EncodingTypes) => ({
   decode: (s: string) => Uint8Array.from(Buffer.from(s, type)),
   encode: (b: Uint8Array) => Buffer.from(b).toString(type),
 })

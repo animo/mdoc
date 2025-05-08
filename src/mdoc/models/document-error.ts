@@ -1,15 +1,15 @@
 import { CborStructure } from '../../cbor'
 import type { DocType } from './doctype'
-import type { ErrorCodeOld } from './mdoc'
+import type { ErrorCode } from './error-code'
 
-export type DocumentErrorStructure = Map<DocType, ErrorCodeOld>
+export type DocumentErrorStructure = Map<DocType, ErrorCode>
 
 export type DocumentErrorOptions = {
-  documentError: Map<DocType, ErrorCodeOld>
+  documentError: Map<DocType, ErrorCode>
 }
 
 export class DocumentError extends CborStructure {
-  public documentError: Map<DocType, ErrorCodeOld>
+  public documentError: Map<DocType, ErrorCode>
 
   public constructor(options: DocumentErrorOptions) {
     super()

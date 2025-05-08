@@ -50,7 +50,6 @@ npm i @animo-id/mdoc
 
 ```javascript
 import { Verifier } from "@animo-id/mdoc";
-import { inspect } from "node:util";
 import fs from "node:fs";
 
 (async () => {
@@ -62,44 +61,10 @@ import fs from "node:fs";
   const ephemeralReaderKey = Buffer.from(ephemeralReaderKeyHex, "hex");
 
   const trustedCerts = [fs.readFileSync("./caCert1.pem") /*, ... */];
-  const verifier = new Verifier(trustedCerts);
-  const mdoc = await verifier.verify(encodedDeviceResponse, {
+  const mdoc = await Verifier.verify(encodedDeviceResponse, {
     ephemeralReaderKey,
     encodedSessionTranscript,
   });
-
-  //at this point the issuer and device signature are valids.
-  inspect(mdoc);
-})();
-```
-
-### Getting diagnostic information
-
-```javascript
-import { Verifier } from "@animo-id/mdoc";
-import { inspect } from "node:util";
-import fs from "node:fs";
-
-(async () => {
-  const encodedDeviceResponse = Buffer.from(encodedDeviceResponseHex, "hex");
-  const encodedSessionTranscript = Buffer.from(
-    encodedSessionTranscriptHex,
-    "hex"
-  );
-  const ephemeralReaderKey = Buffer.from(ephemeralReaderKeyHex, "hex");
-
-  const trustedCerts = [fs.readFileSync("./caCert1.pem") /*, ... */];
-  const verifier = new Verifier(trustedCerts);
-
-  const diagnosticInfo = await verifier.getDiagnosticInformation(
-    encodedDeviceResponse,
-    {
-      ephemeralReaderKey,
-      encodedSessionTranscript,
-    }
-  );
-
-  inspect(diagnosticInfo);
 })();
 ```
 
@@ -107,7 +72,6 @@ import fs from "node:fs";
 
 ```js
 import { MDoc, Document } from "@animo-id/mdoc";
-import { inspect } from "node:util";
 
 (async () => {
   const document = await new Document("org.iso.18013.5.1.mDL")
@@ -128,7 +92,6 @@ import { inspect } from "node:util";
 
   const mdoc = new MDoc([document]).encode();
 
-  inspect(encoded);
 })();
 ```
 

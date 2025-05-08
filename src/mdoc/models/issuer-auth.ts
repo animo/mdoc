@@ -1,7 +1,8 @@
 import { type CborDecodeOptions, DataItem, cborDecode } from '../../cbor/index.js'
-import type { X509Context } from '../../context.js'
+import type { MdocContext } from '../../context.js'
 import { CosePayloadInvalidStructureError, CosePayloadMustBeDefinedError } from '../../cose/error.js'
 import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
+import { type VerificationCallback, defaultVerificationCallback, onCategoryCheck } from '../check-callback.js'
 import { MobileSecurityObject, type MobileSecurityObjectStructure } from './mobile-security-object.js'
 
 export type IssuerAuthStructure = Sign1Structure
@@ -26,30 +27,75 @@ export class IssuerAuth extends Sign1 {
     return mso
   }
 
-  public get certificateChain() {
-    return this.x5chain ?? []
-  }
+  public async validate(
+    options: {
+      verificationCallback?: VerificationCallback
+      now?: Date
+      trustedCertificates?: Array<Uint8Array>
+      disableCertificateChainValidation?: boolean
+    },
+    ctx: Pick<MdocContext, 'x509' | 'cose'>
+  ) {
+    const verificationCallback = options.verificationCallback ?? defaultVerificationCallback
+    const now = options.now ?? new Date()
+    const disableCertificateChainValidation = options.disableCertificateChainValidation ?? false
+    const trustedCertificates = options.trustedCertificates ?? []
 
-  public get certificate() {
-    return this.certificateChain[0]
-  }
+    const onCheck = onCategoryCheck(verificationCallback, 'ISSUER_AUTH')
 
-  public getIssuingCountry(ctx: { x509: X509Context }) {
-    const countryName = ctx.x509.getIssuerNameField({
+    onCheck({
+      status: this.getIssuingCountry(ctx) ? 'PASSED' : 'FAILED',
+      check: "Country name (C) must be present in the issuer certificate's subject distinguished name",
+    })
+
+    if (!disableCertificateChainValidation) {
+      try {
+        if (!trustedCertificates[0]) {
+          throw new Error('No trusted certificates found. Cannot verify issuer signature.')
+        }
+
+        await ctx.x509.validateCertificateChain({
+          trustedCertificates,
+          x5chain: this.certificateChain,
+        })
+
+        onCheck({
+          status: 'PASSED',
+          check: 'Issuer certificate must be valid',
+        })
+      } catch (err) {
+        onCheck({
+          status: 'FAILED',
+          check: 'Issuer certificate must be valid',
+          reason: err instanceof Error ? err.message : 'Unknown error',
+        })
+      }
+    }
+
+    const isSignatureValid = await this.verify({}, ctx)
+
+    onCheck({
+      status: isSignatureValid ? 'PASSED' : 'FAILED',
+      check: 'Issuer auth signature is invalid',
+    })
+
+    const { validityInfo } = this.mobileSecurityObject
+
+    const { notAfter, notBefore } = await ctx.x509.getCertificateData({
       certificate: this.certificate,
-      field: 'C',
-    })[0]
+    })
 
-    return countryName
-  }
+    onCheck({
+      status: validityInfo.validateSigned(notBefore, notAfter) ? 'FAILED' : 'PASSED',
+      check: 'The MSO signed date must be within the validity period of the certificate',
+      reason: `The MSO signed date (${validityInfo.signed.toUTCString()}) must be within the validity period of the certificate (${notBefore.toUTCString()} to ${notAfter.toUTCString()})`,
+    })
 
-  public getIssuingStateOrProvince(ctx: { x509: X509Context }) {
-    const stateOrProvince = ctx.x509.getIssuerNameField({
-      certificate: this.certificate,
-      field: 'ST',
-    })[0]
-
-    return stateOrProvince
+    onCheck({
+      status: now < validityInfo.validFrom || now > validityInfo.validUntil ? 'FAILED' : 'PASSED',
+      check: 'The MSO must be valid at the time of verification',
+      reason: `The MSO must be valid at the time of verification (${now.toUTCString()})`,
+    })
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {

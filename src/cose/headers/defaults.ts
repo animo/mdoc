@@ -40,3 +40,5 @@ export enum EncryptionAlgorithm {
   A256GCM = 3,
   Direct = -6,
 }
+
+export type DigestAlgorithm = 'SHA-256' | 'SHA-384' | 'SHA-512'

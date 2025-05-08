@@ -83,7 +83,7 @@ export class Mac0 extends CborStructure {
     return cborEncode(toBeAuthenticated)
   }
 
-  public get signatureAlgorithmName() {
+  public get signatureAlgorithmName(): MacAlgorithm {
     const algorithm = (this.protectedHeaders.headers?.get(Header.Algorithm) ??
       this.unprotectedHeaders.headers?.get(Header.Algorithm)) as MacAlgorithm | undefined
 
@@ -108,6 +108,7 @@ export class Mac0 extends CborStructure {
       privateKey: options.privateKey.encode(),
       publicKey: options.ephemeralKey.encode(),
       sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
+      info: 'EMacKey',
     })
 
     const tag = await context.cose.mac0.sign({ mac0: this, jwk: ephemeralMacKeyJwk })

@@ -1,12 +1,32 @@
 import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import type { MdocContext } from '../../context'
+import type { CoseKey } from '../../cose'
 import { Mac0, type Mac0Structure } from '../../cose/mac0'
+import type { SessionTranscript } from './session-transcript'
 
 export type DeviceMacStructure = Mac0Structure
 
 export class DeviceMac extends Mac0 {
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceMac {
-    const data = cborDecode<DeviceMacStructure>(bytes, options)
-    return DeviceMac.fromEncodedStructure(data)
+  public async verify(
+    options: {
+      publicKey: CoseKey
+      privateKey: CoseKey
+      info?: 'EMacKey' | 'SKReader' | 'SKDevice'
+      sessionTranscript: SessionTranscript
+    },
+    ctx: Pick<MdocContext, 'crypto' | 'cose'>
+  ) {
+    const jwk = await ctx.crypto.calculateEphemeralMacKeyJwk({
+      privateKey: options.privateKey.privateKey,
+      publicKey: options.publicKey.publicKey,
+      sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
+      info: options.info ?? 'EMacKey',
+    })
+
+    return ctx.cose.mac0.verify({
+      mac0: this,
+      jwk,
+    })
   }
 
   public static override fromEncodedStructure(encodedStructure: DeviceMacStructure): DeviceMac {
@@ -16,5 +36,10 @@ export class DeviceMac extends Mac0 {
       payload: encodedStructure[2],
       tag: encodedStructure[3],
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceMac {
+    const data = cborDecode<DeviceMacStructure>(bytes, options)
+    return DeviceMac.fromEncodedStructure(data)
   }
 }

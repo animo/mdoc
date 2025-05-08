@@ -1,4 +1,4 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import { DeviceSigned, type DeviceSignedStructure } from './device-signed'
 import type { DocType } from './doctype'
 import type { ErrorItems } from './error-items'
@@ -47,16 +47,11 @@ export class Document extends CborStructure {
     return structure
   }
 
-  public static override fromEncodedStructure(encodedStructure: DocumentStructure | Map<string, unknown>): Document {
+  public static override fromEncodedStructure(encodedStructure: DocumentStructure | Map<unknown, unknown>): Document {
     let structure = encodedStructure as DocumentStructure
 
     if (encodedStructure instanceof Map) {
-      structure = {
-        docType: encodedStructure.get('docType') as DocumentStructure['docType'],
-        issuerSigned: encodedStructure.get('issuerSigned') as DocumentStructure['issuerSigned'],
-        deviceSigned: encodedStructure.get('deviceSigned') as DocumentStructure['deviceSigned'],
-        errors: encodedStructure.get('errors') as DocumentStructure['errors'],
-      }
+      structure = Object.fromEntries(encodedStructure.entries()) as DocumentStructure
     }
 
     return new Document({
@@ -65,5 +60,20 @@ export class Document extends CborStructure {
       deviceSigned: DeviceSigned.fromEncodedStructure(structure.deviceSigned),
       errors: structure.errors,
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Document {
+    const structure = cborDecode<DocumentStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return Document.fromEncodedStructure(structure)
+  }
+
+  public getIssuerNamespace(namespace: Namespace) {
+    const issuerNamespaces = this.issuerSigned.issuerNamespaces?.issuerNamespaces
+
+    if (!issuerNamespaces) {
+      return undefined
+    }
+
+    return issuerNamespaces.get(namespace)
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SessionTranscript, Verifier } from '../../../src'
+import { DeviceResponse, SessionTranscript } from '../../../src'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
 import { rootCertificate } from './rootCertificate'
@@ -16,10 +16,9 @@ describe('Google CM Wallet mdoc implementation', () => {
     const origin = 'https://ellis-occurrence-ac-smoking.trycloudflare.com'
     const clientId = `web-origin:${origin}`
 
-    const verifier = new Verifier()
     await expect(
       async () =>
-        await verifier.verifyDeviceResponse(
+        await DeviceResponse.decode(deviceResponse).validate(
           {
             trustedCertificates: [
               new Uint8Array(rootCertificate.rawData),
@@ -27,7 +26,6 @@ describe('Google CM Wallet mdoc implementation', () => {
               // to trust the signing certificate for now
               new Uint8Array(signingCertificate.rawData),
             ],
-            deviceResponse,
             sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDcApi(
               {
                 origin,

@@ -11,8 +11,8 @@ import type { CoseKey } from './key/key.js'
 export type Sign1Structure = [Uint8Array, Map<unknown, unknown>, Uint8Array | null, Uint8Array]
 
 export type Sign1Options = {
-  protectedHeaders: ProtectedHeaders | ProtectedHeaderOptions['protectedHeaders']
-  unprotectedHeaders: UnprotectedHeaders | UnprotectedHeadersOptions['unprotectedHeaders']
+  protectedHeaders?: ProtectedHeaders | ProtectedHeaderOptions['protectedHeaders']
+  unprotectedHeaders?: UnprotectedHeaders | UnprotectedHeadersOptions['unprotectedHeaders']
   payload?: Uint8Array | null
   signature?: Uint8Array
 
@@ -64,6 +64,32 @@ export class Sign1 extends CborStructure {
     ]
   }
 
+  public get certificateChain() {
+    return this.x5chain ?? []
+  }
+
+  public get certificate() {
+    return this.certificateChain[0]
+  }
+
+  public getIssuingCountry(ctx: { x509: MdocContext['x509'] }) {
+    const countryName = ctx.x509.getIssuerNameField({
+      certificate: this.certificate,
+      field: 'C',
+    })[0]
+
+    return countryName
+  }
+
+  public getIssuingStateOrProvince(ctx: { x509: MdocContext['x509'] }) {
+    const stateOrProvince = ctx.x509.getIssuerNameField({
+      certificate: this.certificate,
+      field: 'ST',
+    })[0]
+
+    return stateOrProvince
+  }
+
   public get toBeSigned() {
     const payload = this.detachedContent ?? this.payload
 
@@ -73,7 +99,7 @@ export class Sign1 extends CborStructure {
 
     const toBeSigned: Array<unknown> = [
       'Signature1',
-      this.protectedHeaders.encode(),
+      this.protectedHeaders.encodedStructure(),
       this.externalAad ?? new Uint8Array(),
       payload,
     ]
@@ -110,18 +136,42 @@ export class Sign1 extends CborStructure {
     return Array.isArray(x5chain) ? x5chain : [x5chain]
   }
 
-  public async addSignature(options: { key: CoseKey }, context: { cose: MdocContext['cose'] }) {
+  public async addSignature(options: { signingKey: CoseKey }, ctx: { cose: MdocContext['cose'] }) {
     const payload = this.payload ?? this.detachedContent
     if (!payload) {
       throw new CosePayloadMustBeDefinedError()
     }
 
-    const signature = await context.cose.sign1.sign({
+    const signature = await ctx.cose.sign1.sign({
       sign1: this,
-      jwk: options.key.jwk,
+      key: options.signingKey,
     })
 
     this.signature = signature
+  }
+
+  public async verify(options: { key?: CoseKey }, ctx: { cose: MdocContext['cose']; x509: MdocContext['x509'] }) {
+    const publicKey =
+      options.key?.jwk ??
+      (await ctx.x509.getPublicKey({
+        certificate: this.certificate,
+        alg: this.signatureAlgorithmName,
+      }))
+
+    return await ctx.cose.sign1.verify({
+      sign1: this,
+      jwk: publicKey,
+    })
+  }
+
+  public static fromEncodedSignature1(signature1: Uint8Array) {
+    const structure = cborDecode<[string, Uint8Array, Uint8Array, Uint8Array]>(signature1, { mapsAsObjects: false })
+
+    return new Sign1({
+      protectedHeaders: ProtectedHeaders.decode(structure[1]),
+      externalAad: structure[2],
+      payload: structure[3],
+    })
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
@@ -143,7 +193,7 @@ addExtension({
   tag: Sign1.tag,
   // TODO: why is the tag not being used?
   encode(instance: Sign1, encodeFn: (obj: unknown) => Uint8Array) {
-    return encodeFn(instance.encodedStructure())
+    return encodeFn(instance)
   },
   decode: Sign1.fromEncodedStructure,
 })

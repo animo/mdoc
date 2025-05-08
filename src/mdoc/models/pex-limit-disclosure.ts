@@ -1,24 +1,23 @@
 import type { DataElementIdentifier } from './data-element-identifier.js'
 import type { DataElementValue } from './data-element-value.js'
 import { DeviceNamespaces } from './device-namespaces.js'
-import type { DeviceResponse } from './device-response.js'
 import { DeviceSignedItems } from './device-signed-items.js'
+import type { DocRequest } from './doc-request.js'
 import type { DocType } from './doctype.js'
 import type { Document } from './document.js'
 import type { IssuerNamespace } from './issuer-namespace.js'
 import type { IssuerSignedItem } from './issuer-signed-item.js'
-import type { IntentToRetain } from './itent-to-retain.js'
-import type { Namespace } from './namespace.js'
+import type { IssuerSigned } from './issuer-signed.js'
 import type { InputDescriptor } from './presentation-definition.js'
 
 export const limitDisclosureToDeviceRequestNameSpaces = (
-  document: Document,
-  itemsRequestNamespaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+  issuerSigned: IssuerSigned,
+  docRequest: DocRequest
 ): DeviceNamespaces => {
   const deviceNamespaces: Map<string, DeviceSignedItems> = new Map()
 
-  for (const [nameSpace, nameSpaceFields] of itemsRequestNamespaces.entries()) {
-    const nsAttrs = document.issuerSigned.issuerNamespaces?.issuerNamespaces.get(nameSpace) ?? []
+  for (const [nameSpace, nameSpaceFields] of docRequest.itemsRequest.namespaces.entries()) {
+    const nsAttrs = issuerSigned.issuerNamespaces?.issuerNamespaces.get(nameSpace) ?? []
     const issuerSignedItems = Array.from(nameSpaceFields.entries()).map(([elementIdentifier, _]) => {
       const issuerSignedItem = prepareIssuerSignedItem(elementIdentifier, nsAttrs)
 
@@ -128,8 +127,8 @@ const handleAgeOverNN = (request: string, attributes: IssuerSignedItem[]): Issue
   return attributes[item.index]
 }
 
-export const findMdocMatchingDocType = (deviceResponse: DeviceResponse, docType: DocType) => {
-  const matchingMdoc = deviceResponse.documents?.filter((document) => document.docType === docType)
+export const findMdocMatchingDocType = (documents: Array<Document>, docType: DocType) => {
+  const matchingMdoc = documents.filter((document) => document.docType === docType)
 
   if (!matchingMdoc || !matchingMdoc[0]) {
     throw new Error(`Cannot limit the disclosure. No credential is matching the requested DocType '${docType}'`)
@@ -143,13 +142,13 @@ export const findMdocMatchingDocType = (deviceResponse: DeviceResponse, docType:
 }
 
 export const limitDisclosureToInputDescriptor = (
-  document: Document,
+  issuerSigned: IssuerSigned,
   inputDescriptor: InputDescriptor
 ): DeviceNamespaces => {
   const deviceNamespaces: Map<string, DeviceSignedItems> = new Map()
 
   for (const field of inputDescriptor.constraints.fields) {
-    const result = prepareDigestForInputDescriptor(field.path, document.issuerSigned.issuerNamespaces)
+    const result = prepareDigestForInputDescriptor(field.path, issuerSigned.issuerNamespaces)
 
     if (!result && field.optional) {
       continue

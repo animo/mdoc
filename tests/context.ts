@@ -1,9 +1,10 @@
 import { p256 } from '@noble/curves/p256'
+import { sha256 } from '@noble/hashes/sha2'
 import { hkdf } from '@panva/hkdf'
 import * as x509 from '@peculiar/x509'
 import { X509Certificate } from '@peculiar/x509'
 import { base64url, exportJWK, importX509 } from 'jose'
-import { type MdocContext, type X509Context, hex, stringToBytes } from '../src'
+import { CoseKey, type MdocContext, type X509Context, hex, stringToBytes } from '../src'
 
 export const mdocContext: MdocContext = {
   crypto: {
@@ -15,12 +16,12 @@ export const mdocContext: MdocContext = {
       return crypto.getRandomValues(new Uint8Array(length))
     },
     calculateEphemeralMacKeyJwk: async (input) => {
-      const { privateKey, publicKey, sessionTranscriptBytes } = input
+      const { privateKey, publicKey, sessionTranscriptBytes, info } = input
       const ikm = p256.getSharedSecret(hex.encode(privateKey), hex.encode(publicKey), true).slice(1)
       const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', sessionTranscriptBytes))
-      const info = stringToBytes('EMacKey')
+      const infoAsBytes = stringToBytes(info)
       const digest = 'sha256'
-      const result = await hkdf(digest, ikm, salt, info, 32)
+      const result = await hkdf(digest, ikm, salt, infoAsBytes, 32)
 
       return {
         key_ops: ['sign', 'verify'],
@@ -52,20 +53,23 @@ export const mdocContext: MdocContext = {
     },
     sign1: {
       sign: async (input) => {
-        const { jwk, sign1 } = input
-        const data = sign1.toBeSigned
-        const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign'])
-        const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: { name: 'SHA-256' } }, key, data)
-        return new Uint8Array(signature)
+        const { key, sign1 } = input
+
+        const hashed = sha256(sign1.toBeSigned)
+        const sig = p256.sign(hashed, key.privateKey)
+
+        return sig.toCompactRawBytes()
       },
       verify: async (input) => {
         const { sign1, jwk } = input
         const { toBeSigned, signature } = sign1
+
         if (!signature) {
           throw new Error('signature is required for sign1 verification')
         }
-        const key = await crypto.subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
-        return crypto.subtle.verify({ name: 'ECDSA', hash: { name: 'SHA-256' } }, key, signature, toBeSigned)
+
+        const hashed = sha256(toBeSigned)
+        return p256.verify(signature, hashed, CoseKey.fromJwk(jwk).publicKey)
       },
     },
   },

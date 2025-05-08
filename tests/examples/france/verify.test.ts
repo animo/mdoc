@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SessionTranscript, Verifier } from '../../../src'
+import { DeviceResponse, SessionTranscript } from '../../../src'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
 import { issuerCertificate } from './issuerCertificate'
@@ -16,13 +16,11 @@ describe('French playground mdoc implementation', () => {
     const clientId = 'example.com'
     const responseUri = 'https://example.com/12345/response'
 
-    const verifier = new Verifier()
     await expect(
       async () =>
-        await verifier.verifyDeviceResponse(
+        await DeviceResponse.decode(deviceResponse).validate(
           {
             trustedCertificates: [new Uint8Array(issuerCertificate.rawData)],
-            deviceResponse: deviceResponse,
             sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
               {
                 clientId,

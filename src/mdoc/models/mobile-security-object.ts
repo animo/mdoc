@@ -1,7 +1,7 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import type { DigestAlgorithm } from '../../cose'
 import { DeviceKeyInfo, type DeviceKeyInfoStructure } from './device-key-info'
 import type { DocType } from './doctype'
-import type { DigestAlgorithm } from './types'
 import { ValidityInfo, type ValidityInfoStructure } from './validity-info'
 import { ValueDigests, type ValueDigestsStructure } from './value-digests'
 
@@ -15,7 +15,7 @@ export type MobileSecurityObjectStructure = {
 }
 
 export type MobileSecurityObjectOptions = {
-  version: string
+  version?: string
   digestAlgorithm: DigestAlgorithm
   docType: DocType
   valueDigests: ValueDigests
@@ -33,7 +33,7 @@ export class MobileSecurityObject extends CborStructure {
 
   public constructor(options: MobileSecurityObjectOptions) {
     super()
-    this.version = options.version
+    this.version = options.version ?? '1.0'
     this.digestAlgorithm = options.digestAlgorithm
     this.docType = options.docType
     this.validityInfo = options.validityInfo

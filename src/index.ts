@@ -1,4 +1,4 @@
-export { DataItem, cborEncode, cborDecode } from './cbor'
+export { DataItem, cborEncode, cborDecode, DateOnly } from './cbor'
 export * from './context.js'
 export * from './mdoc'
 export * from './cose'
