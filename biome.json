@@ -30,6 +30,7 @@
   "linter": {
     "enabled": true,
     "rules": {
+      "recommended": true,
       "style": {
         "useLiteralEnumMembers": "off"
       },
@@ -39,12 +40,10 @@
       "performance": {
         "noAccumulatingSpread": "off"
       },
-      "recommended": true,
       "complexity": {
-        "noForEach": "off"
+        "noStaticOnlyClass": "off"
       },
       "correctness": {
-        "recommended": true,
         "noUnusedImports": "error"
       }
     }

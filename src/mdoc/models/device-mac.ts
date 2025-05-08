@@ -16,7 +16,7 @@ export class DeviceMac extends Mac0 {
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
-    const jwk = await ctx.crypto.calculateEphemeralMacKeyJwk({
+    const key = await ctx.crypto.calculateEphemeralMacKey({
       privateKey: options.privateKey.privateKey,
       publicKey: options.publicKey.publicKey,
       sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
@@ -25,7 +25,7 @@ export class DeviceMac extends Mac0 {
 
     return ctx.cose.mac0.verify({
       mac0: this,
-      jwk,
+      key,
     })
   }
 

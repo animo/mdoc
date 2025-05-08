@@ -28,15 +28,15 @@ import {
 export class IssuerSignedBuilder {
   private docType: DocType
   private namespaces: IssuerNamespace
-  private ctx: { cose: MdocContext['cose']; crypto: MdocContext['crypto'] }
+  private ctx: Pick<MdocContext, 'cose' | 'crypto'>
 
-  public constructor(docType: DocType, ctx: { cose: MdocContext['cose']; crypto: MdocContext['crypto'] }) {
+  public constructor(docType: DocType, ctx: Pick<MdocContext, 'cose' | 'crypto'>) {
     this.docType = docType
     this.ctx = ctx
     this.namespaces = new IssuerNamespace({ issuerNamespaces: new Map() })
   }
 
-  public addIssuerNamespace(namespace: Namespace, value: Record<string, unknown>) {
+  public addIssuerNamespace(namespace: Namespace, value: Record<string | number, unknown>) {
     const issuerNamespace = this.namespaces.issuerNamespaces.get(namespace) ?? []
 
     const issuerSignedItems = Object.entries(value).map(

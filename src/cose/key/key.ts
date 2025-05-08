@@ -4,6 +4,8 @@ import {
   CoseDNotDefinedError,
   CoseInvalidKtyForRawError,
   CoseInvalidValueForKtyError,
+  CoseKNotDefinedError,
+  CoseKeyTypeNotSupportedForPrivateKeyExtractionError,
   CoseXNotDefinedError,
 } from '../error'
 import type { Curve } from './curve'
@@ -18,8 +20,8 @@ export enum CoseKeyParameter {
   KeyOps = 4,
   BaseIv = 5,
 
-  // EC Key
-  Curve = -1,
+  // EC Key or Oct with K
+  CurveOrK = -1,
   X = -2,
   Y = -3,
   D = -4,
@@ -32,7 +34,7 @@ export type CoseKeyStructure = {
   [CoseKeyParameter.KeyOps]?: Array<KeyOps | string>
   [CoseKeyParameter.BaseIv]?: Uint8Array
 
-  [CoseKeyParameter.Curve]?: Curve
+  [CoseKeyParameter.CurveOrK]?: Curve | Uint8Array
   [CoseKeyParameter.X]?: Uint8Array
   [CoseKeyParameter.Y]?: Uint8Array
 
@@ -51,6 +53,8 @@ export type CoseKeyOptions = {
   y?: Uint8Array
 
   d?: Uint8Array
+
+  k?: Uint8Array
 }
 
 export class CoseKey extends CborStructure {
@@ -66,8 +70,11 @@ export class CoseKey extends CborStructure {
 
   public d?: Uint8Array
 
+  public k?: Uint8Array
+
   public constructor(options: CoseKeyOptions) {
     super()
+
     this.keyType = options.keyType
     this.keyId = options.keyId
     this.algorithm = options.algorithm
@@ -78,6 +85,8 @@ export class CoseKey extends CborStructure {
     this.x = options.x
     this.y = options.y
     this.d = options.d
+
+    this.k = options.k as Uint8Array
   }
 
   public encodedStructure(): CoseKeyStructure {
@@ -100,7 +109,7 @@ export class CoseKey extends CborStructure {
     }
 
     if (this.curve) {
-      structure[CoseKeyParameter.Curve] = this.curve
+      structure[CoseKeyParameter.CurveOrK] = this.curve
     }
 
     if (this.x) {
@@ -113,6 +122,10 @@ export class CoseKey extends CborStructure {
 
     if (this.d) {
       structure[CoseKeyParameter.D] = this.d
+    }
+
+    if (this.k) {
+      structure[CoseKeyParameter.CurveOrK] = this.k
     }
 
     return structure
@@ -144,16 +157,24 @@ export class CoseKey extends CborStructure {
       structure = Object.fromEntries(encodedStructure.entries()) as CoseKeyStructure
     }
 
+    const curve =
+      structure[CoseKeyParameter.KeyType] === KeyType.Ec ? (structure[CoseKeyParameter.CurveOrK] as Curve) : undefined
+    const k =
+      structure[CoseKeyParameter.KeyType] === KeyType.Oct
+        ? (structure[CoseKeyParameter.CurveOrK] as Uint8Array)
+        : undefined
+
     return new CoseKey({
       keyType: structure[CoseKeyParameter.KeyType],
       keyId: structure[CoseKeyParameter.KeyId],
       algorithm: structure[CoseKeyParameter.Algorithm],
       keyOps: structure[CoseKeyParameter.KeyOps],
       baseIv: structure[CoseKeyParameter.BaseIv],
-      curve: structure[CoseKeyParameter.Curve],
+      curve,
       x: structure[CoseKeyParameter.X],
       y: structure[CoseKeyParameter.Y],
       d: structure[CoseKeyParameter.D],
+      k,
     })
   }
 
@@ -179,15 +200,23 @@ export class CoseKey extends CborStructure {
   }
 
   public get privateKey() {
-    if (this.keyType !== KeyType.Ec) {
-      throw new CoseInvalidKtyForRawError()
+    if (this.keyType === KeyType.Ec) {
+      if (!this.d) {
+        throw new CoseDNotDefinedError()
+      }
+
+      return this.d
     }
 
-    if (!this.d) {
-      throw new CoseDNotDefinedError()
+    if (this.keyType === KeyType.Oct) {
+      if (!this.k) {
+        throw new CoseKNotDefinedError()
+      }
+
+      return this.k
     }
 
-    return this.d
+    throw new CoseKeyTypeNotSupportedForPrivateKeyExtractionError()
   }
 
   public get jwk(): Record<string, unknown> {

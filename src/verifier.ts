@@ -1,8 +1,8 @@
-import type { MdocContext } from '../context.js'
-import type { VerificationCallback } from './check-callback.js'
-import { defaultVerificationCallback, onCategoryCheck } from './check-callback.js'
-import type { Document } from './models/document.js'
-import type { IssuerSignedItem } from './models/issuer-signed-item.js'
+import type { MdocContext } from './context.js'
+import type { VerificationCallback } from './mdoc/check-callback.js'
+import { defaultVerificationCallback, onCategoryCheck } from './mdoc/check-callback.js'
+import type { Document } from './mdoc/models/document.js'
+import type { IssuerSignedItem } from './mdoc/models/issuer-signed-item.js'
 
 const MDL_NAMESPADCE = 'org.iso.18013.5.1'
 
@@ -47,23 +47,19 @@ export class Verifier {
           })
         )
 
-        verifications
-          .filter((v) => v.isValid)
-          .forEach((v) => {
-            onCheck({
-              status: 'PASSED',
-              check: `The calculated digest for ${ns}/${v.ev.elementIdentifier} attribute must match the digest in the issuerAuth element`,
-            })
+        for (const verification of verifications.filter((v) => v.isValid)) {
+          onCheck({
+            status: 'PASSED',
+            check: `The calculated digest for ${ns}/${verification.ev.elementIdentifier} attribute must match the digest in the issuerAuth element`,
           })
+        }
 
-        verifications
-          .filter((v) => !v.isValid)
-          .forEach((v) => {
-            onCheck({
-              status: 'FAILED',
-              check: `The calculated digest for ${ns}/${v.ev.elementIdentifier} attribute must match the digest in the issuerAuth element`,
-            })
+        for (const verification of verifications.filter((v) => !v.isValid)) {
+          onCheck({
+            status: 'FAILED',
+            check: `The calculated digest for ${ns}/${verification.ev.elementIdentifier} attribute must match the digest in the issuerAuth element`,
           })
+        }
 
         if (ns === MDL_NAMESPADCE) {
           const certificateData = await ctx.x509.getCertificateData({

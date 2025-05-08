@@ -2,7 +2,7 @@ import { MdlError } from './errors.js'
 
 export interface VerificationAssessment {
   status: 'PASSED' | 'FAILED' | 'WARNING'
-  category: 'DOCUMENT_FORMAT' | 'DEVICE_AUTH' | 'ISSUER_AUTH' | 'DATA_INTEGRITY'
+  category: 'DOCUMENT_FORMAT' | 'DEVICE_AUTH' | 'ISSUER_AUTH' | 'DATA_INTEGRITY' | 'READER_AUTH'
   check: string
   reason?: string
 }

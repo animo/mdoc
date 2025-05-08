@@ -32,7 +32,7 @@ export class SessionEstablishment extends CborStructure {
     },
     ctx: { crypto: MdocContext['crypto'] }
   ) {
-    const key = await ctx.crypto.calculateEphemeralMacKeyJwk({
+    const key = await ctx.crypto.calculateEphemeralMacKey({
       privateKey: options.eDeviceKeyPrivate.privateKey,
       publicKey: options.eReaderKeyPublic.publicKey,
       sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),

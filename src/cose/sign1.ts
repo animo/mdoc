@@ -1,7 +1,7 @@
 import { CborEncodeError } from '../cbor/error.js'
 import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
 import type { MdocContext } from '../context.js'
-import { CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
+import { CoseCertificateNotFoundError, CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
 import { Header, type SignatureAlgorithm } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
 import { UnprotectedHeaders, type UnprotectedHeadersOptions } from './headers/unprotected-headers.js'
@@ -69,7 +69,13 @@ export class Sign1 extends CborStructure {
   }
 
   public get certificate() {
-    return this.certificateChain[0]
+    const [certificate] = this.certificateChain
+
+    if (!certificate) {
+      throw new CoseCertificateNotFoundError()
+    }
+
+    return certificate
   }
 
   public getIssuingCountry(ctx: { x509: MdocContext['x509'] }) {
@@ -152,7 +158,7 @@ export class Sign1 extends CborStructure {
 
   public async verify(options: { key?: CoseKey }, ctx: { cose: MdocContext['cose']; x509: MdocContext['x509'] }) {
     const publicKey =
-      options.key?.jwk ??
+      options.key ??
       (await ctx.x509.getPublicKey({
         certificate: this.certificate,
         alg: this.signatureAlgorithmName,
@@ -160,7 +166,7 @@ export class Sign1 extends CborStructure {
 
     return await ctx.cose.sign1.verify({
       sign1: this,
-      jwk: publicKey,
+      key: publicKey,
     })
   }
 

@@ -1,5 +1,4 @@
 export * from './utils'
 export * from './errors'
-export * from './verifier'
 export * from './check-callback'
 export * from './models'

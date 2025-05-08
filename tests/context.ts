@@ -1,10 +1,11 @@
 import { p256 } from '@noble/curves/p256'
+import { hmac } from '@noble/hashes/hmac'
 import { sha256 } from '@noble/hashes/sha2'
 import { hkdf } from '@panva/hkdf'
 import * as x509 from '@peculiar/x509'
 import { X509Certificate } from '@peculiar/x509'
-import { base64url, exportJWK, importX509 } from 'jose'
-import { CoseKey, type MdocContext, type X509Context, hex, stringToBytes } from '../src'
+import { exportJWK, importX509 } from 'jose'
+import { CoseKey, KeyOps, KeyType, MacAlgorithm, type MdocContext, hex, stringToBytes } from '../src'
 
 export const mdocContext: MdocContext = {
   crypto: {
@@ -15,7 +16,7 @@ export const mdocContext: MdocContext = {
     random: (length: number) => {
       return crypto.getRandomValues(new Uint8Array(length))
     },
-    calculateEphemeralMacKeyJwk: async (input) => {
+    calculateEphemeralMacKey: async (input) => {
       const { privateKey, publicKey, sessionTranscriptBytes, info } = input
       const ikm = p256.getSharedSecret(hex.encode(privateKey), hex.encode(publicKey), true).slice(1)
       const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', sessionTranscriptBytes))
@@ -23,32 +24,29 @@ export const mdocContext: MdocContext = {
       const digest = 'sha256'
       const result = await hkdf(digest, ikm, salt, infoAsBytes, 32)
 
-      return {
-        key_ops: ['sign', 'verify'],
-        ext: true,
-        kty: 'oct',
-        k: base64url.encode(result),
-        alg: 'HS256',
-      }
+      return new CoseKey({
+        keyOps: [KeyOps.Sign, KeyOps.Verify],
+        keyType: KeyType.Oct,
+        k: result,
+        algorithm: MacAlgorithm.HS256,
+      })
     },
   },
 
   cose: {
     mac0: {
       sign: async (input) => {
-        const { jwk, mac0 } = input
-        const tba = mac0.toBeAuthenticated
-        const key = await crypto.subtle.importKey('jwk', jwk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-        return new Uint8Array(await crypto.subtle.sign('HMAC', key, tba))
+        const { key, mac0 } = input
+        return hmac(sha256, key.privateKey, mac0.toBeAuthenticated)
       },
       verify: async (input) => {
-        const { mac0, jwk } = input
-        const { tag, toBeAuthenticated } = mac0
-        if (!tag) {
+        const { mac0, key } = input
+
+        if (!mac0.tag) {
           throw new Error('tag is required for mac0 verification')
         }
-        const key = await crypto.subtle.importKey('jwk', jwk, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
-        return crypto.subtle.verify('HMAC', key, tag, toBeAuthenticated)
+
+        return mac0.tag === hmac(sha256, key.privateKey, mac0.toBeAuthenticated)
       },
     },
     sign1: {
@@ -61,7 +59,7 @@ export const mdocContext: MdocContext = {
         return sig.toCompactRawBytes()
       },
       verify: async (input) => {
-        const { sign1, jwk } = input
+        const { sign1, key } = input
         const { toBeSigned, signature } = sign1
 
         if (!signature) {
@@ -69,7 +67,7 @@ export const mdocContext: MdocContext = {
         }
 
         const hashed = sha256(toBeSigned)
-        return p256.verify(signature, hashed, CoseKey.fromJwk(jwk).publicKey)
+        return p256.verify(signature, hashed, key.publicKey)
       },
     },
   },
@@ -86,7 +84,7 @@ export const mdocContext: MdocContext = {
         extractable: true,
       })
 
-      return (await exportJWK(key)) as unknown as Record<string, unknown>
+      return CoseKey.fromJwk((await exportJWK(key)) as unknown as Record<string, unknown>)
     },
 
     validateCertificateChain: async (input: {
@@ -151,5 +149,5 @@ export const mdocContext: MdocContext = {
         notAfter: certificate.notAfter,
       }
     },
-  } satisfies X509Context,
+  },
 }

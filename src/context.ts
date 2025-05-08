@@ -4,33 +4,6 @@ import type { Sign1 } from './cose/sign1.js'
 
 type MaybePromise<T> = Promise<T> | T
 
-export interface X509Context {
-  getIssuerNameField: (input: {
-    certificate: Uint8Array
-    field: string
-  }) => string[]
-
-  getPublicKey: (input: {
-    certificate: Uint8Array
-    alg: string
-  }) => MaybePromise<Record<string, unknown>>
-
-  validateCertificateChain: (input: {
-    trustedCertificates: Uint8Array[]
-    x5chain: Uint8Array[]
-  }) => MaybePromise<void>
-
-  getCertificateData: (input: { certificate: Uint8Array }) => MaybePromise<{
-    issuerName: string
-    subjectName: string
-    serialNumber: string
-    thumbprint: string
-    notBefore: Date
-    notAfter: Date
-    pem: string
-  }>
-}
-
 export interface MdocContext {
   crypto: {
     random: (length: number) => Uint8Array
@@ -38,12 +11,12 @@ export interface MdocContext {
       digestAlgorithm: DigestAlgorithm
       bytes: Uint8Array
     }) => MaybePromise<Uint8Array>
-    calculateEphemeralMacKeyJwk: (input: {
+    calculateEphemeralMacKey: (input: {
       privateKey: Uint8Array
       publicKey: Uint8Array
       sessionTranscriptBytes: Uint8Array
       info: 'EMacKey' | 'SKReader' | 'SKDevice'
-    }) => MaybePromise<Record<string, unknown>>
+    }) => MaybePromise<CoseKey>
   }
 
   cose: {
@@ -51,20 +24,45 @@ export interface MdocContext {
       sign: (input: { sign1: Sign1; key: CoseKey }) => MaybePromise<Uint8Array>
 
       verify(input: {
-        jwk: Record<string, unknown>
+        key: CoseKey
         sign1: Sign1
       }): MaybePromise<boolean>
     }
 
     mac0: {
-      sign: (input: { jwk: Record<string, unknown>; mac0: Mac0 }) => MaybePromise<Uint8Array>
+      sign: (input: { key: CoseKey; mac0: Mac0 }) => MaybePromise<Uint8Array>
 
       verify(input: {
         mac0: Mac0
-        jwk: Record<string, unknown>
+        key: CoseKey
       }): MaybePromise<boolean>
     }
   }
 
-  x509: X509Context
+  x509: {
+    getIssuerNameField: (input: {
+      certificate: Uint8Array
+      field: string
+    }) => string[]
+
+    getPublicKey: (input: {
+      certificate: Uint8Array
+      alg: string
+    }) => MaybePromise<CoseKey>
+
+    validateCertificateChain: (input: {
+      trustedCertificates: Uint8Array[]
+      x5chain: Uint8Array[]
+    }) => MaybePromise<void>
+
+    getCertificateData: (input: { certificate: Uint8Array }) => MaybePromise<{
+      issuerName: string
+      subjectName: string
+      serialNumber: string
+      thumbprint: string
+      notBefore: Date
+      notAfter: Date
+      pem: string
+    }>
+  }
 }

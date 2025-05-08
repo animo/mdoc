@@ -13,4 +13,7 @@ export class CoseInvalidKtyForRawError extends CoseError {}
 export class CoseXNotDefinedError extends CoseError {}
 export class CoseYNotDefinedError extends CoseError {}
 export class CoseDNotDefinedError extends CoseError {}
+export class CoseKNotDefinedError extends CoseError {}
 export class CoseEphemeralMacKeyIsRequiredError extends CoseError {}
+export class CoseCertificateNotFoundError extends CoseError {}
+export class CoseKeyTypeNotSupportedForPrivateKeyExtractionError extends CoseError {}
