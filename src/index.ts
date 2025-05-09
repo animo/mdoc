@@ -1,5 +1,7 @@
 export { DataItem, cborEncode, cborDecode, DateOnly } from './cbor'
-export * from './context.js'
+
+export * from './context'
+
 export * from './mdoc'
 export * from './cose'
 export * from './utils'

@@ -1,7 +1,6 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { CoseInvalidAlgorithmError, type CoseKey, Header, ProtectedHeaders, UnprotectedHeaders } from '../../cose'
-import { Verifier } from '../../verifier'
 import { type VerificationCallback, defaultVerificationCallback } from '../check-callback'
 import { EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
@@ -140,8 +139,7 @@ export class DeviceResponse extends CborStructure {
         ctx
       )
 
-      // TODO: move
-      await new Verifier().verifyData({ document, verificationCallback: onCheck }, ctx)
+      await document.issuerSigned.validate({ verificationCallback: onCheck }, ctx)
     }
   }
 
