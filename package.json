@@ -6,9 +6,7 @@
   "author": "Animo Solutions",
   "exports": "./src/index.ts",
   "version": "0.6.0",
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "publishConfig": {
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
