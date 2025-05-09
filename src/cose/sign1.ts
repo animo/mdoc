@@ -78,7 +78,7 @@ export class Sign1 extends CborStructure {
     return certificate
   }
 
-  public getIssuingCountry(ctx: { x509: MdocContext['x509'] }) {
+  public getIssuingCountry(ctx: Pick<MdocContext, 'x509'>) {
     const countryName = ctx.x509.getIssuerNameField({
       certificate: this.certificate,
       field: 'C',
@@ -87,7 +87,7 @@ export class Sign1 extends CborStructure {
     return countryName
   }
 
-  public getIssuingStateOrProvince(ctx: { x509: MdocContext['x509'] }) {
+  public getIssuingStateOrProvince(ctx: Pick<MdocContext, 'x509'>) {
     const stateOrProvince = ctx.x509.getIssuerNameField({
       certificate: this.certificate,
       field: 'ST',
@@ -142,7 +142,7 @@ export class Sign1 extends CborStructure {
     return Array.isArray(x5chain) ? x5chain : [x5chain]
   }
 
-  public async addSignature(options: { signingKey: CoseKey }, ctx: { cose: MdocContext['cose'] }) {
+  public async addSignature(options: { signingKey: CoseKey }, ctx: Pick<MdocContext, 'cose'>) {
     const payload = this.payload ?? this.detachedContent
     if (!payload) {
       throw new CosePayloadMustBeDefinedError()
@@ -156,7 +156,7 @@ export class Sign1 extends CborStructure {
     this.signature = signature
   }
 
-  public async verify(options: { key?: CoseKey }, ctx: { cose: MdocContext['cose']; x509: MdocContext['x509'] }) {
+  public async verify(options: { key?: CoseKey }, ctx: Pick<MdocContext, 'cose' | 'x509'>) {
     const publicKey =
       options.key ??
       (await ctx.x509.getPublicKey({

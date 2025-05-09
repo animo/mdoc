@@ -24,9 +24,9 @@ import { DeviceAuthentication } from '../models/device-authentication'
 export class DeviceSignedBuilder {
   private docType: DocType
   private namespaces: DeviceNamespaces
-  private ctx: { cose: MdocContext['cose']; crypto: MdocContext['crypto'] }
+  private ctx: Pick<MdocContext, 'cose' | 'crypto'>
 
-  public constructor(docType: DocType, ctx: { cose: MdocContext['cose']; crypto: MdocContext['crypto'] }) {
+  public constructor(docType: DocType, ctx: Pick<MdocContext, 'cose' | 'crypto'>) {
     this.docType = docType
     this.namespaces = new DeviceNamespaces({ deviceNamespaces: new Map() })
     this.ctx = ctx

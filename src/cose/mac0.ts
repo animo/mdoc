@@ -102,16 +102,16 @@ export class Mac0 extends CborStructure {
 
   public async addTag(
     options: { privateKey: CoseKey; ephemeralKey: CoseKey; sessionTranscript: SessionTranscript },
-    context: { cose: MdocContext['cose']; crypto: MdocContext['crypto'] }
+    ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
-    const ephemeralMacKey = await context.crypto.calculateEphemeralMacKey({
+    const ephemeralMacKey = await ctx.crypto.calculateEphemeralMacKey({
       privateKey: options.privateKey.encode(),
       publicKey: options.ephemeralKey.encode(),
       sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
       info: 'EMacKey',
     })
 
-    const tag = await context.cose.mac0.sign({ mac0: this, key: ephemeralMacKey })
+    const tag = await ctx.cose.mac0.sign({ mac0: this, key: ephemeralMacKey })
     this.tag = tag
   }
 

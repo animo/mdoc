@@ -45,7 +45,7 @@ export class SessionTranscript extends CborStructure {
 
   public static async calculateSessionTranscriptBytesForOid4VpDcApi(
     options: { clientId: string; origin: string; verifierGeneratedNonce: string },
-    context: { crypto: MdocContext['crypto'] }
+    ctx: Pick<MdocContext, 'crypto'>
   ) {
     return cborEncode(
       DataItem.fromData([
@@ -53,7 +53,7 @@ export class SessionTranscript extends CborStructure {
         null,
         [
           'OpenID4VPDCAPIHandover',
-          await context.crypto.digest({
+          await ctx.crypto.digest({
             digestAlgorithm: 'SHA-256',
             bytes: cborEncode([options.origin, options.clientId, options.verifierGeneratedNonce]),
           }),
@@ -64,18 +64,18 @@ export class SessionTranscript extends CborStructure {
 
   public static async calculateSessionTranscriptBytesForOid4Vp(
     options: { clientId: string; responseUri: string; verifierGeneratedNonce: string; mdocGeneratedNonce: string },
-    context: { crypto: MdocContext['crypto'] }
+    ctx: Pick<MdocContext, 'crypto'>
   ) {
     return cborEncode(
       DataItem.fromData([
         null,
         null,
         [
-          await context.crypto.digest({
+          await ctx.crypto.digest({
             digestAlgorithm: 'SHA-256',
             bytes: cborEncode([options.clientId, options.mdocGeneratedNonce]),
           }),
-          await context.crypto.digest({
+          await ctx.crypto.digest({
             digestAlgorithm: 'SHA-256',
             bytes: cborEncode([options.responseUri, options.mdocGeneratedNonce]),
           }),
@@ -91,9 +91,9 @@ export class SessionTranscript extends CborStructure {
       eReaderKey: EReaderKey
       readerEngagementBytes: Uint8Array
     },
-    context: { crypto: MdocContext['crypto'] }
+    ctx: Pick<MdocContext, 'crypto'>
   ) {
-    const readerEngagementBytesHash = await context.crypto.digest({
+    const readerEngagementBytesHash = await ctx.crypto.digest({
       bytes: options.readerEngagementBytes,
       digestAlgorithm: 'SHA-256',
     })

@@ -34,7 +34,7 @@ export class IssuerSignedItem extends CborStructure {
     this.elementValue = options.elementValue
   }
 
-  public async isValid(namespace: Namespace, issuerAuth: IssuerAuth, ctx: { crypto: MdocContext['crypto'] }) {
+  public async isValid(namespace: Namespace, issuerAuth: IssuerAuth, ctx: Pick<MdocContext, 'crypto'>) {
     const digest = await ctx.crypto.digest({
       digestAlgorithm: issuerAuth.mobileSecurityObject.digestAlgorithm,
       bytes: this.encode({ asDataItem: true }),
@@ -52,7 +52,7 @@ export class IssuerSignedItem extends CborStructure {
     return expectedDigest && compareBytes(digest, expectedDigest)
   }
 
-  public matchCertificate(issuerAuth: IssuerAuth, ctx: { x509: MdocContext['x509'] }) {
+  public matchCertificate(issuerAuth: IssuerAuth, ctx: Pick<MdocContext, 'x509'>) {
     if (this.elementIdentifier === 'issuing_country') {
       return this.elementValue === issuerAuth.getIssuingCountry(ctx)
     }

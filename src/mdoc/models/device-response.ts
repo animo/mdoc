@@ -161,7 +161,7 @@ export class DeviceResponse extends CborStructure {
         signingKey: CoseKey
       }
     },
-    context: { crypto: MdocContext['crypto']; cose: MdocContext['cose'] }
+    ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
     if (!(options.mac && options.signature) || (options.mac && options.signature)) {
       throw new EitherSignatureOrMacMustBeProvidedError()
@@ -207,7 +207,7 @@ export class DeviceResponse extends CborStructure {
             detachedContent: deviceAuthenticationBytes,
           })
 
-          await deviceSignature.addSignature({ signingKey }, context)
+          await deviceSignature.addSignature({ signingKey }, ctx)
 
           deviceAuthOptions.deviceSignature = deviceSignature
         } else {
@@ -223,7 +223,7 @@ export class DeviceResponse extends CborStructure {
               ephemeralKey: (options.mac as Required<typeof options.mac>).ephemeralKey,
               sessionTranscript: options.sessionTranscript,
             },
-            context
+            ctx
           )
 
           deviceAuthOptions.deviceMac = deviceMac
@@ -258,12 +258,12 @@ export class DeviceResponse extends CborStructure {
         signingKey: CoseKey
       }
     },
-    context: { crypto: MdocContext['crypto']; cose: MdocContext['cose'] }
+    ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
     return await DeviceResponse.create(
       limitDisclosureToDeviceRequestNameSpaces,
       { inputDescriptorsOrRequests: options.deviceRequest.docRequests, ...options },
-      context
+      ctx
     )
   }
 
@@ -280,12 +280,12 @@ export class DeviceResponse extends CborStructure {
         signingKey: CoseKey
       }
     },
-    context: { crypto: MdocContext['crypto']; cose: MdocContext['cose'] }
+    ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
     return await DeviceResponse.create(
       limitDisclosureToInputDescriptor,
       { inputDescriptorsOrRequests: options.presentationDefinition.input_descriptors, ...options },
-      context
+      ctx
     )
   }
 }
