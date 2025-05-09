@@ -5,11 +5,11 @@ import { DeviceResponse, type SessionTranscript } from './mdoc/index.js'
 
 export class Verifier {
   /**
-    *
-    *
-    * @todo should this check if it is also compatible with the device /pex request?
-    *
-    */
+   *
+   *
+   * @todo should this check if it is also compatible with the device /pex request?
+   *
+   */
   public static async verifyDeviceResponse(
     options: {
       deviceResponse: Uint8Array | DeviceResponse

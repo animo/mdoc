@@ -49,9 +49,8 @@ export class DocRequest extends CborStructure {
     })
   }
 
-  public static decode(bytes: Uint8Array, options?: CborDecodeOptions): unknown {
+  public static decode(bytes: Uint8Array, options?: CborDecodeOptions): DocRequest {
     const map = cborDecode<Map<unknown, unknown>>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-
     return DocRequest.fromEncodedStructure(map)
   }
 }
