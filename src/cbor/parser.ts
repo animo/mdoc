@@ -2,21 +2,21 @@ import { Encoder, type Options } from './cbor-x'
 import { DataItem } from './data-item'
 
 export type CborOptions = Options & {
-  unwrapToplevelDataItem?: boolean
+  unwrapTopLevelDataItem?: boolean
 }
 
 const encoderDefaults: CborOptions = {
   tagUint8Array: false,
   useRecords: false,
   mapsAsObjects: false,
-  unwrapToplevelDataItem: true,
+  unwrapTopLevelDataItem: true,
 }
 
 export const cborDecode = <T>(input: Uint8Array, options: CborOptions = encoderDefaults): T => {
   const params = { ...encoderDefaults, ...options }
   const enc = new Encoder(params)
   const decoded = enc.decode(input)
-  return params.unwrapToplevelDataItem && typeof decoded === 'object' && decoded instanceof DataItem
+  return params.unwrapTopLevelDataItem && typeof decoded === 'object' && decoded instanceof DataItem
     ? (decoded.data as T)
     : (decoded as T)
 }

@@ -15,7 +15,7 @@ export class IssuerAuth extends Sign1 {
     }
 
     const dataItem = cborDecode<DataItem<MobileSecurityObjectStructure>>(this.payload, {
-      unwrapToplevelDataItem: false,
+      unwrapTopLevelDataItem: false,
     })
 
     if (!(dataItem instanceof DataItem)) {

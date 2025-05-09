@@ -21,12 +21,7 @@ export abstract class CborStructure {
     return cborEncode(structure)
   }
 
-  /**
-   *
-   * @todo this needs to return the class instance of the abstract class extender
-   *
-   */
-  public static decode(bytes: Uint8Array, options?: CborDecodeOptions) {
+  public static decode(_bytes: Uint8Array, _options?: CborDecodeOptions): CborStructure {
     throw new Error('decode must be implemented')
   }
 
