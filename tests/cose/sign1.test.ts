@@ -19,12 +19,6 @@ describe('sign1', () => {
     expect(sign1.payload).toBeDefined()
     expect(sign1.signature).toBeDefined()
   })
-
-  /**
-   *
-   * @todo somehow the resulting signature of sign1.addSignature is not the same as the test result, but they both verify
-   *
-   */
   ;[sign1TestVector01, sign1TestVector02].map(async (testVector) => {
     test(`${testVector.title} :: ${testVector.description}`, async () => {
       const key = CoseKey.fromJwk(testVector.key)

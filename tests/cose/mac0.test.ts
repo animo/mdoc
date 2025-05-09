@@ -12,10 +12,5 @@ describe('mac0', () => {
     expect(mac0.unprotectedHeaders.headers).toBeDefined()
     expect(mac0.payload).toBeDefined()
     expect(mac0.tag).toBeDefined()
-
-    // @todo the tag is not included, but everything else is the same
-    // const encodedSign1 = mac0.encode()
-    // const encodedSign1InHex = uint8ArrayToHex(encodedSign1)
-    // expect(encodedSign1InHex).toStrictEqual(cbor)
   })
 })

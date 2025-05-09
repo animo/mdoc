@@ -75,7 +75,6 @@ export class DeviceAuth extends CborStructure {
 
     const { deviceKey } = options.document.issuerSigned.issuerAuth.mobileSecurityObject.deviceKeyInfo
 
-    // Prevent cloning of the mdoc and mitigate man in the middle attacks
     if (!this.deviceMac && !this.deviceSignature) {
       onCheck({
         status: 'FAILED',
@@ -91,19 +90,16 @@ export class DeviceAuth extends CborStructure {
     }).encode({ asDataItem: true })
 
     if (this.deviceSignature) {
-      // ECDSA/EdDSA authentication
       try {
         const ds = this.deviceSignature
         ds.detachedContent = deviceAuthenticationBytes
 
-        // const jwk = deviceKey.jwk
-        // todo
-        // const verificationResult = await ctx.cose.sign1.verify({ sign1: ds, jwk })
+        const verificationResult = await ctx.cose.sign1.verify({ sign1: ds, key: deviceKey })
 
-        // onCheck({
-        //   status: verificationResult ? 'PASSED' : 'FAILED',
-        //   check: 'Device signature must be valid',
-        // })
+        onCheck({
+          status: verificationResult ? 'PASSED' : 'FAILED',
+          check: 'Device signature must be valid',
+        })
       } catch (err) {
         onCheck({
           status: 'FAILED',
