@@ -4,7 +4,7 @@ const allowedBitsPerEntry = [1, 2, 4, 8] as const
 type AllowedBitsPerEntry = typeof allowedBitsPerEntry[number]
 
 export class StatusArray {
-    private readonly bitsPerEntry: 1 | 2 | 4 | 8;
+    private readonly bitsPerEntry: AllowedBitsPerEntry;
     private readonly statusBitMask: number;
     private readonly data: Uint8Array;
 
@@ -28,7 +28,7 @@ export class StatusArray {
         return [byteIndex, bitOffset];
     }
 
-    getBitsPerEntry(): 1 | 2 | 4 | 8 {
+    getBitsPerEntry(): AllowedBitsPerEntry {
         return this.bitsPerEntry;
     }
 

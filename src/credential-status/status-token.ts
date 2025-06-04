@@ -11,10 +11,10 @@ interface CWTStatusTokenOptions {
     key: CoseKey;
 }
 
-enum CWTProtectedHeaders {
+enum CwtProtectedHeaders {
     TYPE = 16
 }
-enum CWTClaims {
+enum CwtStatusListClaims {
     STATUS_LIST_URI = 2,
     ISSUED_AT = 6,
     STATUS_LIST = 65533
@@ -25,13 +25,13 @@ export class CWTStatusToken {
         const cwt = new CWT()
         cwt.setHeaders({
             protected: {
-                [CWTProtectedHeaders.TYPE]: 'application/statuslist+cwt',
+                [CwtProtectedHeaders.TYPE]: 'application/statuslist+cwt',
             }
         });
         cwt.setClaims({
-            [CWTClaims.STATUS_LIST_URI]: 'https://example.com/statuslist', // Where the status list is going to be hosted
-            [CWTClaims.ISSUED_AT]: Math.floor(Date.now() / 1000),
-            [CWTClaims.STATUS_LIST]: StatusList.buildCborStatusList({ statusArray: options.statusArray, aggregationUri: options.aggregationUri }),
+            [CwtStatusListClaims.STATUS_LIST_URI]: 'https://example.com/statuslist', // Where the status list is going to be hosted
+            [CwtStatusListClaims.ISSUED_AT]: Math.floor(Date.now() / 1000),
+            [CwtStatusListClaims.STATUS_LIST]: StatusList.buildCborStatusList({ statusArray: options.statusArray, aggregationUri: options.aggregationUri }),
         });
         return cborEncode(await cwt.create({ type: options.type, key: options.key }))
     }

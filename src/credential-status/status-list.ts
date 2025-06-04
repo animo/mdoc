@@ -1,7 +1,7 @@
 import { StatusArray } from "./status-array";
 import { cborEncode } from "../cbor";
 
-interface CborStatusListOptions {
+export interface CborStatusListOptions {
     statusArray: StatusArray;
     aggregationUri?: string;
 }

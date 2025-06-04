@@ -12,9 +12,41 @@ type CWTOptions = {
     key: CoseKey;
 };
 
+enum CwtStandardClaims {
+    ISS = 1,
+    SUB = 2,
+    AUD = 3,
+    EXP = 4,
+    NBF = 5,
+    IAT = 6,
+    CTI = 7
+}
+
 export class CWT {
     private claimsSet: Record<string, any> = {};
     private headers: Header = {};
+
+    setIss(iss: string): void {
+        this.claimsSet[CwtStandardClaims.ISS] = iss;
+    }
+    setSub(sub: string): void {
+        this.claimsSet[CwtStandardClaims.SUB] = sub;
+    }
+    setAud(aud: string): void {
+        this.claimsSet[CwtStandardClaims.AUD] = aud;
+    }
+    setExp(exp: number): void {
+        this.claimsSet[CwtStandardClaims.EXP] = exp;
+    }
+    setNbf(nbf: number): void {
+        this.claimsSet[CwtStandardClaims.NBF] = nbf;
+    }
+    setIat(iat: number): void {
+        this.claimsSet[CwtStandardClaims.IAT] = iat;
+    }
+    setCti(cti: Uint8Array): void {
+        this.claimsSet[CwtStandardClaims.CTI] = cti;
+    }
 
     setClaims(claims: Record<string, any>): void {
         this.claimsSet = claims;
