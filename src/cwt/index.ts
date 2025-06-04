@@ -13,13 +13,13 @@ type CWTOptions = {
 };
 
 enum CwtStandardClaims {
-    ISS = 1,
-    SUB = 2,
-    AUD = 3,
-    EXP = 4,
-    NBF = 5,
-    IAT = 6,
-    CTI = 7
+    Iss = 1,
+    Sub = 2,
+    Aud = 3,
+    Exp = 4,
+    Nbf = 5,
+    Iat = 6,
+    Cti = 7
 }
 
 export class CWT {
@@ -27,25 +27,25 @@ export class CWT {
     private headers: Header = {};
 
     setIss(iss: string): void {
-        this.claimsSet[CwtStandardClaims.ISS] = iss;
+        this.claimsSet[CwtStandardClaims.Iss] = iss;
     }
     setSub(sub: string): void {
-        this.claimsSet[CwtStandardClaims.SUB] = sub;
+        this.claimsSet[CwtStandardClaims.Sub] = sub;
     }
     setAud(aud: string): void {
-        this.claimsSet[CwtStandardClaims.AUD] = aud;
+        this.claimsSet[CwtStandardClaims.Aud] = aud;
     }
     setExp(exp: number): void {
-        this.claimsSet[CwtStandardClaims.EXP] = exp;
+        this.claimsSet[CwtStandardClaims.Exp] = exp;
     }
     setNbf(nbf: number): void {
-        this.claimsSet[CwtStandardClaims.NBF] = nbf;
+        this.claimsSet[CwtStandardClaims.Nbf] = nbf;
     }
     setIat(iat: number): void {
-        this.claimsSet[CwtStandardClaims.IAT] = iat;
+        this.claimsSet[CwtStandardClaims.Iat] = iat;
     }
     setCti(cti: Uint8Array): void {
-        this.claimsSet[CwtStandardClaims.CTI] = cti;
+        this.claimsSet[CwtStandardClaims.Cti] = cti;
     }
 
     setClaims(claims: Record<string, any>): void {

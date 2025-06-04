@@ -15,9 +15,9 @@ enum CwtProtectedHeaders {
     TYPE = 16
 }
 enum CwtStatusListClaims {
-    STATUS_LIST_URI = 2,
-    ISSUED_AT = 6,
-    STATUS_LIST = 65533
+    StatusListUri = 2,
+    IssuedAt = 6,
+    StatusList = 65533
 }
 
 export class CWTStatusToken {
@@ -29,9 +29,9 @@ export class CWTStatusToken {
             }
         });
         cwt.setClaims({
-            [CwtStatusListClaims.STATUS_LIST_URI]: 'https://example.com/statuslist', // Where the status list is going to be hosted
-            [CwtStatusListClaims.ISSUED_AT]: Math.floor(Date.now() / 1000),
-            [CwtStatusListClaims.STATUS_LIST]: StatusList.buildCborStatusList({ statusArray: options.statusArray, aggregationUri: options.aggregationUri }),
+            [CwtStatusListClaims.StatusListUri]: 'https://example.com/statuslist', // Where the status list is going to be hosted
+            [CwtStatusListClaims.IssuedAt]: Math.floor(Date.now() / 1000),
+            [CwtStatusListClaims.StatusList]: StatusList.buildCborStatusList({ statusArray: options.statusArray, aggregationUri: options.aggregationUri }),
         });
         return cborEncode(await cwt.create({ type: options.type, key: options.key }))
     }
