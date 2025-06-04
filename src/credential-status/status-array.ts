@@ -1,12 +1,15 @@
 import * as zlib from "zlib";
 
+const allowedBitsPerEntry = [1, 2, 4, 8] as const
+type AllowedBitsPerEntry = typeof allowedBitsPerEntry[number]
+
 export class StatusArray {
     private readonly bitsPerEntry: 1 | 2 | 4 | 8;
     private readonly statusBitMask: number;
     private readonly data: Uint8Array;
 
-    constructor(bitsPerEntry: 1 | 2 | 4 | 8, totalEntries: number) {
-        if (![1, 2, 4, 8].includes(bitsPerEntry)) {
+    constructor(bitsPerEntry: AllowedBitsPerEntry, totalEntries: number) {
+        if (!allowedBitsPerEntry.includes(bitsPerEntry)) {
             throw new Error("Only 1, 2, 4, or 8 bits per entry are allowed.");
         }
 

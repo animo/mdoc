@@ -12,6 +12,6 @@ describe('status-array', () => {
         expect(statusArray.get(1)).toBe(3);
 
         // Will remove it before merging
-        console.log(await CWTStatusToken.build(statusArray, 'sign1', CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK)));
+        console.log(await CWTStatusToken.build({ statusArray, type: 'sign1', key: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK) }));
     })
 })
