@@ -115,8 +115,7 @@ export class CWTStatusToken {
       const statusList = claims.get(String(CwtStatusListClaims.StatusList))
       return StatusList.verifyStatus(statusList as Uint8Array, options.index, options.expectedStatus)
     }
-    else {
-      return false
-    }
+
+    return false
   }
 }

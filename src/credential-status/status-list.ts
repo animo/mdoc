@@ -39,8 +39,7 @@ export class StatusList {
     if (actualStatus !== expectedStatus) {
       return false
     }
-    else {
-      return true
-    }
+
+    return true
   }
 }
