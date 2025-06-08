@@ -9,15 +9,14 @@ export class StatusArray {
   private readonly statusBitMask: number
   private readonly data: Uint8Array
 
-  constructor(bitsPerEntry: AllowedBitsPerEntry, bitArr?: Uint8Array) {
+  constructor(bitsPerEntry: AllowedBitsPerEntry, byteArr?: Uint8Array) {
     if (!allowedBitsPerEntry.includes(bitsPerEntry)) {
       throw new Error('Only 1, 2, 4, or 8 bits per entry are allowed.')
     }
 
     this.bitsPerEntry = bitsPerEntry
     this.statusBitMask = (1 << bitsPerEntry) - 1
-
-    this.data = bitArr ? bitArr : new Uint8Array(arraySize)
+    this.data = byteArr ? byteArr : new Uint8Array(arraySize)
   }
 
   private computeByteAndOffset(index: number): [number, number] {

@@ -79,7 +79,6 @@ export class CWTStatusToken {
       throw new Error('CWT status token does not contain claims')
     }
     const claims = cborDecode(cwt[2]) as Map<string, string | number | Uint8Array>
-
     // Check if is the same as the one used to fetch the token
     if (!claims.has(String(CwtStatusListClaims.StatusListUri))) {
       throw new Error('CWT status token does not contain status list URI')
@@ -116,7 +115,8 @@ export class CWTStatusToken {
       const statusList = claims.get(String(CwtStatusListClaims.StatusList))
       return StatusList.verifyStatus(statusList as Uint8Array, options.index, options.expectedStatus)
     }
-
-    return false
+    else {
+      return false
+    }
   }
 }

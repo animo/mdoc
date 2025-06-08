@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { CWTStatusToken, CoseKey, StatusArray } from '../../src'
 import { ISSUER_PRIVATE_KEY_JWK } from '../issuing/config'
 
-describe('status-array', () => {
+describe('CWTStatusToken', () => {
   test('should create and verify a CWTStatusToken with a StatusArray', async () => {
     const statusArray = new StatusArray(2)
 

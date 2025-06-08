@@ -22,8 +22,8 @@ export class StatusList {
     return cborEncode(statusList)
   }
 
-  static verifyStatus(compressedData: Uint8Array, index: number, expectedStatus: number): boolean {
-    const statusList = cborDecode(compressedData) as Map<string, Uint8Array | number | string>
+  static verifyStatus(cborStatusList: Uint8Array, index: number, expectedStatus: number): boolean {
+    const statusList = cborDecode(cborStatusList) as Map<string, Uint8Array | number | string>
     const bits = statusList.get('bits') as AllowedBitsPerEntry
     const lst = statusList.get('lst') as Uint8Array
 
@@ -39,7 +39,8 @@ export class StatusList {
     if (actualStatus !== expectedStatus) {
       return false
     }
-
-    return true
+    else {
+      return true
+    }
   }
 }
