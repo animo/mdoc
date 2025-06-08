@@ -1,58 +1,57 @@
-import * as zlib from "zlib";
+import * as zlib from 'node:zlib'
 
-const allowedBitsPerEntry = [1, 2, 4, 8] as const
-type AllowedBitsPerEntry = typeof allowedBitsPerEntry[number]
+const arraySize = 1024
+export const allowedBitsPerEntry = [1, 2, 4, 8] as const
+export type AllowedBitsPerEntry = (typeof allowedBitsPerEntry)[number]
 
 export class StatusArray {
-    private readonly bitsPerEntry: AllowedBitsPerEntry;
-    private readonly statusBitMask: number;
-    private readonly data: Uint8Array;
+  private readonly bitsPerEntry: AllowedBitsPerEntry
+  private readonly statusBitMask: number
+  private readonly data: Uint8Array
 
-    constructor(bitsPerEntry: AllowedBitsPerEntry, totalEntries: number) {
-        if (!allowedBitsPerEntry.includes(bitsPerEntry)) {
-            throw new Error("Only 1, 2, 4, or 8 bits per entry are allowed.");
-        }
-
-        this.bitsPerEntry = bitsPerEntry;
-        this.statusBitMask = (1 << bitsPerEntry) - 1;
-
-        const totalBits = totalEntries * bitsPerEntry;
-        const byteSize = Math.ceil(totalBits / 8);
-        this.data = new Uint8Array(byteSize);
+  constructor(bitsPerEntry: AllowedBitsPerEntry, bitArr?: Uint8Array) {
+    if (!allowedBitsPerEntry.includes(bitsPerEntry)) {
+      throw new Error('Only 1, 2, 4, or 8 bits per entry are allowed.')
     }
 
-    private computeByteAndOffset(index: number): [number, number] {
-        const byteIndex = Math.floor((index * this.bitsPerEntry) / 8);
-        const bitOffset = (index * this.bitsPerEntry) % 8;
+    this.bitsPerEntry = bitsPerEntry
+    this.statusBitMask = (1 << bitsPerEntry) - 1
 
-        return [byteIndex, bitOffset];
+    this.data = bitArr ? bitArr : new Uint8Array(arraySize)
+  }
+
+  private computeByteAndOffset(index: number): [number, number] {
+    const byteIndex = Math.floor((index * this.bitsPerEntry) / 8)
+    const bitOffset = (index * this.bitsPerEntry) % 8
+
+    return [byteIndex, bitOffset]
+  }
+
+  getBitsPerEntry(): AllowedBitsPerEntry {
+    return this.bitsPerEntry
+  }
+
+  set(index: number, status: number): void {
+    if (status < 0 || status > this.statusBitMask) {
+      throw new Error(`Invalid status: ${status}. Must be between 0 and ${this.statusBitMask}.`)
     }
 
-    getBitsPerEntry(): AllowedBitsPerEntry {
-        return this.bitsPerEntry;
-    }
+    const [byteIndex, bitOffset] = this.computeByteAndOffset(index)
 
-    set(index: number, status: number): void {
-        if (status < 0 || status > this.statusBitMask) {
-            throw new Error(`Invalid status: ${status}. Must be between 0 and ${this.statusBitMask}.`);
-        }
+    // Clear current bits
+    this.data[byteIndex] &= ~(this.statusBitMask << bitOffset)
 
-        const [byteIndex, bitOffset] = this.computeByteAndOffset(index);
+    // Set new status bits
+    this.data[byteIndex] |= (status & this.statusBitMask) << bitOffset
+  }
 
-        // Clear current bits
-        this.data[byteIndex] &= ~(this.statusBitMask << bitOffset);
+  get(index: number): number {
+    const [byteIndex, bitOffset] = this.computeByteAndOffset(index)
 
-        // Set new status bits
-        this.data[byteIndex] |= (status & this.statusBitMask) << bitOffset;
-    }
+    return (this.data[byteIndex] >> bitOffset) & this.statusBitMask
+  }
 
-    get(index: number): number {
-        const [byteIndex, bitOffset] = this.computeByteAndOffset(index);
-
-        return (this.data[byteIndex] >> bitOffset) & this.statusBitMask;
-    }
-
-    compress(): Uint8Array {
-        return zlib.deflateSync(this.data, { level: zlib.constants.Z_BEST_COMPRESSION });
-    }
+  compress(): Uint8Array {
+    return zlib.deflateSync(this.data, { level: zlib.constants.Z_BEST_COMPRESSION })
+  }
 }
