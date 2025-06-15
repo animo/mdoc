@@ -101,7 +101,7 @@ export class CWTStatusToken {
     } else if (cwt instanceof Mac0) {
       coseType = CoseType.Mac0
     } else {
-      throw new Error(`Unimplemented/Unsupported CWT type`)
+      throw new Error('Unimplemented/Unsupported CWT type')
     }
     const validSignature = await CWT.verify({ type: coseType, token: options.token, key: options.key })
     if (!validSignature) {
