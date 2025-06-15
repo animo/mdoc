@@ -1,4 +1,4 @@
-import * as zlib from 'node:zlib'
+import * as zlib from 'pako'
 import { cborDecode, cborEncode } from '../cbor'
 import { type AllowedBitsPerEntry, StatusArray, allowedBitsPerEntry } from './status-array'
 
@@ -34,7 +34,7 @@ export class StatusList {
       throw new Error(`Invalid bits per entry: ${bits}. Allowed values are ${allowedBitsPerEntry.join(', ')}.`)
     }
 
-    const statusArray = new StatusArray(bits, zlib.inflateSync(lst))
+    const statusArray = new StatusArray(bits, zlib.inflate(lst))
     const actualStatus = statusArray.get(index)
     if (actualStatus !== expectedStatus) {
       return false

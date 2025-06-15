@@ -1,4 +1,4 @@
-import * as zlib from 'node:zlib'
+import * as zlib from 'pako'
 
 const arraySize = 1024
 export const allowedBitsPerEntry = [1, 2, 4, 8] as const
@@ -51,6 +51,6 @@ export class StatusArray {
   }
 
   compress(): Uint8Array {
-    return zlib.deflateSync(this.data, { level: zlib.constants.Z_BEST_COMPRESSION })
+    return zlib.deflate(this.data)
   }
 }

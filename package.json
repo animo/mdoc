@@ -40,7 +40,9 @@
     "@panva/hkdf": "^1.2.1",
     "@peculiar/x509": "^1.12.3",
     "@types/node": "^20.14.11",
+    "@types/pako": "^2.0.3",
     "jose": "^5.9.3",
+    "pako": "^2.1.0",
     "tsup": "^8.3.5",
     "typescript": "^5.6.3",
     "vitest": "^2.1.5"
