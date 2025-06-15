@@ -1,5 +1,7 @@
 import { cborDecode, cborEncode } from '../cbor'
-import type { CoseKey, Mac0Structure, Sign1Structure } from '../cose'
+import { Tag } from '../cbor/cbor-x'
+import type { CoseKey } from '../cose'
+import { CoseType, CoseTypeToTag, Mac0, Sign1 } from '../cose'
 import { CWT } from '../cwt'
 import type { StatusArray } from './status-array'
 import { StatusList } from './status-list'
@@ -11,12 +13,11 @@ interface CWTStatusTokenOptions {
     expirationTime?: number
     timeToLive?: number
   }
-  type: 'sign1' | 'mac0'
+  type: CoseType
   key: CoseKey
 }
 
 interface CWTStatusTokenVerifyOptions {
-  type: 'sign1' | 'mac0' // Remove this
   token: Uint8Array
   key?: CoseKey
 }
@@ -63,22 +64,21 @@ export class CWTStatusToken {
     }
 
     cwt.setClaims(claims)
-    return cborEncode(await cwt.create({ type: options.type, key: options.key }))
+    return cborEncode(new Tag(await cwt.create({ type: options.type, key: options.key }), CoseTypeToTag[options.type]))
   }
 
   static async verifyStatusToken(options: CWTStatusTokenVerifyOptions): Promise<boolean> {
-    const cwt = cborDecode(options.token) as Sign1Structure | Mac0Structure
-    const protectedHeaders = cborDecode(cwt[0]) as Map<string, string>
+    const cwt = cborDecode(options.token) as Sign1 | Mac0
 
-    const type = protectedHeaders.get(String(CwtProtectedHeaders.TYPE))
+    const type = cwt.protectedHeaders.headers?.get(String(CwtProtectedHeaders.TYPE))
     if (!type || type !== 'application/statuslist+cwt') {
       throw new Error('CWT status token does not have the correct type in protected headers')
     }
 
-    if (!cwt[2]) {
+    if (!cwt.payload) {
       throw new Error('CWT status token does not contain claims')
     }
-    const claims = cborDecode(cwt[2]) as Map<string, string | number | Uint8Array>
+    const claims = cborDecode(cwt.payload) as Map<string, string | number | Uint8Array>
     // Check if is the same as the one used to fetch the token
     if (!claims.has(String(CwtStatusListClaims.StatusListUri))) {
       throw new Error('CWT status token does not contain status list URI')
@@ -95,7 +95,15 @@ export class CWTStatusToken {
       throw new Error('CWT status token has expired')
     }
 
-    const validSignature = await CWT.verify({ type: options.type, token: options.token, key: options.key })
+    let coseType: CoseType
+    if (cwt instanceof Sign1) {
+      coseType = CoseType.Sign1
+    } else if (cwt instanceof Mac0) {
+      coseType = CoseType.Mac0
+    } else {
+      throw new Error(`Unimplemented/Unsupported CWT type`)
+    }
+    const validSignature = await CWT.verify({ type: coseType, token: options.token, key: options.key })
     if (!validSignature) {
       throw new Error('Invalid signature for CWT status token')
     }
@@ -106,12 +114,12 @@ export class CWTStatusToken {
   static async verifyStatus(options: CWTStatusVerifyOptions): Promise<boolean> {
     const validStatusToken = await CWTStatusToken.verifyStatusToken(options)
     if (validStatusToken) {
-      const cwt = cborDecode(options.token) as Sign1Structure | Mac0Structure
-      if (!cwt[2]) {
+      const cwt = cborDecode(options.token) as Sign1 | Mac0
+      if (!cwt.payload) {
         throw new Error('CWT status token does not contain claims')
       }
 
-      const claims = cborDecode(cwt[2]) as Map<string, string | number | Uint8Array>
+      const claims = cborDecode(cwt.payload) as Map<string, string | number | Uint8Array>
       const statusList = claims.get(String(CwtStatusListClaims.StatusList))
       return StatusList.verifyStatus(statusList as Uint8Array, options.index, options.expectedStatus)
     }

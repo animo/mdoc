@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import { CWTStatusToken, CoseKey, StatusArray } from '../../src'
+import { CoseType } from '../../src/cose'
 import { ISSUER_PRIVATE_KEY_JWK } from '../issuing/config'
 
 describe('CWTStatusToken', () => {
@@ -13,11 +14,10 @@ describe('CWTStatusToken', () => {
 
     const cwtStatusToken = await CWTStatusToken.build({
       claimsSet: { statusArray },
-      type: 'sign1',
+      type: CoseType.Sign1,
       key: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
     })
     const verify = await CWTStatusToken.verifyStatus({
-      type: 'sign1',
       token: cwtStatusToken,
       key: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
       index: 0,

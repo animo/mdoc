@@ -9,6 +9,7 @@ import {
   type Sign1Options,
   type Sign1Structure,
 } from '../cose'
+import { CoseType } from '../cose'
 
 type Header = {
   protected?: Record<string, unknown>
@@ -16,12 +17,12 @@ type Header = {
 }
 
 type CWTOptions = {
-  type: 'sign1' | 'mac0' | 'encrypt0'
+  type: CoseType
   key: CoseKey
 }
 
 interface CWTVerifyOptions {
-  type: 'sign1' | 'mac0'
+  type: CoseType
   token: Uint8Array
   key?: CoseKey
 }
@@ -72,7 +73,7 @@ export class CWT {
 
   async create({ type, key }: CWTOptions): Promise<Sign1Structure | Mac0Structure> {
     switch (type) {
-      case 'sign1': {
+      case CoseType.Sign1: {
         const sign1Options: Sign1Options = {
           protectedHeaders: this.headers.protected ? cborEncode(this.headers.protected) : undefined,
           unprotectedHeaders: this.headers.unprotected ? new Map(Object.entries(this.headers.unprotected)) : undefined,
@@ -83,7 +84,7 @@ export class CWT {
         await sign1.addSignature({ signingKey: key }, { cose: mdocContext.cose })
         return sign1.encodedStructure()
       }
-      case 'mac0': {
+      case CoseType.Mac0: {
         if (!this.headers.protected || !this.headers.unprotected) {
           throw new Error('Protected and unprotected headers must be defined for MAC0')
         }
@@ -98,28 +99,26 @@ export class CWT {
         // return mac0.encodedStructure();
         throw new Error('MAC0 is not yet implemented')
       }
-      case 'encrypt0':
-        throw new Error('Encrypt0 is not yet implemented')
       default:
-        throw new Error('Unsupported CWT type')
+        throw new Error(`${type} is not yet implemented`)
     }
   }
 
   static async verify({ type, token, key }: CWTVerifyOptions): Promise<boolean> {
-    const cwt = cborDecode(token) as Sign1Structure | Mac0Structure
+    const cwt = cborDecode(token) as Sign1 | Mac0
     switch (type) {
-      case 'sign1': {
+      case CoseType.Sign1: {
         const sign1Options: Sign1Options = {
-          protectedHeaders: cwt[0],
-          unprotectedHeaders: cwt[1],
-          payload: cwt[2],
-          signature: cwt[3],
+          protectedHeaders: cwt.protectedHeaders,
+          unprotectedHeaders: cwt.unprotectedHeaders,
+          payload: cwt.payload,
+          signature: (cwt as Sign1).signature,
         }
         const sign1 = new Sign1(sign1Options)
         return await sign1.verify({ key }, mdocContext)
       }
       default:
-        throw new Error('Unsupported CWT type for verification')
+        throw new Error(`${type} is not yet implemented for verification`)
     }
   }
 }
