@@ -126,4 +126,32 @@ export class CWTStatusToken {
 
     return false
   }
+
+  static async fetchStatusListUri(statusListUri: string): Promise<Uint8Array> {
+    if (!statusListUri.startsWith('https://')) {
+      throw new Error(`Status list URI must be HTTPS: ${statusListUri}`)
+    }
+
+    const abortController = new AbortController()
+    setTimeout(() => {
+      abortController.abort()
+    }, 5000)
+    try {
+      const response = await fetch(statusListUri, {
+        signal: abortController.signal,
+        headers: {
+          Accept: 'application/statuslist+cwt',
+        },
+      })
+      const buffer = await response.arrayBuffer()
+      return new Uint8Array(buffer)
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Fetch operation timed out for status list URI: ${statusListUri}`)
+      }
+      throw new Error(
+        `Error fetching status list from ${statusListUri}: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
 }
