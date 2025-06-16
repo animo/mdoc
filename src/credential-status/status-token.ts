@@ -1,3 +1,5 @@
+import AbortController from 'abort-controller'
+import fetch from 'node-fetch'
 import { cborDecode, cborEncode } from '../cbor'
 import { Tag } from '../cbor/cbor-x'
 import type { CoseKey } from '../cose'
@@ -138,7 +140,7 @@ export class CWTStatusToken {
     }, 5000)
     try {
       const response = await fetch(statusListUri, {
-        signal: abortController.signal,
+        signal: abortController.signal as NonNullable<RequestInit['signal']>,
         headers: {
           Accept: 'application/statuslist+cwt',
         },
