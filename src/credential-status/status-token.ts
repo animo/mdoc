@@ -14,7 +14,7 @@ export interface CwtStatusTokenOptions {
     expirationTime?: number
     timeToLive?: number
   }
-  type: CoseStructureType
+  type: CoseStructureType.Sign1 | CoseStructureType.Mac0
   key: CoseKey
 }
 

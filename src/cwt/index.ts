@@ -17,7 +17,7 @@ type Header = {
 }
 
 type CwtOptions = {
-  type: CoseStructureType
+  type: CoseStructureType.Sign1 | CoseStructureType.Mac0
   key: CoseKey
 }
 
