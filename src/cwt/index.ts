@@ -16,15 +16,19 @@ type Header = {
   unprotected?: Record<string, unknown>
 }
 
-type CWTOptions = {
+type CwtOptions = {
   type: CoseStructureType
   key: CoseKey
 }
 
-interface CWTVerifyOptions {
+export interface CwtVerifyOptions {
   type: CoseStructureType
   token: Uint8Array
   key?: CoseKey
+}
+
+export enum CwtProtectedHeaders {
+  Typ = 16,
 }
 
 enum CwtStandardClaims {
@@ -71,7 +75,7 @@ export class CWT {
     this.headers = headers
   }
 
-  async create({ type, key }: CWTOptions): Promise<Sign1Structure | Mac0Structure> {
+  async create({ type, key }: CwtOptions): Promise<Sign1Structure | Mac0Structure> {
     switch (type) {
       case CoseStructureType.Sign1: {
         const sign1Options: Sign1Options = {
@@ -95,6 +99,7 @@ export class CWT {
         }
 
         const mac0 = new Mac0(mac0Options)
+        // Todo: Implement MAC0 signing logic
         // await mac0.addTag({ privateKey: key, ephemeralKey: key, sessionTranscript: new SessionTranscript({ handover: new QrHandover() }) }, mdocContext);
         // return mac0.encodedStructure();
         throw new Error('MAC0 is not yet implemented')
@@ -104,7 +109,7 @@ export class CWT {
     }
   }
 
-  static async verify({ type, token, key }: CWTVerifyOptions): Promise<boolean> {
+  static async verify({ type, token, key }: CwtVerifyOptions): Promise<boolean> {
     const cwt = cborDecode(token) as Sign1 | Mac0
     switch (type) {
       case CoseStructureType.Sign1: {
@@ -118,6 +123,7 @@ export class CWT {
         return await sign1.verify({ key }, mdocContext)
       }
       default:
+        // Todo: Implement verification for MAC0
         throw new Error(`${type} is not yet implemented for verification`)
     }
   }

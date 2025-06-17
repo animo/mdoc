@@ -7,7 +7,7 @@ export interface CborStatusListOptions {
   aggregationUri?: string
 }
 
-interface CborStatusList {
+export interface CborStatusList {
   bits: AllowedBitsPerEntry
   lst: Uint8Array
   aggregation_uri?: string
