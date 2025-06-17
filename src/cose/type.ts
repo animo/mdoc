@@ -1,4 +1,4 @@
-export enum CoseType {
+export enum CoseStructureType {
   Sign = 'sign',
   Sign1 = 'sign1',
   Encrypt = 'encrypt',
@@ -6,7 +6,7 @@ export enum CoseType {
   Mac = 'mac',
   Mac0 = 'mac0',
 }
-export enum CoseTag {
+export enum CoseStructureTag {
   Sign = 98,
   Sign1 = 18,
   Encrypt = 96,
@@ -14,11 +14,11 @@ export enum CoseTag {
   Mac = 97,
   Mac0 = 17,
 }
-export const CoseTypeToTag: Record<CoseType, CoseTag> = {
-  [CoseType.Sign]: CoseTag.Sign,
-  [CoseType.Sign1]: CoseTag.Sign1,
-  [CoseType.Encrypt]: CoseTag.Encrypt,
-  [CoseType.Encrypt0]: CoseTag.Encrypt0,
-  [CoseType.Mac]: CoseTag.Mac,
-  [CoseType.Mac0]: CoseTag.Mac0,
+export const CoseTypeToTag: Record<CoseStructureType, CoseStructureTag> = {
+  [CoseStructureType.Sign]: CoseStructureTag.Sign,
+  [CoseStructureType.Sign1]: CoseStructureTag.Sign1,
+  [CoseStructureType.Encrypt]: CoseStructureTag.Encrypt,
+  [CoseStructureType.Encrypt0]: CoseStructureTag.Encrypt0,
+  [CoseStructureType.Mac]: CoseStructureTag.Mac,
+  [CoseStructureType.Mac0]: CoseStructureTag.Mac0,
 }

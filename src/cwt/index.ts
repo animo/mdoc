@@ -9,7 +9,7 @@ import {
   type Sign1Options,
   type Sign1Structure,
 } from '../cose'
-import { CoseType } from '../cose'
+import { CoseStructureType } from '../cose'
 
 type Header = {
   protected?: Record<string, unknown>
@@ -17,12 +17,12 @@ type Header = {
 }
 
 type CWTOptions = {
-  type: CoseType
+  type: CoseStructureType
   key: CoseKey
 }
 
 interface CWTVerifyOptions {
-  type: CoseType
+  type: CoseStructureType
   token: Uint8Array
   key?: CoseKey
 }
@@ -73,7 +73,7 @@ export class CWT {
 
   async create({ type, key }: CWTOptions): Promise<Sign1Structure | Mac0Structure> {
     switch (type) {
-      case CoseType.Sign1: {
+      case CoseStructureType.Sign1: {
         const sign1Options: Sign1Options = {
           protectedHeaders: this.headers.protected ? cborEncode(this.headers.protected) : undefined,
           unprotectedHeaders: this.headers.unprotected ? new Map(Object.entries(this.headers.unprotected)) : undefined,
@@ -84,7 +84,7 @@ export class CWT {
         await sign1.addSignature({ signingKey: key }, { cose: mdocContext.cose })
         return sign1.encodedStructure()
       }
-      case CoseType.Mac0: {
+      case CoseStructureType.Mac0: {
         if (!this.headers.protected || !this.headers.unprotected) {
           throw new Error('Protected and unprotected headers must be defined for MAC0')
         }
@@ -107,7 +107,7 @@ export class CWT {
   static async verify({ type, token, key }: CWTVerifyOptions): Promise<boolean> {
     const cwt = cborDecode(token) as Sign1 | Mac0
     switch (type) {
-      case CoseType.Sign1: {
+      case CoseStructureType.Sign1: {
         const sign1Options: Sign1Options = {
           protectedHeaders: cwt.protectedHeaders,
           unprotectedHeaders: cwt.unprotectedHeaders,

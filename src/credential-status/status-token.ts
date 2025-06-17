@@ -3,19 +3,19 @@ import fetch from 'node-fetch'
 import { cborDecode, cborEncode } from '../cbor'
 import { Tag } from '../cbor/cbor-x'
 import type { CoseKey } from '../cose'
-import { CoseType, CoseTypeToTag, Mac0, Sign1 } from '../cose'
+import { CoseStructureType, CoseTypeToTag, Mac0, Sign1 } from '../cose'
 import { CWT } from '../cwt'
 import type { StatusArray } from './status-array'
 import { StatusList } from './status-list'
 
-interface CWTStatusTokenOptions {
+interface CwtStatusTokenOptions {
   claimsSet: {
     statusArray: StatusArray
     aggregationUri?: string
     expirationTime?: number
     timeToLive?: number
   }
-  type: CoseType
+  type: CoseStructureType
   key: CoseKey
 }
 
@@ -42,7 +42,7 @@ enum CwtStatusListClaims {
 }
 
 export class CWTStatusToken {
-  static async build(options: CWTStatusTokenOptions): Promise<Uint8Array> {
+  static async build(options: CwtStatusTokenOptions): Promise<Uint8Array> {
     const cwt = new CWT()
     cwt.setHeaders({
       protected: {
@@ -97,11 +97,11 @@ export class CWTStatusToken {
       throw new Error('CWT status token has expired')
     }
 
-    let coseType: CoseType
+    let coseType: CoseStructureType
     if (cwt instanceof Sign1) {
-      coseType = CoseType.Sign1
+      coseType = CoseStructureType.Sign1
     } else if (cwt instanceof Mac0) {
-      coseType = CoseType.Mac0
+      coseType = CoseStructureType.Mac0
     } else {
       throw new Error('Unimplemented/Unsupported CWT type')
     }

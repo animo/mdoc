@@ -7,11 +7,17 @@ export interface CborStatusListOptions {
   aggregationUri?: string
 }
 
+interface CborStatusList {
+  bits: AllowedBitsPerEntry
+  lst: Uint8Array
+  aggregation_uri?: string
+}
+
 export class StatusList {
   static buildCborStatusList(options: CborStatusListOptions): Uint8Array {
     const compressed = options.statusArray.compress()
 
-    const statusList: Record<string, number | Uint8Array | string> = {
+    const statusList: CborStatusList = {
       bits: options.statusArray.getBitsPerEntry(),
       lst: compressed,
     }
@@ -23,9 +29,17 @@ export class StatusList {
   }
 
   static verifyStatus(cborStatusList: Uint8Array, index: number, expectedStatus: number): boolean {
-    const statusList = cborDecode(cborStatusList) as Map<string, Uint8Array | number | string>
-    const bits = statusList.get('bits') as AllowedBitsPerEntry
-    const lst = statusList.get('lst') as Uint8Array
+    const decoded = cborDecode(cborStatusList)
+    if (!(decoded instanceof Map)) {
+      throw new Error('Decoded CBOR data is not a Map.')
+    }
+
+    const statusList: CborStatusList = {
+      bits: decoded.get('bits') as AllowedBitsPerEntry,
+      lst: decoded.get('lst') as Uint8Array,
+      aggregation_uri: decoded.get('aggregation_uri') as string | undefined,
+    }
+    const { bits, lst } = statusList
 
     if (!statusList || !lst || !bits) {
       throw new Error('Invalid status list format.')
@@ -36,10 +50,6 @@ export class StatusList {
 
     const statusArray = new StatusArray(bits, zlib.inflate(lst))
     const actualStatus = statusArray.get(index)
-    if (actualStatus !== expectedStatus) {
-      return false
-    }
-
-    return true
+    return actualStatus === expectedStatus
   }
 }
