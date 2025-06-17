@@ -5,29 +5,29 @@ export const allowedBitsPerEntry = [1, 2, 4, 8] as const
 export type AllowedBitsPerEntry = (typeof allowedBitsPerEntry)[number]
 
 export class StatusArray {
-  private readonly bitsPerEntry: AllowedBitsPerEntry
+  private readonly _bitsPerEntry: AllowedBitsPerEntry
   private readonly statusBitMask: number
   private readonly data: Uint8Array
 
   constructor(bitsPerEntry: AllowedBitsPerEntry, byteArr?: Uint8Array) {
     if (!allowedBitsPerEntry.includes(bitsPerEntry)) {
-      throw new Error('Only 1, 2, 4, or 8 bits per entry are allowed.')
+      throw new Error(`Only bits ${allowedBitsPerEntry.join(', ')} per entry are allowed.`)
     }
 
-    this.bitsPerEntry = bitsPerEntry
+    this._bitsPerEntry = bitsPerEntry
     this.statusBitMask = (1 << bitsPerEntry) - 1
     this.data = byteArr ? byteArr : new Uint8Array(arraySize)
   }
 
-  private computeByteAndOffset(index: number): [number, number] {
-    const byteIndex = Math.floor((index * this.bitsPerEntry) / 8)
-    const bitOffset = (index * this.bitsPerEntry) % 8
+  private computeByteAndOffset(index: number): { byteIndex: number; bitOffset: number } {
+    const byteIndex = Math.floor((index * this._bitsPerEntry) / 8)
+    const bitOffset = (index * this._bitsPerEntry) % 8
 
-    return [byteIndex, bitOffset]
+    return { byteIndex, bitOffset }
   }
 
-  getBitsPerEntry(): AllowedBitsPerEntry {
-    return this.bitsPerEntry
+  get bitsPerEntry(): AllowedBitsPerEntry {
+    return this._bitsPerEntry
   }
 
   set(index: number, status: number): void {
@@ -35,7 +35,7 @@ export class StatusArray {
       throw new Error(`Invalid status: ${status}. Must be between 0 and ${this.statusBitMask}.`)
     }
 
-    const [byteIndex, bitOffset] = this.computeByteAndOffset(index)
+    const { byteIndex, bitOffset } = this.computeByteAndOffset(index)
 
     // Clear current bits
     this.data[byteIndex] &= ~(this.statusBitMask << bitOffset)
@@ -45,7 +45,7 @@ export class StatusArray {
   }
 
   get(index: number): number {
-    const [byteIndex, bitOffset] = this.computeByteAndOffset(index)
+    const { byteIndex, bitOffset } = this.computeByteAndOffset(index)
 
     return (this.data[byteIndex] >> bitOffset) & this.statusBitMask
   }

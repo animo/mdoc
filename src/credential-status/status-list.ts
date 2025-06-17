@@ -18,7 +18,7 @@ export class StatusList {
     const compressed = options.statusArray.compress()
 
     const statusList: CborStatusList = {
-      bits: options.statusArray.getBitsPerEntry(),
+      bits: options.statusArray.bitsPerEntry,
       lst: compressed,
     }
 
