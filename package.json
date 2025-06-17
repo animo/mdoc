@@ -30,9 +30,7 @@
     "changeset-version": "pnpm changeset version && pnpm style:fix"
   },
   "dependencies": {
-    "abort-controller": "^3.0.0",
     "buffer": "^6.0.3",
-    "node-fetch": "2",
     "pako": "^2.1.0"
   },
   "devDependencies": {
@@ -43,7 +41,6 @@
     "@panva/hkdf": "^1.2.1",
     "@peculiar/x509": "^1.12.3",
     "@types/node": "^20.14.11",
-    "@types/node-fetch": "^2.6.12",
     "@types/pako": "^2.0.3",
     "jose": "^5.9.3",
     "tsup": "^8.3.5",

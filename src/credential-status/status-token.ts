@@ -1,5 +1,3 @@
-import AbortController from 'abort-controller'
-import fetch from 'node-fetch'
 import { cborDecode, cborEncode } from '../cbor'
 import { Tag } from '../cbor/cbor-x'
 import type { CoseKey } from '../cose'
