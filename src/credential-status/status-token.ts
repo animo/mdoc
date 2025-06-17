@@ -1,5 +1,6 @@
 import { cborDecode, cborEncode } from '../cbor'
 import { Tag } from '../cbor/cbor-x'
+import type { MdocContext } from '../context'
 import type { CoseKey } from '../cose'
 import { CoseStructureType, CoseTypeToTag, Mac0, Sign1 } from '../cose'
 import { CWT, CwtProtectedHeaders } from '../cwt'
@@ -7,6 +8,7 @@ import type { StatusArray } from './status-array'
 import { StatusList } from './status-list'
 
 export interface CwtStatusTokenOptions {
+  mdocContext: Pick<MdocContext, 'cose' | 'x509'>
   statusListUri: string
   claimsSet: {
     statusArray: StatusArray
@@ -19,6 +21,7 @@ export interface CwtStatusTokenOptions {
 }
 
 export interface CwtStatusTokenVerifyOptions {
+  mdocContext: Pick<MdocContext, 'cose' | 'x509'>
   token: Uint8Array
   key?: CoseKey
 }
@@ -63,7 +66,12 @@ export class CwtStatusToken {
     }
 
     cwt.setClaims(claims)
-    return cborEncode(new Tag(await cwt.create({ type: options.type, key: options.key }), CoseTypeToTag[options.type]))
+    return cborEncode(
+      new Tag(
+        await cwt.create({ type: options.type, key: options.key, mdocContext: options.mdocContext }),
+        CoseTypeToTag[options.type]
+      )
+    )
   }
 
   static async verifyStatusToken(options: CwtStatusTokenVerifyOptions): Promise<Sign1 | Mac0> {
@@ -102,7 +110,12 @@ export class CwtStatusToken {
     } else {
       throw new Error('Unsupported CWT structure type. Supported values are sign1 and mac0')
     }
-    const validSignature = await CWT.verify({ type: coseType, token: options.token, key: options.key })
+    const validSignature = await CWT.verify({
+      type: coseType,
+      token: options.token,
+      key: options.key,
+      mdocContext: options.mdocContext,
+    })
     if (!validSignature) {
       throw new Error('Invalid signature for CWT status token')
     }

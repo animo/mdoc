@@ -1,5 +1,5 @@
-import { mdocContext } from '../../tests/context'
 import { cborDecode, cborEncode } from '../cbor'
+import type { MdocContext } from '../context'
 import {
   type CoseKey,
   Mac0,
@@ -17,11 +17,13 @@ type Header = {
 }
 
 type CwtOptions = {
+  mdocContext: Pick<MdocContext, 'cose' | 'x509'>
   type: CoseStructureType.Sign1 | CoseStructureType.Mac0
   key: CoseKey
 }
 
 export interface CwtVerifyOptions {
+  mdocContext: Pick<MdocContext, 'cose' | 'x509'>
   type: CoseStructureType
   token: Uint8Array
   key?: CoseKey
@@ -75,7 +77,7 @@ export class CWT {
     this.headers = headers
   }
 
-  async create({ type, key }: CwtOptions): Promise<Sign1Structure | Mac0Structure> {
+  async create({ type, key, mdocContext }: CwtOptions): Promise<Sign1Structure | Mac0Structure> {
     switch (type) {
       case CoseStructureType.Sign1: {
         const sign1Options: Sign1Options = {
@@ -109,7 +111,7 @@ export class CWT {
     }
   }
 
-  static async verify({ type, token, key }: CwtVerifyOptions): Promise<boolean> {
+  static async verify({ type, token, key, mdocContext }: CwtVerifyOptions): Promise<boolean> {
     const cwt = cborDecode(token) as Sign1 | Mac0
     switch (type) {
       case CoseStructureType.Sign1: {
