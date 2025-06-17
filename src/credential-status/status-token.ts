@@ -4,6 +4,7 @@ import type { MdocContext } from '../context'
 import type { CoseKey } from '../cose'
 import { CoseStructureType, CoseTypeToTag, Mac0, Sign1 } from '../cose'
 import { CWT, CwtProtectedHeaders } from '../cwt'
+import { dateToSeconds } from '../utils'
 import type { StatusArray } from './status-array'
 import { StatusList } from './status-list'
 
@@ -32,11 +33,11 @@ export interface CwtStatusVerifyOptions extends CwtStatusTokenVerifyOptions {
 }
 
 enum CwtStatusListClaims {
-  StatusListUri = 2,
-  ExpirationTime = 4,
-  IssuedAt = 6,
-  StatusList = 65533,
-  TimeToLive = 65534,
+  Sub = 2,
+  Exp = 4,
+  Iat = 6,
+  Sli = 65533, // Status List
+  Ttl = 65534,
 }
 
 const CWT_STATUS_LIST_HEADER_TYPE = 'application/statuslist+cwt'
@@ -51,18 +52,18 @@ export class CwtStatusToken {
     })
 
     const claims: { [key: number]: string | number | Uint8Array } = {
-      [CwtStatusListClaims.StatusListUri]: options.statusListUri,
-      [CwtStatusListClaims.IssuedAt]: Math.floor(Date.now() / 1000),
-      [CwtStatusListClaims.StatusList]: StatusList.buildCborStatusList({
+      [CwtStatusListClaims.Sub]: options.statusListUri,
+      [CwtStatusListClaims.Iat]: dateToSeconds(),
+      [CwtStatusListClaims.Sli]: StatusList.buildCborStatusList({
         statusArray: options.claimsSet.statusArray,
         aggregationUri: options.claimsSet.aggregationUri,
       }),
     }
     if (options.claimsSet.expirationTime) {
-      claims[CwtStatusListClaims.ExpirationTime] = options.claimsSet.expirationTime
+      claims[CwtStatusListClaims.Exp] = options.claimsSet.expirationTime
     }
     if (options.claimsSet.timeToLive) {
-      claims[CwtStatusListClaims.TimeToLive] = options.claimsSet.timeToLive
+      claims[CwtStatusListClaims.Ttl] = options.claimsSet.timeToLive
     }
 
     cwt.setClaims(claims)
@@ -86,19 +87,19 @@ export class CwtStatusToken {
       throw new Error('CWT status token does not contain claims')
     }
     const claims = cborDecode(cwt.payload) as Map<string, string | number | Uint8Array>
-    // Check if is the same as the one used to fetch the token
-    if (!claims.has(String(CwtStatusListClaims.StatusListUri))) {
+    // Todo: Check if is the same as the one used to fetch the token
+    if (!claims.has(String(CwtStatusListClaims.Sub))) {
       throw new Error('CWT status token does not contain status list URI')
     }
-    if (!claims.has(String(CwtStatusListClaims.IssuedAt))) {
+    if (!claims.has(String(CwtStatusListClaims.Iat))) {
       throw new Error('CWT status token does not contain issued at claim')
     }
-    if (!claims.has(String(CwtStatusListClaims.StatusList))) {
+    if (!claims.has(String(CwtStatusListClaims.Sli))) {
       throw new Error('CWT status token does not contain status list')
     }
 
-    const expirationTime = claims.get(String(CwtStatusListClaims.ExpirationTime))
-    if (expirationTime && typeof expirationTime === 'number' && expirationTime < Math.floor(Date.now() / 1000)) {
+    const expirationTime = claims.get(String(CwtStatusListClaims.Exp))
+    if (expirationTime && typeof expirationTime === 'number' && expirationTime < dateToSeconds()) {
       throw new Error('CWT status token has expired')
     }
 
@@ -130,7 +131,7 @@ export class CwtStatusToken {
     }
 
     const claims = cborDecode(cwt.payload) as Map<string, string | number | Uint8Array>
-    const statusList = claims.get(String(CwtStatusListClaims.StatusList))
+    const statusList = claims.get(String(CwtStatusListClaims.Sli))
     return StatusList.verifyStatus(statusList as Uint8Array, options.index, options.expectedStatus)
   }
 
