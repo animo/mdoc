@@ -1,5 +1,6 @@
 import * as zlib from 'pako'
 import { cborDecode, cborEncode } from '../cbor'
+import { InvalidStatusListBitsError, InvalidStatusListFormatError } from './error'
 import { type AllowedBitsPerEntry, StatusArray, allowedBitsPerEntry } from './status-array'
 
 export interface CborStatusListOptions {
@@ -42,10 +43,10 @@ export class StatusList {
     const { bits, lst } = statusList
 
     if (!statusList || !lst || !bits) {
-      throw new Error('Invalid status list format.')
+      throw new InvalidStatusListFormatError()
     }
     if (!allowedBitsPerEntry.includes(bits)) {
-      throw new Error(`Invalid bits per entry: ${bits}. Allowed values are ${allowedBitsPerEntry.join(', ')}.`)
+      throw new InvalidStatusListBitsError(bits, allowedBitsPerEntry)
     }
 
     const statusArray = new StatusArray(bits, zlib.inflate(lst))
