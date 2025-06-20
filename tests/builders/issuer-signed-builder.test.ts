@@ -51,6 +51,7 @@ describe('issuer signed builder', () => {
       digestAlgorithm: 'SHA-256',
       deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
       validityInfo: { signed, validFrom, validUntil },
+      statusList: { idx: 0, uri: 'https://status.example.com/status-list' },
     })
     issuerSignedEncoded = issuerSigned.encode()
 

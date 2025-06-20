@@ -19,7 +19,10 @@ import {
   IssuerSigned,
   IssuerSignedItem,
   MobileSecurityObject,
+  type MobileSecurityObjectOptions,
   type Namespace,
+  StatusInfo,
+  type StatusInfoStructure,
   ValidityInfo,
   type ValidityInfoOptions,
   ValueDigests,
@@ -86,6 +89,7 @@ export class IssuerSignedBuilder {
     validityInfo: ValidityInfo | ValidityInfoOptions
     deviceKeyInfo: DeviceKeyInfo | DeviceKeyInfoOptions
     certificate: Uint8Array
+    statusList?: StatusInfoStructure
   }): Promise<IssuerSigned> {
     const validityInfo =
       options.validityInfo instanceof ValidityInfo ? options.validityInfo : new ValidityInfo(options.validityInfo)
@@ -93,13 +97,17 @@ export class IssuerSignedBuilder {
     const deviceKeyInfo =
       options.deviceKeyInfo instanceof DeviceKeyInfo ? options.deviceKeyInfo : new DeviceKeyInfo(options.deviceKeyInfo)
 
-    const mso = new MobileSecurityObject({
+    const payload: MobileSecurityObjectOptions = {
       docType: this.docType,
       validityInfo,
       digestAlgorithm: options.digestAlgorithm,
       deviceKeyInfo,
       valueDigests: await this.convertIssuerNamespacesIntoValueDigests(options.digestAlgorithm),
-    })
+    }
+    if (options.statusList) {
+      payload.status = new StatusInfo({ key: options.signingKey, statusList: options.statusList })
+    }
+    const mso = new MobileSecurityObject(payload)
 
     const protectedHeaders = new ProtectedHeaders({
       protectedHeaders: new Map([[Header.Algorithm, options.algorithm]]),
