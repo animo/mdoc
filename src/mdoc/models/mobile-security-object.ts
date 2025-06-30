@@ -2,7 +2,7 @@ import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { DigestAlgorithm } from '../../cose'
 import { DeviceKeyInfo, type DeviceKeyInfoStructure } from './device-key-info'
 import type { DocType } from './doctype'
-import { StatusInfo } from './status-info'
+import { StatusInfo, type StatusInfoStructure } from './status-info'
 import { ValidityInfo, type ValidityInfoStructure } from './validity-info'
 import { ValueDigests, type ValueDigestsStructure } from './value-digests'
 
@@ -13,7 +13,7 @@ export type MobileSecurityObjectStructure = {
   valueDigests: ValueDigestsStructure
   deviceKeyInfo: DeviceKeyInfoStructure
   validityInfo: ValidityInfoStructure
-  status?: Uint8Array
+  status?: StatusInfoStructure
 }
 
 export type MobileSecurityObjectOptions = {
@@ -46,8 +46,7 @@ export class MobileSecurityObject extends CborStructure {
     this.status = options.status
   }
 
-  // Todo: Is it fine to make it async?
-  public async encodedStructure(): Promise<MobileSecurityObjectStructure> {
+  public encodedStructure(): MobileSecurityObjectStructure {
     const structure: MobileSecurityObjectStructure = {
       version: this.version,
       digestAlgorithm: this.digestAlgorithm,
@@ -57,7 +56,7 @@ export class MobileSecurityObject extends CborStructure {
       validityInfo: this.validityInfo.encodedStructure(),
     }
     if (this.status) {
-      structure.status = await this.status.encodedStructure()
+      structure.status = this.status.encodedStructure()
     }
     return structure
   }

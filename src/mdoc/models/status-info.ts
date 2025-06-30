@@ -1,17 +1,14 @@
 import { cborDecode, cborEncode } from '../../cbor'
-import { Tag } from '../../cbor/cbor-x'
-import type { MdocContext } from '../../context'
-import { type CoseKey, CoseStructureType, CoseTypeToTag, Mac0, Sign1 } from '../../cose'
-import { CWT } from '../../cwt'
 
 export type StatusInfoStructure = {
+  [StatusInfoClaim.StatusList]: {
+    status_list: Uint8Array
+  }
+}
+
+export type StatusInfoOptions = {
   idx: number
   uri: string
-}
-export type StatusInfoOptions = {
-  statusList: StatusInfoStructure
-  key?: CoseKey
-  mdocContext?: Pick<MdocContext, 'cose' | 'x509'>
 }
 
 export enum StatusInfoClaim {
@@ -19,69 +16,46 @@ export enum StatusInfoClaim {
 }
 
 export class StatusInfo {
-  public statusList: StatusInfoStructure
-  public mdocContext?: Pick<MdocContext, 'cose' | 'x509'>
-  public key?: CoseKey
+  public statusList: StatusInfoOptions
 
   public constructor(statusInfo: StatusInfoOptions) {
     this.statusList = {
-      idx: statusInfo.statusList.idx,
-      uri: statusInfo.statusList.uri,
+      idx: statusInfo.idx,
+      uri: statusInfo.uri,
     }
-    this.mdocContext = statusInfo.mdocContext
-    this.key = statusInfo.key
   }
 
-  public setKey(key: CoseKey): void {
-    this.key = key
-  }
-  public setMdocContext(mdocContext: Pick<MdocContext, 'cose' | 'x509'>): void {
-    this.mdocContext = mdocContext
-  }
-
-  public async encodedStructure(): Promise<Uint8Array> {
-    const cwt = new CWT()
-    cwt.setClaims({
+  public encodedStructure(): StatusInfoStructure {
+    return {
       [StatusInfoClaim.StatusList]: {
         status_list: cborEncode(this.statusList),
       },
-    })
-    if (!this.key) {
-      throw new Error('Signing key is required to encode StatusInfo')
     }
-    if (!this.mdocContext) {
-      throw new Error('MdocContext is required to encode StatusInfo')
-    }
-    // Todo: Add support for Mac0?
-    const type = CoseStructureType.Sign1
-    return cborEncode(
-      new Tag(await cwt.create({ type, key: this.key, mdocContext: this.mdocContext }), CoseTypeToTag[type])
-    )
   }
 
-  public static fromEncodedStructure(encodedStructure: Uint8Array): StatusInfo {
-    const decoded = cborDecode(encodedStructure) as Sign1 | Mac0
-    if (!(decoded instanceof Sign1 || decoded instanceof Mac0)) {
-      throw new Error('Unsupported CWT type')
+  public static fromEncodedStructure(encodedStructure: StatusInfoStructure): StatusInfo {
+    let structure = encodedStructure as StatusInfoStructure
+    if (structure instanceof Map) {
+      structure = Object.fromEntries(structure.entries()) as StatusInfoStructure
     }
-    if (!decoded.payload) {
-      throw new Error('CWT payload is missing')
-    }
-    const payload = cborDecode(decoded.payload) as {
-      [StatusInfoClaim.StatusList]: { status_list: StatusInfoStructure }
-    }
-    if (!payload || typeof payload !== 'object' || !(StatusInfoClaim.StatusList in payload)) {
+    if (!(StatusInfoClaim.StatusList in structure)) {
       throw new Error('Invalid status list structure')
     }
-    const statusList = payload[StatusInfoClaim.StatusList].status_list
-    if (!statusList || typeof statusList !== 'object' || !('idx' in statusList) || !('uri' in statusList)) {
+    if (structure[StatusInfoClaim.StatusList] instanceof Map) {
+      structure[StatusInfoClaim.StatusList] = Object.fromEntries(structure[StatusInfoClaim.StatusList].entries())
+    }
+
+    let statusList = cborDecode(structure[StatusInfoClaim.StatusList].status_list) as StatusInfoOptions
+    if (statusList instanceof Map) {
+      statusList = Object.fromEntries(statusList.entries()) as StatusInfoOptions
+    }
+    if (!('idx' in statusList) || !('uri' in statusList)) {
       throw new Error('Invalid status list structure')
     }
+
     return new StatusInfo({
-      statusList: {
-        idx: statusList.idx,
-        uri: statusList.uri,
-      },
+      idx: statusList.idx,
+      uri: statusList.uri,
     })
   }
 }
