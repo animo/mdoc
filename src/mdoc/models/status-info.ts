@@ -1,18 +1,10 @@
-import { cborDecode, cborEncode } from '../../cbor'
-
 export type StatusInfoStructure = {
-  [StatusInfoClaim.StatusList]: {
-    status_list: Uint8Array
-  }
+  status_list: StatusInfoOptions
 }
 
 export type StatusInfoOptions = {
   idx: number
   uri: string
-}
-
-export enum StatusInfoClaim {
-  StatusList = 65535,
 }
 
 export class StatusInfo {
@@ -27,9 +19,7 @@ export class StatusInfo {
 
   public encodedStructure(): StatusInfoStructure {
     return {
-      [StatusInfoClaim.StatusList]: {
-        status_list: cborEncode(this.statusList),
-      },
+      status_list: this.statusList,
     }
   }
 
@@ -38,14 +28,8 @@ export class StatusInfo {
     if (structure instanceof Map) {
       structure = Object.fromEntries(structure.entries()) as StatusInfoStructure
     }
-    if (!(StatusInfoClaim.StatusList in structure)) {
-      throw new Error('Invalid status list structure')
-    }
-    if (structure[StatusInfoClaim.StatusList] instanceof Map) {
-      structure[StatusInfoClaim.StatusList] = Object.fromEntries(structure[StatusInfoClaim.StatusList].entries())
-    }
 
-    let statusList = cborDecode(structure[StatusInfoClaim.StatusList].status_list) as StatusInfoOptions
+    let statusList = structure.status_list as StatusInfoOptions
     if (statusList instanceof Map) {
       statusList = Object.fromEntries(statusList.entries()) as StatusInfoOptions
     }
