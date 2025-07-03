@@ -135,7 +135,7 @@ export class CwtStatusToken {
     return StatusList.verifyStatus(statusList as Uint8Array, options.index, options.expectedStatus)
   }
 
-  static async fetchStatusListUri(statusListUri: string, timeoutMs = 5000): Promise<Uint8Array> {
+  static async fetchStatusList(statusListUri: string, timeoutMs = 5000): Promise<Uint8Array> {
     if (!statusListUri.startsWith('https://')) {
       throw new Error(`Status list URI must be HTTPS: ${statusListUri}`)
     }

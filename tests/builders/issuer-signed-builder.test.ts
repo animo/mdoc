@@ -1,6 +1,14 @@
 import { X509Certificate } from '@peculiar/x509'
 import { describe, expect, test } from 'vitest'
-import { CoseKey, DateOnly, type IssuerSigned, SignatureAlgorithm } from '../../src'
+import {
+  CoseKey,
+  CoseStructureType,
+  CwtStatusToken,
+  DateOnly,
+  type IssuerSigned,
+  SignatureAlgorithm,
+  StatusArray,
+} from '../../src'
 import { IssuerSignedBuilder } from '../../src/mdoc/builders/issuer-signed-builder'
 import { mdocContext } from '../context'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../issuing/config'
@@ -29,7 +37,7 @@ const claims = {
   ],
 }
 
-describe('issuer signed builder', () => {
+describe('issuer signed builder', async () => {
   let issuerSigned: IssuerSigned
   let issuerSignedEncoded: Uint8Array
 
@@ -38,6 +46,18 @@ describe('issuer signed builder', () => {
   validFrom.setMinutes(signed.getMinutes() + 5)
   const validUntil = new Date(signed)
   validUntil.setFullYear(signed.getFullYear() + 30)
+
+  const statusArray = new StatusArray(1)
+  statusArray.set(0, 0)
+  const statusToken = await CwtStatusToken.sign({
+    mdocContext,
+    statusListUri: 'https://status.example.com/status-list',
+    claimsSet: {
+      statusArray,
+    },
+    type: CoseStructureType.Sign1,
+    key: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
+  })
 
   test('correctly instantiate an issuer signed object', async () => {
     const issuerSignedBuilder = new IssuerSignedBuilder('org.iso.18013.5.1.mDL', mdocContext).addIssuerNamespace(
@@ -83,6 +103,23 @@ describe('issuer signed builder', () => {
     expect(validityInfo.validFrom).toEqual(validFrom)
     expect(validityInfo.validUntil).toEqual(validUntil)
     expect(validityInfo.expectedUpdate).toBeUndefined()
+  })
+
+  test('verify status info', async () => {
+    const { status } = issuerSigned.issuerAuth.mobileSecurityObject
+    expect(status).toBeDefined()
+
+    if (status) {
+      expect(
+        await CwtStatusToken.verifyStatus({
+          mdocContext,
+          key: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
+          token: statusToken,
+          index: status.statusList.idx,
+          expectedStatus: 0,
+        })
+      ).toBeTruthy()
+    }
   })
 
   test('set correct digest algorithm', () => {
