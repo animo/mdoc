@@ -43,7 +43,7 @@ export class SessionTranscript extends CborStructure {
     ]
   }
 
-  public static async calculateSessionTranscriptBytesForOid4VpDcApi(
+  public static async calculateSessionTranscriptBytesForOid4VpDcApiDraft24(
     options: { clientId: string; origin: string; verifierGeneratedNonce: string },
     ctx: Pick<MdocContext, 'crypto'>
   ) {
@@ -62,7 +62,54 @@ export class SessionTranscript extends CborStructure {
     )
   }
 
+  public static async calculateSessionTranscriptBytesForOid4VpDcApi(
+    options: { origin: string; verifierGeneratedNonce: string; jwkThumbprint?: Uint8Array },
+    ctx: Pick<MdocContext, 'crypto'>
+  ) {
+    return cborEncode(
+      DataItem.fromData([
+        null,
+        null,
+        [
+          'OpenID4VPDCAPIHandover',
+          await ctx.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([options.origin, options.verifierGeneratedNonce, options.jwkThumbprint ?? null]),
+          }),
+        ],
+      ])
+    )
+  }
+
   public static async calculateSessionTranscriptBytesForOid4Vp(
+    options: { clientId: string; verifierGeneratedNonce: string; jwkThumbprint?: Uint8Array; responseUri: string },
+    ctx: Pick<MdocContext, 'crypto'>
+  ) {
+    return cborEncode(
+      DataItem.fromData([
+        null,
+        null,
+        [
+          'OpenID4VPHandover',
+          await ctx.crypto.digest({
+            digestAlgorithm: 'SHA-256',
+            bytes: cborEncode([
+              options.clientId,
+              options.verifierGeneratedNonce,
+              options.jwkThumbprint ?? null,
+              options.responseUri,
+            ]),
+          }),
+        ],
+      ])
+    )
+  }
+
+  /**
+   * Calculate the session transcript bytes as defined in 18013-7 first edition, based
+   * on OpenID4VP draft 18.
+   */
+  public static async calculateSessionTranscriptBytesForOid4VpDraft18(
     options: { clientId: string; responseUri: string; verifierGeneratedNonce: string; mdocGeneratedNonce: string },
     ctx: Pick<MdocContext, 'crypto'>
   ) {

@@ -26,7 +26,7 @@ describe('Google CM Wallet mdoc implementation', () => {
               // to trust the signing certificate for now
               new Uint8Array(signingCertificate.rawData),
             ],
-            sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDcApi(
+            sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDcApiDraft24(
               {
                 origin,
                 clientId,
