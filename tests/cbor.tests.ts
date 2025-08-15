@@ -13,6 +13,27 @@ describe('cbor', () => {
     expect(decoded.get('foo')?.data.get('bar')).toBe('baz')
   })
 
+  it('should properly encoded and decoded maps (length <= 23)', () => {
+    const length = 23
+    const obj = Object.fromEntries(Array.from({ length }, (_, i) => [`key${i}`, i]))
+    const encoded = cborEncode(DataItem.fromData(obj))
+    const decoded = cborDecode(encoded, { unwrapTopLevelDataItem: false })
+    const reEncode = cborEncode(decoded)
+    expect(compareBytes(reEncode, encoded)).toBeTruthy()
+    expect(encoded[4].toString(16)).toBe((0xa0 + length).toString(16))
+  })
+
+  it('should properly encoded and decoded maps (length >= 23)', () => {
+    const length = 24
+    const obj = Object.fromEntries(Array.from({ length }, (_, i) => [`key${i}`, i]))
+    const encoded = cborEncode(DataItem.fromData(obj))
+    const decoded = cborDecode(encoded, { unwrapTopLevelDataItem: false })
+    const reEncode = cborEncode(decoded)
+    expect(compareBytes(reEncode, encoded)).toBeTruthy()
+    expect(encoded[4].toString(16)).toBe('b8')
+    expect(encoded[5].toString(16)).toBe(length.toString(16))
+  })
+
   it('should properly encoded and decoded maps', () => {
     const encoded = cborEncode(DataItem.fromData({ foo: 'baz' }))
     const decoded = cborDecode(encoded, { unwrapTopLevelDataItem: false })

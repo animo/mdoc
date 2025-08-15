@@ -10,6 +10,7 @@ const encoderDefaults: CborOptions = {
   useRecords: false,
   mapsAsObjects: false,
   unwrapTopLevelDataItem: true,
+  variableMapSize: true,
 }
 
 export const cborDecode = <T>(input: Uint8Array, options: CborOptions = encoderDefaults): T => {
