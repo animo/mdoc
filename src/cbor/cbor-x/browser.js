@@ -1,7 +1,7 @@
 exports.Encoder = require('./encode').Encoder
 exports.Decoder = require('./decode').Decoder
 exports.addExtension = require('./encode').addExtension
-const encoder = nconststststststststststexports.Encoder({ useRecords: false })
+const encoder = new exports.Encoder({ useRecords: false })
 exports.decode = encoder.decode
 exports.encode = encoder.encode
 Object.assign(exports, {
