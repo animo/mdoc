@@ -33,3 +33,5 @@ export const compareBytes = (lhs: Uint8Array, rhs: Uint8Array) => {
   if (lhs.byteLength !== rhs.byteLength) return false
   return lhs.every((b, i) => b === rhs[i])
 }
+
+export const dateToSeconds = (date?: Date): number => Math.floor((date?.getTime() ?? Date.now()) / 1000)
