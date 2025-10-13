@@ -161,9 +161,9 @@ export class DeviceResponse extends CborStructure {
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
-    if (!(options.mac && options.signature) || (options.mac && options.signature)) {
-      throw new EitherSignatureOrMacMustBeProvidedError()
-    }
+    const hasMac = !!options.mac
+    const hasSignature = !!options.signature
+    if (hasMac === hasSignature) throw new EitherSignatureOrMacMustBeProvidedError()
 
     const useSignature = !!options.signature
     const signingKey = useSignature ? options.mac.signingKey : options.signature.signingKey
