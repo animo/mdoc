@@ -13,7 +13,7 @@ import { DeviceSigned } from './device-signed'
 import type { DocRequest } from './doc-request'
 import { Document, type DocumentStructure } from './document'
 import { DocumentError, type DocumentErrorStructure } from './document-error'
-import type { IssuerSigned } from './issuer-signed'
+import { IssuerSigned } from './issuer-signed'
 import {
   findMdocMatchingDocType,
   limitDisclosureToDeviceRequestNameSpaces,
@@ -161,12 +161,11 @@ export class DeviceResponse extends CborStructure {
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
-    const hasMac = !!options.mac
-    const hasSignature = !!options.signature
-    if (hasMac === hasSignature) throw new EitherSignatureOrMacMustBeProvidedError()
-
+    const useMac = !!options.mac
     const useSignature = !!options.signature
-    const signingKey = useSignature ? options.mac.signingKey : options.signature.signingKey
+    if (useMac === useSignature) throw new EitherSignatureOrMacMustBeProvidedError()
+
+    const signingKey = useSignature ? options.signature!.signingKey : options.mac!.signingKey
 
     const documents = await Promise.all(
       options.inputDescriptorsOrRequests.map(async (idOrRequest) => {
@@ -182,7 +181,7 @@ export class DeviceResponse extends CborStructure {
         const deviceAuthenticationBytes = new DeviceAuthentication({
           sessionTranscript: options.sessionTranscript,
           docType: document.docType,
-          deviceNamespaces: document.deviceSigned.deviceNamespaces,
+          deviceNamespaces,
         }).encode({ asDataItem: true })
 
         const unprotectedHeaders = signingKey.keyId
@@ -218,7 +217,7 @@ export class DeviceResponse extends CborStructure {
           await deviceMac.addTag(
             {
               privateKey: signingKey,
-              ephemeralKey: (options.mac as Required<typeof options.mac>).ephemeralKey,
+              ephemeralKey: (options.mac as Required<typeof options.mac>)!.ephemeralKey,
               sessionTranscript: options.sessionTranscript,
             },
             ctx
@@ -229,7 +228,10 @@ export class DeviceResponse extends CborStructure {
 
         return new Document({
           docType: document.docType,
-          issuerSigned: document.issuerSigned,
+          issuerSigned: new IssuerSigned({
+              issuerNamespaces: document.issuerSigned.issuerNamespaces,
+              issuerAuth: document.issuerSigned.issuerAuth,
+          }),
           deviceSigned: new DeviceSigned({
             deviceNamespaces,
             deviceAuth: new DeviceAuth(deviceAuthOptions),

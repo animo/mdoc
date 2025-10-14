@@ -1,14 +1,14 @@
-import type { DataElementIdentifier } from './data-element-identifier.js'
-import type { DataElementValue } from './data-element-value.js'
-import { DeviceNamespaces } from './device-namespaces.js'
-import { DeviceSignedItems } from './device-signed-items.js'
-import type { DocRequest } from './doc-request.js'
-import type { DocType } from './doctype.js'
-import type { Document } from './document.js'
-import type { IssuerNamespace } from './issuer-namespace.js'
-import type { IssuerSignedItem } from './issuer-signed-item.js'
-import type { IssuerSigned } from './issuer-signed.js'
-import type { InputDescriptor } from './presentation-definition.js'
+import type { DataElementIdentifier } from './data-element-identifier'
+import type { DataElementValue } from './data-element-value'
+import { DeviceNamespaces } from './device-namespaces'
+import { DeviceSignedItems } from './device-signed-items'
+import type { DocRequest } from './doc-request'
+import type { DocType } from './doctype'
+import type { Document } from './document'
+import { IssuerNamespace } from './issuer-namespace'
+import type { IssuerSignedItem } from './issuer-signed-item'
+import type { IssuerSigned } from './issuer-signed'
+import type { InputDescriptor } from './presentation-definition'
 
 export const limitDisclosureToDeviceRequestNameSpaces = (
   issuerSigned: IssuerSigned,
@@ -34,6 +34,7 @@ export const limitDisclosureToDeviceRequestNameSpaces = (
       deviceSignedItems.set(issuerSignedItem.elementIdentifier, issuerSignedItem.elementValue)
     }
 
+    issuerSigned.issuerNamespaces?.issuerNamespaces.set(nameSpace, issuerSignedItems)
     deviceNamespaces.set(nameSpace, new DeviceSignedItems({ deviceSignedItems }))
   }
 
@@ -147,6 +148,8 @@ export const limitDisclosureToInputDescriptor = (
 ): DeviceNamespaces => {
   const deviceNamespaces: Map<string, DeviceSignedItems> = new Map()
 
+  const issuerNamespaces = new Map()
+
   for (const field of inputDescriptor.constraints.fields) {
     const result = prepareDigestForInputDescriptor(field.path, issuerSigned.issuerNamespaces)
 
@@ -163,12 +166,14 @@ export const limitDisclosureToInputDescriptor = (
     const { namespace, digest } = result
     const entry = deviceNamespaces.get(namespace)
     if (!entry) {
+      issuerNamespaces.set(namespace, [digest])
       deviceNamespaces.set(namespace, issuerSignedItemToDeviceSignedItems(digest))
     } else {
+      issuerNamespaces.get(namespace).push(digest)
       entry.deviceSignedItems.set(digest.elementIdentifier, digest.elementValue)
     }
   }
-
+  issuerSigned.issuerNamespaces = new IssuerNamespace({ issuerNamespaces })
   return new DeviceNamespaces({ deviceNamespaces })
 }
 
