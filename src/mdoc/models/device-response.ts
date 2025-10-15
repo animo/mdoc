@@ -6,7 +6,7 @@ import { EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
 import { DeviceAuthentication } from './device-authentication'
 import { DeviceMac } from './device-mac'
-import type { DeviceNamespaces } from './device-namespaces'
+import { DeviceNamespaces } from './device-namespaces'
 import type { DeviceRequest } from './device-request'
 import { DeviceSignature } from './device-signature'
 import { DeviceSigned } from './device-signed'
@@ -21,6 +21,7 @@ import {
 } from './pex-limit-disclosure'
 import type { InputDescriptor, PresentationDefinition } from './presentation-definition'
 import { SessionTranscript } from './session-transcript'
+import {IssuerNamespace} from "./issuer-namespace";
 
 export type DeviceResponseStructure = {
   version: string
@@ -145,12 +146,13 @@ export class DeviceResponse extends CborStructure {
 
   private static async create(
     limitDisclosureCb:
-      | ((issuerSigned: IssuerSigned, inputDescriptor: InputDescriptor) => DeviceNamespaces)
-      | ((issuerSigned: IssuerSigned, docRequest: DocRequest) => DeviceNamespaces),
+      | ((issuerSigned: IssuerSigned, inputDescriptor: InputDescriptor) => IssuerNamespace)
+      | ((issuerSigned: IssuerSigned, docRequest: DocRequest) => IssuerNamespace),
     options: {
       inputDescriptorsOrRequests: Array<InputDescriptor> | Array<DocRequest>
       sessionTranscript: SessionTranscript
-      documents: Array<Document>
+      documents: Array<Document>,
+      deviceNamespaces?: DeviceNamespaces,
       mac?: {
         ephemeralKey: CoseKey
         signingKey: CoseKey
@@ -173,10 +175,12 @@ export class DeviceResponse extends CborStructure {
           options.documents,
           'id' in idOrRequest ? idOrRequest.id : idOrRequest.itemsRequest.docType
         )
-        const deviceNamespaces = limitDisclosureCb(
+        const disclosedIssuerNamespaces = limitDisclosureCb(
           document.issuerSigned,
           idOrRequest as unknown as InputDescriptor & DocRequest
         )
+
+        const deviceNamespaces = options.deviceNamespaces ?? new DeviceNamespaces({ deviceNamespaces: new Map() })
 
         const deviceAuthenticationBytes = new DeviceAuthentication({
           sessionTranscript: options.sessionTranscript,
@@ -229,7 +233,7 @@ export class DeviceResponse extends CborStructure {
         return new Document({
           docType: document.docType,
           issuerSigned: new IssuerSigned({
-              issuerNamespaces: document.issuerSigned.issuerNamespaces,
+              issuerNamespaces: disclosedIssuerNamespaces,
               issuerAuth: document.issuerSigned.issuerAuth,
           }),
           deviceSigned: new DeviceSigned({
