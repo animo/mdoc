@@ -2,6 +2,7 @@ import { base64url } from 'jose'
 import type { MdocContext } from './context'
 import type { CoseKey } from './cose'
 import {
+  type DeviceNamespaces,
   DeviceRequest,
   DeviceResponse,
   type Document,
@@ -74,6 +75,7 @@ export class Holder {
       deviceRequest: DeviceRequest
       sessionTranscript: SessionTranscript
       documents: Array<Document>
+      deviceNamespaces?: DeviceNamespaces
       mac?: {
         ephemeralKey: CoseKey
         signingKey: CoseKey
@@ -92,6 +94,7 @@ export class Holder {
       presentationDefinition: PresentationDefinition
       sessionTranscript: SessionTranscript
       documents: Array<Document>
+      deviceNamespaces?: DeviceNamespaces
       mac?: {
         ephemeralKey: CoseKey
         signingKey: CoseKey
