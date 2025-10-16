@@ -153,11 +153,11 @@ export class DeviceResponse extends CborStructure {
       sessionTranscript: SessionTranscript
       documents: Array<Document>
       deviceNamespaces?: DeviceNamespaces
-      mac?: {
-        ephemeralKey: CoseKey
+      signature?: {
         signingKey: CoseKey
       }
-      signature?: {
+      mac?: {
+        ephemeralKey: CoseKey
         signingKey: CoseKey
       }
     },
@@ -168,6 +168,7 @@ export class DeviceResponse extends CborStructure {
     if (useMac === useSignature) throw new EitherSignatureOrMacMustBeProvidedError()
 
     const signingKey = useSignature ? options.signature?.signingKey : options.mac?.signingKey
+    if (!signingKey) throw new Error('Signing key is missing')
 
     const documents = await Promise.all(
       options.inputDescriptorsOrRequests.map(async (idOrRequest) => {
@@ -218,10 +219,13 @@ export class DeviceResponse extends CborStructure {
             detachedContent: deviceAuthenticationBytes,
           })
 
+          const ephemeralKey = options.mac?.ephemeralKey
+          if (!ephemeralKey) throw new Error('Ephemeral key is missing')
+
           await deviceMac.addTag(
             {
               privateKey: signingKey,
-              ephemeralKey: (options.mac as Required<typeof options.mac>)?.ephemeralKey,
+              ephemeralKey: ephemeralKey,
               sessionTranscript: options.sessionTranscript,
             },
             ctx
@@ -254,6 +258,7 @@ export class DeviceResponse extends CborStructure {
       deviceRequest: DeviceRequest
       sessionTranscript: SessionTranscript
       documents: Array<Document>
+      deviceNamespaces?: DeviceNamespaces
       mac?: {
         ephemeralKey: CoseKey
         signingKey: CoseKey
@@ -276,6 +281,7 @@ export class DeviceResponse extends CborStructure {
       presentationDefinition: PresentationDefinition
       sessionTranscript: SessionTranscript
       documents: Array<Document>
+      deviceNamespaces?: DeviceNamespaces
       mac?: {
         ephemeralKey: CoseKey
         signingKey: CoseKey
