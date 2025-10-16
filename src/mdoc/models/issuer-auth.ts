@@ -57,7 +57,7 @@ export class IssuerAuth extends Sign1 {
         await ctx.x509.verifyCertificateChain({
           trustedCertificates,
           x5chain: this.certificateChain,
-          now
+          now,
         })
 
         onCheck({

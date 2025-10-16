@@ -1,21 +1,17 @@
-import type { DataElementIdentifier } from './data-element-identifier'
-import type { DataElementValue } from './data-element-value'
-import { DeviceNamespaces } from './device-namespaces'
-import { DeviceSignedItems } from './device-signed-items'
 import type { DocRequest } from './doc-request'
 import type { DocType } from './doctype'
 import type { Document } from './document'
-import type { IssuerSignedItem } from './issuer-signed-item'
+import { IssuerNamespace } from './issuer-namespace'
 import type { IssuerSigned } from './issuer-signed'
+import type { IssuerSignedItem } from './issuer-signed-item'
+import type { Namespace } from './namespace'
 import type { InputDescriptor } from './presentation-definition'
-import type {Namespace} from "./namespace";
-import {IssuerNamespace} from "./issuer-namespace";
 
 export const limitDisclosureToDeviceRequestNameSpaces = (
   issuerSigned: IssuerSigned,
   docRequest: DocRequest
 ): IssuerNamespace => {
-  const issuerNamespaces = new Map<Namespace, Array<IssuerSignedItem>>
+  const issuerNamespaces = new Map<Namespace, Array<IssuerSignedItem>>()
   for (const [namespace, nameSpaceFields] of docRequest.itemsRequest.namespaces.entries()) {
     const nsAttrs = issuerSigned.issuerNamespaces?.issuerNamespaces.get(namespace) ?? []
     const issuerSignedItems = Array.from(nameSpaceFields.entries()).map(([elementIdentifier, _]) => {
@@ -29,7 +25,7 @@ export const limitDisclosureToDeviceRequestNameSpaces = (
     issuerNamespaces.set(namespace, issuerSignedItems)
   }
 
-  return new IssuerNamespace({issuerNamespaces})
+  return new IssuerNamespace({ issuerNamespaces })
 }
 
 const prepareIssuerSignedItem = (
@@ -137,7 +133,7 @@ export const limitDisclosureToInputDescriptor = (
   issuerSigned: IssuerSigned,
   inputDescriptor: InputDescriptor
 ): IssuerNamespace => {
-  const issuerNamespaces = new Map<Namespace, Array<IssuerSignedItem>>
+  const issuerNamespaces = new Map<Namespace, Array<IssuerSignedItem>>()
 
   for (const field of inputDescriptor.constraints.fields) {
     const result = prepareDigestForInputDescriptor(field.path, issuerSigned.issuerNamespaces)
