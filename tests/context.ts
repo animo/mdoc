@@ -87,9 +87,10 @@ export const mdocContext: MdocContext = {
       return CoseKey.fromJwk((await exportJWK(key)) as unknown as Record<string, unknown>)
     },
 
-    validateCertificateChain: async (input: {
+    verifyCertificateChain: async (input: {
       trustedCertificates: Array<Uint8Array>
       x5chain: Array<Uint8Array>
+      now?: Date
     }) => {
       const { trustedCertificates, x5chain: certificateChain } = input
       if (certificateChain.length === 0) throw new Error('Certificate chain is empty')
@@ -132,7 +133,7 @@ export const mdocContext: MdocContext = {
         const cert = parsedChain[i]
         const previousCertificate = parsedChain[i - 1]
         const publicKey = previousCertificate ? previousCertificate.publicKey : undefined
-        await cert?.verify({ publicKey, date: new Date() })
+        await cert?.verify({ publicKey, date: input.now ?? new Date() })
       }
     },
     getCertificateData: async (input: { certificate: Uint8Array }) => {

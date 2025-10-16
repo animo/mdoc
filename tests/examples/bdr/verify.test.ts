@@ -8,7 +8,7 @@ describe('BDR mDL implementation', () => {
   it('should verify mDL IssuerSigned from BDR', async () => {
     const issuerSigned = IssuerSigned.decode(issuerSignedBytes)
 
-    await issuerSigned.issuerAuth.validate(
+    await issuerSigned.issuerAuth.verify(
       {
         trustedCertificates: [new Uint8Array(issuerCertificate.rawData)],
         disableCertificateChainValidation: false,

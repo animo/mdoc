@@ -50,9 +50,10 @@ export interface MdocContext {
       alg: string
     }) => MaybePromise<CoseKey>
 
-    validateCertificateChain: (input: {
+    verifyCertificateChain: (input: {
       trustedCertificates: Uint8Array[]
       x5chain: Uint8Array[]
+      now?: Date
     }) => MaybePromise<void>
 
     getCertificateData: (input: { certificate: Uint8Array }) => MaybePromise<{

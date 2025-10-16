@@ -27,6 +27,6 @@ export class Verifier {
         ? options.deviceResponse
         : DeviceResponse.decode(options.deviceResponse)
 
-    await deviceResponse.validate(options, ctx)
+    await deviceResponse.verify(options, ctx)
   }
 }
