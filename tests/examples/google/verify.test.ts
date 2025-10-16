@@ -18,7 +18,7 @@ describe('Google CM Wallet mdoc implementation', () => {
 
     await expect(
       async () =>
-        await DeviceResponse.decode(deviceResponse).validate(
+        await DeviceResponse.decode(deviceResponse).verify(
           {
             trustedCertificates: [
               new Uint8Array(rootCertificate.rawData),

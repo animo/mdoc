@@ -91,7 +91,7 @@ export class DeviceResponse extends CborStructure {
     return DeviceResponse.fromEncodedStructure(structure)
   }
 
-  public async validate(
+  public async verify(
     options: {
       sessionTranscript: SessionTranscript | Uint8Array
       ephemeralReaderKey?: CoseKey
@@ -117,7 +117,7 @@ export class DeviceResponse extends CborStructure {
     })
 
     for (const document of this.documents ?? []) {
-      await document.issuerSigned.issuerAuth.validate(
+      await document.issuerSigned.issuerAuth.verify(
         {
           disableCertificateChainValidation: options.disableCertificateChainValidation,
           now: options.now,
@@ -127,7 +127,7 @@ export class DeviceResponse extends CborStructure {
         ctx
       )
 
-      await document.deviceSigned.deviceAuth.validate(
+      await document.deviceSigned.deviceAuth.verify(
         {
           document,
           ephemeralMacPrivateKey: options.ephemeralReaderKey,
@@ -140,7 +140,7 @@ export class DeviceResponse extends CborStructure {
         ctx
       )
 
-      await document.issuerSigned.validate({ verificationCallback: onCheck }, ctx)
+      await document.issuerSigned.verify({ verificationCallback: onCheck }, ctx)
     }
   }
 

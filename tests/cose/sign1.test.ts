@@ -35,12 +35,12 @@ describe('sign1', () => {
 
       expect(tbsHex).toStrictEqual(testVector['sign1::sign'].tbsHex.cborHex)
 
-      const isValid = await sign1.verify({ key }, mdocContext)
+      const isValid = await sign1.verifySignature({ key }, mdocContext)
       expect(isValid).toBeTruthy()
 
       await sign1.addSignature({ signingKey: key }, mdocContext)
 
-      const isValidAfterResign = await sign1.verify({ key }, mdocContext)
+      const isValidAfterResign = await sign1.verifySignature({ key }, mdocContext)
       expect(isValidAfterResign).toBeTruthy()
     })
   })

@@ -48,7 +48,7 @@ export class IssuerSigned extends CborStructure {
     return IssuerSigned.decode(base64url.decode(encoded))
   }
 
-  public async validate(
+  public async verify(
     options: { verificationCallback?: VerificationCallback },
     ctx: Pick<MdocContext, 'x509' | 'crypto'>
   ) {

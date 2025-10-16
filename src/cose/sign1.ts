@@ -156,7 +156,7 @@ export class Sign1 extends CborStructure {
     this.signature = signature
   }
 
-  public async verify(options: { key?: CoseKey }, ctx: Pick<MdocContext, 'cose' | 'x509'>) {
+  public async verifySignature(options: { key?: CoseKey }, ctx: Pick<MdocContext, 'cose' | 'x509'>) {
     const publicKey =
       options.key ??
       (await ctx.x509.getPublicKey({

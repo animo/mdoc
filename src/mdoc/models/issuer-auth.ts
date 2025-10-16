@@ -27,7 +27,7 @@ export class IssuerAuth extends Sign1 {
     return mso
   }
 
-  public async validate(
+  public async verify(
     options: {
       verificationCallback?: VerificationCallback
       now?: Date
@@ -54,9 +54,10 @@ export class IssuerAuth extends Sign1 {
           throw new Error('No trusted certificates found. Cannot verify issuer signature.')
         }
 
-        await ctx.x509.validateCertificateChain({
+        await ctx.x509.verifyCertificateChain({
           trustedCertificates,
           x5chain: this.certificateChain,
+          now
         })
 
         onCheck({
@@ -72,7 +73,7 @@ export class IssuerAuth extends Sign1 {
       }
     }
 
-    const isSignatureValid = await this.verify({}, ctx)
+    const isSignatureValid = await this.verifySignature({}, ctx)
 
     onCheck({
       status: isSignatureValid ? 'PASSED' : 'FAILED',
@@ -86,7 +87,7 @@ export class IssuerAuth extends Sign1 {
     })
 
     onCheck({
-      status: validityInfo.validateSigned(notBefore, notAfter) ? 'FAILED' : 'PASSED',
+      status: validityInfo.verifySigned(notBefore, notAfter) ? 'FAILED' : 'PASSED',
       check: 'The MSO signed date must be within the validity period of the certificate',
       reason: `The MSO signed date (${validityInfo.signed.toUTCString()}) must be within the validity period of the certificate (${notBefore.toUTCString()} to ${notAfter.toUTCString()})`,
     })

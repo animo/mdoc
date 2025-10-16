@@ -60,7 +60,7 @@ export class DeviceAuth extends CborStructure {
     throw new MdlError('unreachable')
   }
 
-  public async validate(
+  public async verify(
     options: {
       document: Document
       verificationCallback?: VerificationCallback

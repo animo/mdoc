@@ -28,16 +28,16 @@ export class ValidityInfo extends CborStructure {
     this.expectedUpdate = options.expectedUpdate
   }
 
-  public validateSigned(notBefore: Date, notAfter: Date): boolean {
+  public verifySigned(notBefore: Date, notAfter: Date): boolean {
     const isWithinRange = this.signed < notBefore || this.signed > notAfter
     return isWithinRange
   }
 
-  public validateValidUntil(now: Date = new Date()): boolean {
+  public verifyValidUntil(now: Date = new Date()): boolean {
     return this.validUntil < now
   }
 
-  public validateValidFrom(now: Date = new Date()): boolean {
+  public verifyValidFrom(now: Date = new Date()): boolean {
     return this.validFrom < now
   }
 

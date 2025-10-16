@@ -56,14 +56,14 @@ describe('issuer signed builder', () => {
     expect(issuerSigned.issuerNamespaces?.issuerNamespaces.has('org.iso.18013.5.1')).toBeTruthy()
     expect(issuerSigned.issuerAuth.signature).toBeDefined()
 
-    const verificationResult = await issuerSigned.issuerAuth.verify({}, mdocContext)
+    const verificationResult = await issuerSigned.issuerAuth.verifySignature({}, mdocContext)
 
     expect(verificationResult).toBeTruthy()
   })
 
   test('verify issuer signature', async () => {
     await expect(
-      issuerSigned.issuerAuth.validate(
+      issuerSigned.issuerAuth.verify(
         {
           trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
         },

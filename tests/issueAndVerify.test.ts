@@ -36,7 +36,7 @@ describe('Issue And Verify', () => {
       family_name: 'Doe',
     })
 
-    const isSignatureValid = await issuerSigned.issuerAuth.verify({}, mdocContext)
+    const isSignatureValid = await issuerSigned.issuerAuth.verifySignature({}, mdocContext)
 
     expect(isSignatureValid).toBeTruthy()
   })
@@ -44,7 +44,7 @@ describe('Issue And Verify', () => {
   test('receive mdoc', async () => {
     const issuerSigned = IssuerSigned.fromEncodedForOid4Vci(encodedIssuerSigned)
 
-    const isSignatureValid = await issuerSigned.issuerAuth.verify({}, mdocContext)
+    const isSignatureValid = await issuerSigned.issuerAuth.verifySignature({}, mdocContext)
     expect(isSignatureValid).toBeTruthy()
   })
 })
