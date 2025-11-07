@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { p256 } from '@noble/curves/p256'
+import { p256 } from '@noble/curves/nist.js'
 import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { hkdf } from '@panva/hkdf'
@@ -53,11 +53,7 @@ export const mdocContext: MdocContext = {
     sign1: {
       sign: async (input) => {
         const { key, sign1 } = input
-
-        const hashed = sha256(sign1.toBeSigned)
-        const sig = p256.sign(hashed, key.privateKey)
-
-        return sig.toBytes('compact')
+        return p256.sign(sign1.toBeSigned, key.privateKey, { format: 'compact' })
       },
       verify: async (input) => {
         const { sign1, key } = input
@@ -67,8 +63,8 @@ export const mdocContext: MdocContext = {
           throw new Error('signature is required for sign1 verification')
         }
 
-        const hashed = sha256(toBeSigned)
-        return p256.verify(signature, hashed, key.publicKey)
+        // lowS is needed after upgrade of @noble/curves to keep existing tests passing
+        return p256.verify(signature, toBeSigned, key.publicKey, { lowS: false })
       },
     },
   },
