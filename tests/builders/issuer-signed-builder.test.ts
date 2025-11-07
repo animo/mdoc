@@ -31,7 +31,6 @@ const claims = {
 
 describe('issuer signed builder', () => {
   let issuerSigned: IssuerSigned
-  let _issuerSignedEncoded: Uint8Array
 
   const signed = new Date('2023-10-24T14:55:18Z')
   const validFrom = new Date(signed)
@@ -52,7 +51,6 @@ describe('issuer signed builder', () => {
       deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
       validityInfo: { signed, validFrom, validUntil },
     })
-    _issuerSignedEncoded = issuerSigned.encode()
 
     expect(issuerSigned.issuerNamespaces).toBeDefined()
     expect(issuerSigned.issuerNamespaces?.issuerNamespaces.has('org.iso.18013.5.1')).toBeTruthy()
