@@ -1,8 +1,8 @@
-import { type CborDecodeOptions, DataItem, cborDecode } from '../../cbor/index.js'
+import { type CborDecodeOptions, cborDecode, DataItem } from '../../cbor/index.js'
 import type { MdocContext } from '../../context.js'
 import { CosePayloadInvalidStructureError, CosePayloadMustBeDefinedError } from '../../cose/error.js'
 import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
-import { type VerificationCallback, defaultVerificationCallback, onCategoryCheck } from '../check-callback.js'
+import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback.js'
 import { MobileSecurityObject, type MobileSecurityObjectStructure } from './mobile-security-object.js'
 
 export type IssuerAuthStructure = Sign1Structure

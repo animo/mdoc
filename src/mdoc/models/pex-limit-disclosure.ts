@@ -6,8 +6,8 @@ import type { DocRequest } from './doc-request.js'
 import type { DocType } from './doctype.js'
 import type { Document } from './document.js'
 import type { IssuerNamespace } from './issuer-namespace.js'
-import type { IssuerSignedItem } from './issuer-signed-item.js'
 import type { IssuerSigned } from './issuer-signed.js'
+import type { IssuerSignedItem } from './issuer-signed-item.js'
 import type { InputDescriptor } from './presentation-definition.js'
 
 export const limitDisclosureToDeviceRequestNameSpaces = (

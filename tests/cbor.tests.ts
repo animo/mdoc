@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DataItem, cborDecode, cborEncode } from '../src'
+import { cborDecode, cborEncode, DataItem } from '../src'
 import { compareBytes, hex } from '../src/utils'
 
 describe('cbor', () => {

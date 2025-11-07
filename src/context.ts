@@ -7,10 +7,7 @@ type MaybePromise<T> = Promise<T> | T
 export interface MdocContext {
   crypto: {
     random: (length: number) => Uint8Array
-    digest: (input: {
-      digestAlgorithm: DigestAlgorithm
-      bytes: Uint8Array
-    }) => MaybePromise<Uint8Array>
+    digest: (input: { digestAlgorithm: DigestAlgorithm; bytes: Uint8Array }) => MaybePromise<Uint8Array>
     calculateEphemeralMacKey: (input: {
       privateKey: Uint8Array
       publicKey: Uint8Array
@@ -23,32 +20,20 @@ export interface MdocContext {
     sign1: {
       sign: (input: { sign1: Sign1; key: CoseKey }) => MaybePromise<Uint8Array>
 
-      verify(input: {
-        key: CoseKey
-        sign1: Sign1
-      }): MaybePromise<boolean>
+      verify(input: { key: CoseKey; sign1: Sign1 }): MaybePromise<boolean>
     }
 
     mac0: {
       sign: (input: { key: CoseKey; mac0: Mac0 }) => MaybePromise<Uint8Array>
 
-      verify(input: {
-        mac0: Mac0
-        key: CoseKey
-      }): MaybePromise<boolean>
+      verify(input: { mac0: Mac0; key: CoseKey }): MaybePromise<boolean>
     }
   }
 
   x509: {
-    getIssuerNameField: (input: {
-      certificate: Uint8Array
-      field: string
-    }) => string[]
+    getIssuerNameField: (input: { certificate: Uint8Array; field: string }) => string[]
 
-    getPublicKey: (input: {
-      certificate: Uint8Array
-      alg: string
-    }) => MaybePromise<CoseKey>
+    getPublicKey: (input: { certificate: Uint8Array; alg: string }) => MaybePromise<CoseKey>
 
     validateCertificateChain: (input: {
       trustedCertificates: Uint8Array[]

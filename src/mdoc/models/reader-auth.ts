@@ -1,7 +1,7 @@
 import { type CborDecodeOptions, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { Sign1, type Sign1Structure } from '../../cose/sign1'
-import { type VerificationCallback, defaultVerificationCallback, onCategoryCheck } from '../check-callback'
+import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback'
 import { ReaderAuthentication, type ReaderAuthenticationOptions } from './reader-authentication'
 
 export type ReaderAuthStructure = Sign1Structure

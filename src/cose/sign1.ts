@@ -1,5 +1,5 @@
 import { CborEncodeError } from '../cbor/error.js'
-import { type CborDecodeOptions, CborStructure, addExtension, cborDecode, cborEncode } from '../cbor/index.js'
+import { addExtension, type CborDecodeOptions, CborStructure, cborDecode, cborEncode } from '../cbor/index.js'
 import type { MdocContext } from '../context.js'
 import { CoseCertificateNotFoundError, CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
 import { Header, type SignatureAlgorithm } from './headers/defaults.js'

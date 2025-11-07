@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "Node16",
+    "module": "NodeNext",
     "target": "ES2020",
     "declaration": true,
     "sourceMap": true,
@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "noEmitOnError": true,
     "lib": ["ES2020"],
-    "types": [],
+    "types": ["node"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
   },

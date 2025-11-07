@@ -1,4 +1,4 @@
-import { type CborDecodeOptions, CborStructure, DataItem, cborDecode } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
 import { ItemsRequest, type ItemsRequestStructure } from './items-request'
 import { SessionTranscript, type SessionTranscriptStructure } from './session-transcript'
 

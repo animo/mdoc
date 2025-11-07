@@ -1,5 +1,9 @@
-// biome-ignore format:
-class CoseError extends Error { constructor(message: string = new.target.name) { super(message) } }
+// biome-ignore format: no explanation
+class CoseError extends Error {
+  constructor(message: string = new.target.name) {
+    super(message)
+  }
+}
 
 export class CoseUnsupportedMacError extends CoseError {}
 export class CoseInvalidSignatureError extends CoseError {}

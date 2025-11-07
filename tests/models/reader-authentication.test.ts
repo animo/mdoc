@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { NfcHandover, hex } from '../../src'
+import { hex, NfcHandover } from '../../src'
 import { ReaderAuthentication } from '../../src/mdoc/models/reader-authentication'
 
 const cbor =

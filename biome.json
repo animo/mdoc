@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.3.4/schema.json",
   "files": {
     "maxSize": 10000000
   },
@@ -24,15 +24,23 @@
       "allowComments": true
     }
   },
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
       "style": {
-        "useLiteralEnumMembers": "off"
+        "useLiteralEnumMembers": "off",
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
       },
       "suspicious": {
         "noExportsInTest": "off"
@@ -55,7 +63,7 @@
   },
   "overrides": [
     {
-      "include": ["*.d.ts"],
+      "includes": ["**/*.d.ts"],
       "linter": {
         "rules": {
           "complexity": {
@@ -68,7 +76,7 @@
       }
     },
     {
-      "include": ["*.js"],
+      "includes": ["**/*.js"],
       "linter": {
         "enabled": false
       }

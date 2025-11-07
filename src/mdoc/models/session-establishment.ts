@@ -1,4 +1,4 @@
-import { type CborDecodeOptions, CborStructure, DataItem, cborDecode } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
 import type { MdocContext } from '../../context'
 import type { CoseKey } from '../../cose'
 import { EReaderKey, type EReaderKeyStructure } from './e-reader-key'
@@ -32,7 +32,7 @@ export class SessionEstablishment extends CborStructure {
     },
     ctx: Pick<MdocContext, 'crypto'>
   ) {
-    const key = await ctx.crypto.calculateEphemeralMacKey({
+    const _key = await ctx.crypto.calculateEphemeralMacKey({
       privateKey: options.eDeviceKeyPrivate.privateKey,
       publicKey: options.eReaderKeyPublic.publicKey,
       sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),

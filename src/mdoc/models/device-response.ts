@@ -1,7 +1,7 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { CoseInvalidAlgorithmError, type CoseKey, Header, ProtectedHeaders, UnprotectedHeaders } from '../../cose'
-import { type VerificationCallback, defaultVerificationCallback } from '../check-callback'
+import { defaultVerificationCallback, type VerificationCallback } from '../check-callback'
 import { EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
 import { DeviceAuthentication } from './device-authentication'

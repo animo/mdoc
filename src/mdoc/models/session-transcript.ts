@@ -1,4 +1,4 @@
-import { type CborDecodeOptions, CborStructure, DataItem, cborDecode, cborEncode } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode, cborEncode, DataItem } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { DeviceEngagement, type DeviceEngagementStructure } from './device-engagement'
 import { EReaderKey, type EReaderKeyStructure } from './e-reader-key'

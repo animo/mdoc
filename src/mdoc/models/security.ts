@@ -1,4 +1,4 @@
-import { type CborDecodeOptions, CborStructure, DataItem, cborDecode } from '../../cbor'
+import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
 import { EDeviceKey, type EDeviceKeyStructure } from './e-device-key'
 
 export type SecurityStructure = [number, DataItem<EDeviceKeyStructure>]

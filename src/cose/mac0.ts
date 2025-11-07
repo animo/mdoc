@@ -1,6 +1,6 @@
 import { CborStructure } from '../cbor/cbor-structure.js'
 import { CborEncodeError } from '../cbor/error.js'
-import { type CborDecodeOptions, addExtension } from '../cbor/index.js'
+import { addExtension, type CborDecodeOptions } from '../cbor/index.js'
 import { cborDecode, cborEncode } from '../cbor/parser.js'
 import type { MdocContext } from '../context.js'
 import type { SessionTranscript } from '../mdoc/index.js'

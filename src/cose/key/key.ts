@@ -1,11 +1,11 @@
-import { concatBytes } from '@noble/curves/abstract/utils'
+import { concatBytes } from '@noble/curves/utils.js'
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import {
   CoseDNotDefinedError,
   CoseInvalidKtyForRawError,
   CoseInvalidValueForKtyError,
-  CoseKNotDefinedError,
   CoseKeyTypeNotSupportedForPrivateKeyExtractionError,
+  CoseKNotDefinedError,
   CoseXNotDefinedError,
 } from '../error'
 import type { Curve } from './curve'

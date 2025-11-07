@@ -1,24 +1,24 @@
 export {
-  Decoder,
-  FLOAT32_OPTIONS,
-  Tag,
   clearSource,
+  Decoder,
   decode,
   decodeMultiple,
+  FLOAT32_OPTIONS,
   isNativeAccelerationEnabled,
   roundFloat32,
   setSizeLimits,
+  Tag,
 } from './decode.js'
 export {
   ALWAYS,
+  addExtension,
   DECIMAL_FIT,
   DECIMAL_ROUND,
   Encoder,
-  NEVER,
-  REUSE_BUFFER_MODE,
-  addExtension,
   encode,
   encodeAsAsyncIterable,
   encodeAsIterable,
+  NEVER,
+  REUSE_BUFFER_MODE,
 } from './encode.js'
 export { decodeIter, encodeIter } from './iterators.js'

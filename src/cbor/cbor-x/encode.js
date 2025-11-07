@@ -1,4 +1,5 @@
-import { Decoder, FLOAT32_OPTIONS, Tag, addExtension as decodeAddExtension, mult10 } from './decode.js'
+import { Decoder, addExtension as decodeAddExtension, FLOAT32_OPTIONS, mult10, Tag } from './decode.js'
+
 let textEncoder
 try {
   textEncoder = new TextEncoder()

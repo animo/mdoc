@@ -1,7 +1,7 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { type CoseKey, MacAlgorithm } from '../../cose'
-import { type VerificationCallback, defaultVerificationCallback, onCategoryCheck } from '../check-callback'
+import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback'
 import { MdlError } from '../errors'
 import { DeviceAuthentication } from './device-authentication'
 import { DeviceMac, type DeviceMacStructure } from './device-mac'

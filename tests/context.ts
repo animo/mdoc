@@ -1,11 +1,12 @@
+import crypto from 'node:crypto'
 import { p256 } from '@noble/curves/p256'
-import { hmac } from '@noble/hashes/hmac'
-import { sha256 } from '@noble/hashes/sha2'
+import { hmac } from '@noble/hashes/hmac.js'
+import { sha256 } from '@noble/hashes/sha2.js'
 import { hkdf } from '@panva/hkdf'
 import * as x509 from '@peculiar/x509'
 import { X509Certificate } from '@peculiar/x509'
 import { exportJWK, importX509 } from 'jose'
-import { CoseKey, KeyOps, KeyType, MacAlgorithm, type MdocContext, hex, stringToBytes } from '../src'
+import { CoseKey, hex, KeyOps, KeyType, MacAlgorithm, type MdocContext, stringToBytes } from '../src'
 
 export const mdocContext: MdocContext = {
   crypto: {
@@ -18,7 +19,7 @@ export const mdocContext: MdocContext = {
     },
     calculateEphemeralMacKey: async (input) => {
       const { privateKey, publicKey, sessionTranscriptBytes, info } = input
-      const ikm = p256.getSharedSecret(hex.encode(privateKey), hex.encode(publicKey), true).slice(1)
+      const ikm = p256.getSharedSecret(privateKey, publicKey, true).slice(1)
       const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', sessionTranscriptBytes))
       const infoAsBytes = stringToBytes(info)
       const digest = 'sha256'
@@ -56,7 +57,7 @@ export const mdocContext: MdocContext = {
         const hashed = sha256(sign1.toBeSigned)
         const sig = p256.sign(hashed, key.privateKey)
 
-        return sig.toCompactRawBytes()
+        return sig.toBytes('compact')
       },
       verify: async (input) => {
         const { sign1, key } = input
@@ -87,10 +88,7 @@ export const mdocContext: MdocContext = {
       return CoseKey.fromJwk((await exportJWK(key)) as unknown as Record<string, unknown>)
     },
 
-    validateCertificateChain: async (input: {
-      trustedCertificates: Array<Uint8Array>
-      x5chain: Array<Uint8Array>
-    }) => {
+    validateCertificateChain: async (input: { trustedCertificates: Array<Uint8Array>; x5chain: Array<Uint8Array> }) => {
       const { trustedCertificates, x5chain: certificateChain } = input
       if (certificateChain.length === 0) throw new Error('Certificate chain is empty')
 

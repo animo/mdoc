@@ -1,7 +1,7 @@
 import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { base64url } from '../../utils'
-import { type VerificationCallback, defaultVerificationCallback, onCategoryCheck } from '../check-callback'
+import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback'
 import { IssuerAuth, type IssuerAuthStructure } from './issuer-auth'
 import { IssuerNamespace, type IssuerNamespaceStructure } from './issuer-namespace'
 import type { IssuerSignedItem } from './issuer-signed-item'
