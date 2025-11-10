@@ -28,8 +28,7 @@ export class IssuerSigned extends CborStructure {
   }
 
   public getIssuerNamespace(namespace: Namespace) {
-    if (!this.issuerNamespaces) return undefined
-    return this.issuerNamespaces.issuerNamespaces.get(namespace)
+    return this.issuerNamespaces?.get(namespace)
   }
 
   public getPrettyClaims(namespace: Namespace) {

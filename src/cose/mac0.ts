@@ -1,9 +1,7 @@
-import { CborStructure } from '../cbor/cbor-structure.js'
 import { CborEncodeError } from '../cbor/error.js'
-import { addExtension, type CborDecodeOptions } from '../cbor/index.js'
-import { cborDecode, cborEncode } from '../cbor/parser.js'
+import { addExtension, type CborDecodeOptions, CborStructure, cborDecode, cborEncode } from '../cbor/index.js'
 import type { MdocContext } from '../context.js'
-import type { SessionTranscript } from '../mdoc/index.js'
+import { SessionTranscript } from '../mdoc/models/session-transcript.js'
 import { CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
 import { Header, type MacAlgorithm } from './headers/defaults.js'
 import { type ProtectedHeaderOptions, ProtectedHeaders } from './headers/protected-headers.js'
@@ -101,13 +99,16 @@ export class Mac0 extends CborStructure {
   }
 
   public async addTag(
-    options: { privateKey: CoseKey; ephemeralKey: CoseKey; sessionTranscript: SessionTranscript },
+    options: { privateKey: CoseKey; ephemeralKey: CoseKey; sessionTranscript: SessionTranscript | Uint8Array },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
     const ephemeralMacKey = await ctx.crypto.calculateEphemeralMacKey({
       privateKey: options.privateKey.encode(),
       publicKey: options.ephemeralKey.encode(),
-      sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
+      sessionTranscriptBytes:
+        options.sessionTranscript instanceof SessionTranscript
+          ? options.sessionTranscript.encode({ asDataItem: true })
+          : options.sessionTranscript,
       info: 'EMacKey',
     })
 

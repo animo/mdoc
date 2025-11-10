@@ -1,6 +1,5 @@
 import type { DocRequest } from './doc-request'
 import type { DocType } from './doctype'
-import type { Document } from './document'
 import { IssuerNamespace } from './issuer-namespace'
 import type { IssuerSigned } from './issuer-signed'
 import type { IssuerSignedItem } from './issuer-signed-item'
@@ -115,18 +114,18 @@ const handleAgeOverNN = (request: string, attributes: IssuerSignedItem[]): Issue
   return attributes[item.index]
 }
 
-export const findMdocMatchingDocType = (documents: Array<Document>, docType: DocType) => {
-  const matchingMdoc = documents.filter((document) => document.docType === docType)
+export const findIssuerSigned = (is: Array<IssuerSigned>, docType: DocType) => {
+  const issuerSigned = is.filter((i) => i.issuerAuth.mobileSecurityObject.docType === docType)
 
-  if (!matchingMdoc || !matchingMdoc[0]) {
-    throw new Error(`Cannot limit the disclosure. No credential is matching the requested DocType '${docType}'`)
+  if (!issuerSigned || !issuerSigned[0]) {
+    throw new Error(`Cannot limit the disclosure. No Issuer Signed Item matching docType '${docType}'`)
   }
 
-  if (matchingMdoc.length > 1) {
-    throw new Error(`Cannot limit the disclosure. Multiple credentials are matching the requested DocType '${docType}'`)
+  if (issuerSigned.length > 1) {
+    throw new Error(`Cannot limit the disclosure. Multiple Issuer Signed Items matching docType '${docType}'`)
   }
 
-  return matchingMdoc[0]
+  return issuerSigned[0]
 }
 
 export const limitDisclosureToInputDescriptor = (

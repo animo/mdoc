@@ -6,8 +6,7 @@ import { DeviceResponse, type SessionTranscript } from './mdoc/index.js'
 export class Verifier {
   /**
    *
-   *
-   * @todo should this check if it is also compatible with the device /pex request?
+   * @todo check whether the device response is compatible with the device request / dcql request
    *
    */
   public static async verifyDeviceResponse(

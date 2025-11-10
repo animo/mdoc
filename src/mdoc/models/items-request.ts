@@ -11,7 +11,9 @@ export type ItemsRequestStructure = {
 
 export type ItemsRequestOptions = {
   docType: DocType
-  namespaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+  namespaces:
+    | Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+    | Record<Namespace, Record<DataElementIdentifier, IntentToRetain>>
 }
 
 export class ItemsRequest extends CborStructure {
@@ -21,7 +23,10 @@ export class ItemsRequest extends CborStructure {
   public constructor(options: ItemsRequestOptions) {
     super()
     this.docType = options.docType
-    this.namespaces = options.namespaces
+    this.namespaces =
+      options.namespaces instanceof Map
+        ? options.namespaces
+        : new Map(Object.entries(options.namespaces).map(([ns, inner]) => [ns, new Map(Object.entries(inner))]))
   }
 
   public encodedStructure(): ItemsRequestStructure {

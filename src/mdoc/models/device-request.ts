@@ -7,7 +7,7 @@ export type DeviceRequestStructure = {
 }
 
 export type DeviceRequestOptions = {
-  version: string
+  version?: string
   docRequests: Array<DocRequest>
 }
 
@@ -17,7 +17,7 @@ export class DeviceRequest extends CborStructure {
 
   public constructor(options: DeviceRequestOptions) {
     super()
-    this.version = options.version
+    this.version = options.version ?? '1.0'
     this.docRequests = options.docRequests
   }
 

@@ -67,7 +67,6 @@ export class Encoder extends Decoder {
     this.mapEncode = function (value, encodeOptions) {
       // Experimental support for premapping keys using _keyMap instad of keyMap - not optiimised yet)
       if (this._keyMap && !this._mapped) {
-        //console.log('encoding ', value)
         switch (value.constructor.name) {
           case 'Array':
             value = value.map((r) => this.encodeKeys(r))
@@ -125,7 +124,6 @@ export class Encoder extends Decoder {
           sharedStructures.transitions = Object.create(null)
           for (let i = 0; i < sharedStructuresLength; i++) {
             const keys = sharedStructures[i]
-            //console.log('shared struct keys:', keys)
             if (!keys) continue
             let nextTransition
             let transition = sharedStructures.transitions

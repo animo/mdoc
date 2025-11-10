@@ -5,9 +5,7 @@ import {
   type DeviceNamespaces,
   DeviceRequest,
   DeviceResponse,
-  type Document,
   IssuerSigned,
-  type PresentationDefinition,
   SessionTranscript,
   type VerificationCallback,
 } from './mdoc'
@@ -73,8 +71,8 @@ export class Holder {
   public static async createDeviceResponseForDeviceRequest(
     options: {
       deviceRequest: DeviceRequest
-      sessionTranscript: SessionTranscript
-      documents: Array<Document>
+      sessionTranscript: SessionTranscript | Uint8Array
+      issuerSigned: Array<IssuerSigned>
       deviceNamespaces?: DeviceNamespaces
       mac?: {
         ephemeralKey: CoseKey
@@ -89,22 +87,22 @@ export class Holder {
     return await DeviceResponse.createWithDeviceRequest(options, context)
   }
 
-  public static async createDeviceResponseForPresentationDefinition(
-    options: {
-      presentationDefinition: PresentationDefinition
-      sessionTranscript: SessionTranscript
-      documents: Array<Document>
-      deviceNamespaces?: DeviceNamespaces
-      mac?: {
-        ephemeralKey: CoseKey
-        signingKey: CoseKey
-      }
-      signature?: {
-        signingKey: CoseKey
-      }
-    },
-    context: Pick<MdocContext, 'cose' | 'crypto'>
-  ) {
-    return await DeviceResponse.createWithPresentationDefinition(options, context)
-  }
+  // public static async createDeviceResponseForPresentationDefinition(
+  //   options: {
+  //     presentationDefinition: PresentationDefinition
+  //     sessionTranscript: SessionTranscript
+  //     documents: Array<Document>
+  //     deviceNamespaces?: DeviceNamespaces
+  //     mac?: {
+  //       ephemeralKey: CoseKey
+  //       signingKey: CoseKey
+  //     }
+  //     signature?: {
+  //       signingKey: CoseKey
+  //     }
+  //   },
+  //   context: Pick<MdocContext, 'cose' | 'crypto'>
+  // ) {
+  //   return await DeviceResponse.createWithPresentationDefinition(options, context)
+  // }
 }

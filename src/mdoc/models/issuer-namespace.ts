@@ -39,4 +39,8 @@ export class IssuerNamespace extends CborStructure {
 
     return new IssuerNamespace({ issuerNamespaces })
   }
+
+  public get(namespace: string) {
+    return this.issuerNamespaces.get(namespace)
+  }
 }

@@ -1,5 +1,5 @@
-import { addExtension } from './cbor-x/index.js'
-import { cborDecode, cborEncode } from './index.js'
+import { cborDecode, cborEncode } from '.'
+import { addExtension } from './cbor-x'
 
 export type DataItemParams<T = unknown> =
   | {

@@ -6,7 +6,7 @@ import { SessionTranscript } from './session-transcript'
 export type DeviceAuthenticationStructure = [string, Uint8Array, DocType, Uint8Array]
 
 export type DeviceAuthenticationOptions = {
-  sessionTranscript: SessionTranscript
+  sessionTranscript: SessionTranscript | Uint8Array
   docType: DocType
   deviceNamespaces: DeviceNamespaces
 }
@@ -18,7 +18,10 @@ export class DeviceAuthentication extends CborStructure {
 
   public constructor(options: DeviceAuthenticationOptions) {
     super()
-    this.sessionTranscript = options.sessionTranscript
+    this.sessionTranscript =
+      options.sessionTranscript instanceof SessionTranscript
+        ? options.sessionTranscript
+        : SessionTranscript.decode(options.sessionTranscript)
     this.docType = options.docType
     this.deviceNamespaces = options.deviceNamespaces
   }
