@@ -4,6 +4,7 @@ import { type CoseKey, Header, ProtectedHeaders, UnprotectedHeaders } from '../.
 import { base64url } from '../../utils'
 import { findIssuerSigned } from '../../utils/findIssuerSigned'
 import { limitDisclosureToDeviceRequestNameSpaces } from '../../utils/limitDisclosure'
+import { verifyDocRequestsWithIssuerSigned } from '../../utils/verifyDocRequestsWithIssuerSigned'
 import { type VerificationCallback, defaultVerificationCallback } from '../check-callback'
 import { EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
@@ -88,6 +89,7 @@ export class DeviceResponse extends CborStructure {
 
   public async verify(
     options: {
+      deviceRequest?: DeviceRequest
       sessionTranscript: SessionTranscript | Uint8Array
       ephemeralReaderKey?: CoseKey
       disableCertificateChainValidation?: boolean
@@ -136,6 +138,26 @@ export class DeviceResponse extends CborStructure {
       )
 
       await document.issuerSigned.verify({ verificationCallback: onCheck }, ctx)
+    }
+
+    if (options.deviceRequest?.docRequests && this.documents) {
+      try {
+        verifyDocRequestsWithIssuerSigned(
+          options.deviceRequest.docRequests,
+          this.documents.map((d) => d.issuerSigned)
+        )
+        onCheck({
+          status: 'PASSED',
+          check: 'Device Response did match the Device Request',
+          category: 'DOCUMENT_FORMAT',
+        })
+      } catch (e) {
+        onCheck({
+          status: 'FAILED',
+          check: `Device Response did not match the Device Request: ${(e as Error).message}`,
+          category: 'DOCUMENT_FORMAT',
+        })
+      }
     }
   }
 

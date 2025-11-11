@@ -6,8 +6,8 @@ import {
   DeviceResponse,
   DocRequest,
   Holder,
+  Issuer,
   IssuerSigned,
-  IssuerSignedBuilder,
   ItemsRequest,
   SessionTranscript,
   SignatureAlgorithm,
@@ -24,14 +24,14 @@ validUntil.setFullYear(signed.getFullYear() + 30)
 
 suite('Verification', () => {
   test('Verify simple mdoc', async () => {
-    const isb = new IssuerSignedBuilder('org.iso.18013.5.1', mdocContext)
+    const issuer = new Issuer('org.iso.18013.5.1', mdocContext)
 
-    isb.addIssuerNamespace('org.iso.18013.5.1.mDL', {
+    issuer.addIssuerNamespace('org.iso.18013.5.1.mDL', {
       first_name: 'First',
       last_name: 'Last',
     })
 
-    const issuerSigned = await isb.sign({
+    const issuerSigned = await issuer.sign({
       signingKey: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
@@ -97,15 +97,14 @@ suite('Verification', () => {
 
     const decodedDeviceResponse = DeviceResponse.fromEncodedForOid4Vp(encodedDeviceResponse)
 
-    await expect(
-      Verifier.verifyDeviceResponse(
-        {
-          deviceResponse: decodedDeviceResponse,
-          sessionTranscript: fakeSessionTranscript,
-          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-        },
-        mdocContext
-      )
-    ).resolves.toBeUndefined()
+    await Verifier.verifyDeviceResponse(
+      {
+        deviceRequest,
+        deviceResponse: decodedDeviceResponse,
+        sessionTranscript: fakeSessionTranscript,
+        trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+      },
+      mdocContext
+    )
   })
 })
