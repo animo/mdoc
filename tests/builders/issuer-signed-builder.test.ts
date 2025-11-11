@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest'
 import { CoseKey, DateOnly, type IssuerSigned, SignatureAlgorithm } from '../../src'
 import { IssuerSignedBuilder } from '../../src/mdoc/builders/issuer-signed-builder'
 import { mdocContext } from '../context'
-import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../issuing/config'
+import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 
 const claims = {
   family_name: 'Jones',

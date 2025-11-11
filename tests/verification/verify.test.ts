@@ -14,7 +14,7 @@ import {
   Verifier,
 } from '../../src'
 import { mdocContext } from '../context'
-import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../issuing/config'
+import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 
 const signed = new Date('2023-10-24T14:55:18Z')
 const validFrom = new Date(signed)
@@ -188,15 +188,17 @@ suite('Verification', () => {
 
     const decodedDeviceResponse = DeviceResponse.fromEncodedForOid4Vp(encodedDeviceResponse)
 
-    await Verifier.verifyDeviceResponse(
-      {
-        deviceRequest,
-        deviceResponse: decodedDeviceResponse,
-        sessionTranscript: fakeSessionTranscript,
-        trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
-      },
-      mdocContext
-    )
+    await expect(
+      Verifier.verifyDeviceResponse(
+        {
+          deviceRequest,
+          deviceResponse: decodedDeviceResponse,
+          sessionTranscript: fakeSessionTranscript,
+          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+        },
+        mdocContext
+      )
+    ).resolves.toBeUndefined()
   })
 
   test('Fail to create mdoc with not enough attributes', async () => {

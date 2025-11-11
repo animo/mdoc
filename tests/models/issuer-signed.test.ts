@@ -2,7 +2,7 @@ import { X509Certificate } from '@peculiar/x509'
 import { describe, expect, test } from 'vitest'
 import { CoseKey, IssuerSigned, IssuerSignedBuilder, SignatureAlgorithm } from '../../src'
 import { mdocContext } from '../context'
-import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../issuing/config'
+import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 
 const signed = new Date('2023-10-24T14:55:18Z')
 const validFrom = new Date(signed)
