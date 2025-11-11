@@ -13,8 +13,8 @@ import {
   SignatureAlgorithm,
   Verifier,
 } from '../../src'
-import { mdocContext } from '../context'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
+import { mdocContext } from '../context'
 
 const signed = new Date('2023-10-24T14:55:18Z')
 const validFrom = new Date(signed)
