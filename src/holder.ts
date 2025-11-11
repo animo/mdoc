@@ -86,23 +86,4 @@ export class Holder {
   ) {
     return await DeviceResponse.createWithDeviceRequest(options, context)
   }
-
-  // public static async createDeviceResponseForPresentationDefinition(
-  //   options: {
-  //     presentationDefinition: PresentationDefinition
-  //     sessionTranscript: SessionTranscript
-  //     documents: Array<Document>
-  //     deviceNamespaces?: DeviceNamespaces
-  //     mac?: {
-  //       ephemeralKey: CoseKey
-  //       signingKey: CoseKey
-  //     }
-  //     signature?: {
-  //       signingKey: CoseKey
-  //     }
-  //   },
-  //   context: Pick<MdocContext, 'cose' | 'crypto'>
-  // ) {
-  //   return await DeviceResponse.createWithPresentationDefinition(options, context)
-  // }
 }

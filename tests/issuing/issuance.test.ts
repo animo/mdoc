@@ -1,6 +1,6 @@
 import { X509Certificate } from '@peculiar/x509'
 import { expect, suite, test } from 'vitest'
-import { CoseKey, hex, IssuerSignedBuilder, SignatureAlgorithm } from '../../src'
+import { CoseKey, Issuer, SignatureAlgorithm, hex } from '../../src'
 import { deterministicMdocContext } from '../context'
 import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from './config'
 
@@ -12,14 +12,14 @@ validUntil.setFullYear(signed.getFullYear() + 30)
 
 suite('Issuance', () => {
   test('Issue simple mdoc', async () => {
-    const isb = new IssuerSignedBuilder('org.iso.18013.5.1', deterministicMdocContext)
+    const issuer = new Issuer('org.iso.18013.5.1', deterministicMdocContext)
 
-    isb.addIssuerNamespace('org.iso.18013.5.1.mDL', {
+    issuer.addIssuerNamespace('org.iso.18013.5.1.mDL', {
       first_name: 'First',
       last_name: 'Last',
     })
 
-    const issuerSigned = await isb.sign({
+    const issuerSigned = await issuer.sign({
       signingKey: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
@@ -45,19 +45,19 @@ suite('Issuance', () => {
   })
 
   test('Issue mdoc with multiple namespaces', async () => {
-    const isb = new IssuerSignedBuilder('org.iso.18013.5.1', deterministicMdocContext)
+    const issuer = new Issuer('org.iso.18013.5.1', deterministicMdocContext)
 
-    isb.addIssuerNamespace('org.iso.18013.5.1.mDL', {
+    issuer.addIssuerNamespace('org.iso.18013.5.1.mDL', {
       first_name: 'First',
       last_name: 'Last',
     })
 
-    isb.addIssuerNamespace('org.iso.18013.5.1.second', {
+    issuer.addIssuerNamespace('org.iso.18013.5.1.second', {
       street: 'my street',
       number: '1233',
     })
 
-    const issuerSigned = await isb.sign({
+    const issuerSigned = await issuer.sign({
       signingKey: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,

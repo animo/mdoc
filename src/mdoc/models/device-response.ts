@@ -2,7 +2,9 @@ import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { type CoseKey, Header, ProtectedHeaders, UnprotectedHeaders } from '../../cose'
 import { base64url } from '../../utils'
-import { defaultVerificationCallback, type VerificationCallback } from '../check-callback'
+import { findIssuerSigned } from '../../utils/findIssuerSigned'
+import { limitDisclosureToDeviceRequestNameSpaces } from '../../utils/limitDisclosure'
+import { type VerificationCallback, defaultVerificationCallback } from '../check-callback'
 import { EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
 import { DeviceAuthentication } from './device-authentication'
@@ -11,13 +13,9 @@ import { DeviceNamespaces } from './device-namespaces'
 import type { DeviceRequest } from './device-request'
 import { DeviceSignature } from './device-signature'
 import { DeviceSigned } from './device-signed'
-import type { DocRequest } from './doc-request'
 import { Document, type DocumentStructure } from './document'
 import { DocumentError, type DocumentErrorStructure } from './document-error'
-import type { IssuerNamespace } from './issuer-namespace'
 import { IssuerSigned } from './issuer-signed'
-import { findIssuerSigned, limitDisclosureToDeviceRequestNameSpaces } from './pex-limit-disclosure'
-import type { InputDescriptor } from './presentation-definition'
 import { SessionTranscript } from './session-transcript'
 
 export type DeviceResponseStructure = {
@@ -150,11 +148,8 @@ export class DeviceResponse extends CborStructure {
   }
 
   private static async create(
-    limitDisclosureCb:
-      | ((issuerSigned: IssuerSigned, inputDescriptor: InputDescriptor) => IssuerNamespace)
-      | ((issuerSigned: IssuerSigned, docRequest: DocRequest) => IssuerNamespace),
     options: {
-      inputDescriptorsOrRequests: /* Array<InputDescriptor> */ Array<DocRequest>
+      deviceRequest: DeviceRequest
       sessionTranscript: SessionTranscript | Uint8Array
       issuerSigned: Array<IssuerSigned>
       deviceNamespaces?: DeviceNamespaces
@@ -176,17 +171,11 @@ export class DeviceResponse extends CborStructure {
     if (!signingKey) throw new Error('Signing key is missing')
 
     const documents = await Promise.all(
-      options.inputDescriptorsOrRequests.map(async (request) => {
-        const issuerSigned = findIssuerSigned(options.issuerSigned, request.itemsRequest.docType)
+      options.deviceRequest.docRequests.map(async (docRequest) => {
+        const issuerSigned = findIssuerSigned(options.issuerSigned, docRequest.itemsRequest.docType)
+        const disclosedIssuerNamespace = limitDisclosureToDeviceRequestNameSpaces(issuerSigned, docRequest)
 
-        // TODO(security): we can also get the docType from the issuerSigned.issuerAuth.mobileSecurityObject.docType
-        //                 are there any implications of using either?
-        const docType = request.itemsRequest.docType
-
-        const disclosedIssuerNamespaces = limitDisclosureCb(
-          issuerSigned,
-          request as unknown as InputDescriptor & DocRequest
-        )
+        const docType = docRequest.itemsRequest.docType
 
         const deviceNamespaces = options.deviceNamespaces ?? new DeviceNamespaces({ deviceNamespaces: new Map() })
 
@@ -240,7 +229,7 @@ export class DeviceResponse extends CborStructure {
         return new Document({
           docType,
           issuerSigned: new IssuerSigned({
-            issuerNamespaces: disclosedIssuerNamespaces,
+            issuerNamespaces: disclosedIssuerNamespace,
             issuerAuth: issuerSigned.issuerAuth,
           }),
           deviceSigned: new DeviceSigned({
@@ -272,33 +261,6 @@ export class DeviceResponse extends CborStructure {
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
-    return await DeviceResponse.create(
-      limitDisclosureToDeviceRequestNameSpaces,
-      { inputDescriptorsOrRequests: options.deviceRequest.docRequests, ...options },
-      ctx
-    )
+    return await DeviceResponse.create(options, ctx)
   }
-
-  // public static async createWithPresentationDefinition(
-  //   options: {
-  //     presentationDefinition: PresentationDefinition
-  //     sessionTranscript: SessionTranscript
-  //     documents: Array<Document>
-  //     deviceNamespaces?: DeviceNamespaces
-  //     mac?: {
-  //       ephemeralKey: CoseKey
-  //       signingKey: CoseKey
-  //     }
-  //     signature?: {
-  //       signingKey: CoseKey
-  //     }
-  //   },
-  //   ctx: Pick<MdocContext, 'crypto' | 'cose'>
-  // ) {
-  //   return await DeviceResponse.create(
-  //     limitDisclosureToInputDescriptor,
-  //     { inputDescriptorsOrRequests: options.presentationDefinition.input_descriptors, ...options },
-  //     ctx
-  //   )
-  // }
 }

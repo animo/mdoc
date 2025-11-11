@@ -7,6 +7,7 @@ import {
   type SignatureAlgorithm,
   UnprotectedHeaders,
 } from '../../cose'
+import { randomUnsignedInteger } from '../../utils/randomUnsignedInteger'
 import {
   DeviceKeyInfo,
   type DeviceKeyInfoOptions,
@@ -39,10 +40,8 @@ export class IssuerSignedBuilder {
     const issuerNamespace = this.namespaces.issuerNamespaces.get(namespace) ?? []
 
     const issuerSignedItems = Object.entries(value).map(([k, v]) => {
-      const bytes = this.ctx.crypto.random(4)
-      const digestId = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0
       return new IssuerSignedItem({
-        digestId,
+        digestId: randomUnsignedInteger(this.ctx),
         elementIdentifier: k,
         elementValue: v,
         random: this.ctx.crypto.random(32),
