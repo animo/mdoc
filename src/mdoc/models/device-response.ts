@@ -17,7 +17,7 @@ import { DeviceSigned } from './device-signed'
 import { Document, type DocumentStructure } from './document'
 import { DocumentError, type DocumentErrorStructure } from './document-error'
 import { IssuerSigned } from './issuer-signed'
-import { SessionTranscript } from './session-transcript'
+import type { SessionTranscript } from './session-transcript'
 
 export type DeviceResponseStructure = {
   version: string
@@ -128,10 +128,7 @@ export class DeviceResponse extends CborStructure {
         {
           document,
           ephemeralMacPrivateKey: options.ephemeralReaderKey,
-          sessionTranscript:
-            options.sessionTranscript instanceof SessionTranscript
-              ? options.sessionTranscript
-              : SessionTranscript.decode(options.sessionTranscript),
+          sessionTranscript: options.sessionTranscript,
           verificationCallback: onCheck,
         },
         ctx

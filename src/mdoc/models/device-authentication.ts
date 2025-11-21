@@ -17,16 +17,13 @@ export type DeviceAuthenticationOptions = {
 }
 
 export class DeviceAuthentication extends CborStructure {
-  public sessionTranscript: SessionTranscript
+  public sessionTranscript: SessionTranscript | Uint8Array
   public docType: DocType
   public deviceNamespaces: DeviceNamespaces
 
   public constructor(options: DeviceAuthenticationOptions) {
     super()
-    this.sessionTranscript =
-      options.sessionTranscript instanceof SessionTranscript
-        ? options.sessionTranscript
-        : SessionTranscript.decode(options.sessionTranscript)
+    this.sessionTranscript = options.sessionTranscript
     this.docType = options.docType
     this.deviceNamespaces = options.deviceNamespaces
   }
@@ -34,7 +31,9 @@ export class DeviceAuthentication extends CborStructure {
   public encodedStructure(): DeviceAuthenticationStructure {
     return [
       'DeviceAuthentication',
-      this.sessionTranscript.encodedStructure(),
+      this.sessionTranscript instanceof SessionTranscript
+        ? this.sessionTranscript.encodedStructure()
+        : cborDecode(this.sessionTranscript),
       this.docType,
       DataItem.fromData(this.deviceNamespaces.encodedStructure()),
     ]

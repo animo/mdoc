@@ -4,11 +4,6 @@ import type { VerificationCallback } from './mdoc/check-callback.js'
 import { type DeviceRequest, DeviceResponse, type SessionTranscript } from './mdoc/index.js'
 
 export class Verifier {
-  /**
-   *
-   * @todo check whether the device response is compatible with the device request / dcql request
-   *
-   */
   public static async verifyDeviceResponse(
     options: {
       deviceRequest?: DeviceRequest

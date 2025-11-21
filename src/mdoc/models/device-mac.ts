@@ -2,7 +2,7 @@ import { type CborDecodeOptions, cborDecode } from '../../cbor'
 import type { MdocContext } from '../../context'
 import type { CoseKey } from '../../cose'
 import { Mac0, type Mac0Structure } from '../../cose/mac0'
-import type { SessionTranscript } from './session-transcript'
+import { SessionTranscript } from './session-transcript'
 
 export type DeviceMacStructure = Mac0Structure
 
@@ -12,14 +12,17 @@ export class DeviceMac extends Mac0 {
       publicKey: CoseKey
       privateKey: CoseKey
       info?: 'EMacKey' | 'SKReader' | 'SKDevice'
-      sessionTranscript: SessionTranscript
+      sessionTranscript: SessionTranscript | Uint8Array
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {
     const key = await ctx.crypto.calculateEphemeralMacKey({
       privateKey: options.privateKey.privateKey,
       publicKey: options.publicKey.publicKey,
-      sessionTranscriptBytes: options.sessionTranscript.encode({ asDataItem: true }),
+      sessionTranscriptBytes:
+        options.sessionTranscript instanceof SessionTranscript
+          ? options.sessionTranscript.encode({ asDataItem: true })
+          : options.sessionTranscript,
       info: options.info ?? 'EMacKey',
     })
 

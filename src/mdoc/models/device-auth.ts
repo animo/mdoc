@@ -65,7 +65,7 @@ export class DeviceAuth extends CborStructure {
       document: Document
       verificationCallback?: VerificationCallback
       ephemeralMacPrivateKey?: CoseKey
-      sessionTranscript: SessionTranscript
+      sessionTranscript: SessionTranscript | Uint8Array
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose'>
   ) {

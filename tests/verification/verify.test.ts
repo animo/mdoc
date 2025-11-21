@@ -2,6 +2,7 @@ import { X509Certificate } from '@peculiar/x509'
 import { expect, suite, test } from 'vitest'
 import {
   CoseKey,
+  cborEncode,
   DeviceRequest,
   DeviceResponse,
   DocRequest,
@@ -181,6 +182,86 @@ suite('Verification', () => {
       first_name: 'First',
       last_name: 'Last',
     })
+
+    const encodedDeviceResponse = deviceResponse.encodedForOid4Vp
+
+    // openid4vp protocol
+
+    const decodedDeviceResponse = DeviceResponse.fromEncodedForOid4Vp(encodedDeviceResponse)
+
+    await expect(
+      Verifier.verifyDeviceResponse(
+        {
+          deviceRequest,
+          deviceResponse: decodedDeviceResponse,
+          sessionTranscript: fakeSessionTranscript,
+          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+        },
+        mdocContext
+      )
+    ).resolves.toBeUndefined()
+  })
+
+  test('Verify with custom session transcript', async () => {
+    const issuer = new Issuer('org.iso.18013.5.1', mdocContext)
+
+    issuer.addIssuerNamespace('org.iso.18013.5.1.mDL', {
+      first_name: 'First',
+      last_name: 'Last',
+    })
+
+    const issuerSigned = await issuer.sign({
+      signingKey: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
+      certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
+      algorithm: SignatureAlgorithm.ES256,
+      digestAlgorithm: 'SHA-256',
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      validityInfo: { signed, validFrom, validUntil },
+    })
+
+    const encodedIssuerSigned = issuerSigned.encodedForOid4Vci
+
+    // openid4vci protocol
+
+    const credential = IssuerSigned.fromEncodedForOid4Vci(encodedIssuerSigned)
+
+    await expect(
+      Holder.verifyIssuerSigned(
+        {
+          issuerSigned: credential,
+          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+        },
+        mdocContext
+      )
+    ).resolves.toBeUndefined()
+
+    const deviceRequest = new DeviceRequest({
+      docRequests: [
+        new DocRequest({
+          itemsRequest: new ItemsRequest({
+            docType: 'org.iso.18013.5.1',
+            namespaces: {
+              'org.iso.18013.5.1.mDL': {
+                first_name: true,
+                last_name: true,
+              },
+            },
+          }),
+        }),
+      ],
+    })
+
+    const fakeSessionTranscript = cborEncode([1, 2, 3])
+
+    const deviceResponse = await Holder.createDeviceResponseForDeviceRequest(
+      {
+        deviceRequest,
+        issuerSigned: [credential],
+        sessionTranscript: fakeSessionTranscript,
+        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK) },
+      },
+      mdocContext
+    )
 
     const encodedDeviceResponse = deviceResponse.encodedForOid4Vp
 
