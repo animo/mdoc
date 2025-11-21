@@ -21,7 +21,7 @@ describe('French playground mdoc implementation', () => {
         await DeviceResponse.decode(deviceResponse).verify(
           {
             trustedCertificates: [new Uint8Array(issuerCertificate.rawData)],
-            sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDraft18(
+            sessionTranscript: await SessionTranscript.forOid4VpDraft18(
               {
                 clientId,
                 responseUri,

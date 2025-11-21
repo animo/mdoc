@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest'
-import { cborDecode, cborEncode } from '../../src'
 import { DeviceEngagement } from '../../src/mdoc/models/device-engagement'
 import { EReaderKey } from '../../src/mdoc/models/e-reader-key'
 import { NfcHandover } from '../../src/mdoc/models/nfc-handover'
@@ -25,32 +24,32 @@ describe('session transcript', () => {
   })
 
   test('calculateSessionTranscriptBytesForOid4VpDcApi against OpenID4VP test vector', async () => {
-    const sessionTranscript = await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDcApi(
+    const sessionTranscript = await SessionTranscript.forOid4VpDcApi(
       {
         origin: 'https://example.com',
-        verifierGeneratedNonce: 'exc7gBkxjx1rdc9udRrveKvSsJIq80avlXeLHhGwqtA',
+        nonce: 'exc7gBkxjx1rdc9udRrveKvSsJIq80avlXeLHhGwqtA',
         jwkThumbprint: Buffer.from('4283ec927ae0f208daaa2d026a814f2b22dca52cf85ffa8f3f8626c6bd669047', 'hex'),
       },
       mdocContext
     )
 
-    expect(Buffer.from(cborEncode(cborDecode(sessionTranscript))).toString('hex')).toEqual(
+    expect(Buffer.from(sessionTranscript.encode()).toString('hex')).toEqual(
       '83f6f682764f70656e4944345650444341504948616e646f7665725820fbece366f4212f9762c74cfdbf83b8c69e371d5d68cea09cb4c48ca6daab761a'
     )
   })
 
   test('calculateSessionTranscriptBytesForOid4Vp against OpenID4VP test vector', async () => {
-    const sessionTranscript = await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
+    const sessionTranscript = await SessionTranscript.forOid4Vp(
       {
         clientId: 'x509_san_dns:example.com',
-        verifierGeneratedNonce: 'exc7gBkxjx1rdc9udRrveKvSsJIq80avlXeLHhGwqtA',
+        nonce: 'exc7gBkxjx1rdc9udRrveKvSsJIq80avlXeLHhGwqtA',
         jwkThumbprint: Buffer.from('4283ec927ae0f208daaa2d026a814f2b22dca52cf85ffa8f3f8626c6bd669047', 'hex'),
         responseUri: 'https://example.com/response',
       },
       mdocContext
     )
 
-    expect(Buffer.from(cborEncode(cborDecode(sessionTranscript))).toString('hex')).toEqual(
+    expect(Buffer.from(sessionTranscript.encode()).toString('hex')).toEqual(
       '83f6f682714f70656e494434565048616e646f7665725820048bc053c00442af9b8eed494cefdd9d95240d254b046b11b68013722aad38ac'
     )
   })

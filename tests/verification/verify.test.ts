@@ -72,11 +72,11 @@ suite('Verification', () => {
       ],
     })
 
-    const fakeSessionTranscript = await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
+    const fakeSessionTranscript = await SessionTranscript.forOid4Vp(
       {
         clientId: 'my-client-id',
         responseUri: 'my-response-uri.com',
-        verifierGeneratedNonce: 'my-random-nonce',
+        nonce: 'my-random-nonce',
       },
       mdocContext
     )
@@ -158,11 +158,11 @@ suite('Verification', () => {
       ],
     })
 
-    const fakeSessionTranscript = await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
+    const fakeSessionTranscript = await SessionTranscript.forOid4Vp(
       {
         clientId: 'my-client-id',
         responseUri: 'my-response-uri.com',
-        verifierGeneratedNonce: 'my-random-nonce',
+        nonce: 'my-random-nonce',
       },
       mdocContext
     )
@@ -251,11 +251,11 @@ suite('Verification', () => {
       ],
     })
 
-    const fakeSessionTranscript = await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
+    const fakeSessionTranscript = await SessionTranscript.forOid4Vp(
       {
         clientId: 'my-client-id',
         responseUri: 'my-response-uri.com',
-        verifierGeneratedNonce: 'my-random-nonce',
+        nonce: 'my-random-nonce',
       },
       mdocContext
     )
@@ -322,11 +322,11 @@ suite('Verification', () => {
       ],
     })
 
-    const fakeSessionTranscript = await SessionTranscript.calculateSessionTranscriptBytesForOid4Vp(
+    const fakeSessionTranscript = await SessionTranscript.forOid4Vp(
       {
         clientId: 'my-client-id',
         responseUri: 'my-response-uri.com',
-        verifierGeneratedNonce: 'my-random-nonce',
+        nonce: 'my-random-nonce',
       },
       mdocContext
     )

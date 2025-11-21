@@ -1,4 +1,5 @@
-import { CborStructure } from '../../cbor'
+import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import { Handover } from './handover'
 
 export type NfcHandoverStructure = [Uint8Array, Uint8Array | null]
 
@@ -7,7 +8,7 @@ export type NfcHandoverOptions = {
   requestMessage?: Uint8Array
 }
 
-export class NfcHandover extends CborStructure {
+export class NfcHandover extends Handover {
   public selectMessage: Uint8Array
   public requestMessage?: Uint8Array
 
@@ -26,5 +27,18 @@ export class NfcHandover extends CborStructure {
       selectMessage: encodedStructure[0],
       requestMessage: encodedStructure[1] ?? undefined,
     })
+  }
+
+  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): NfcHandover {
+    const structure = cborDecode<NfcHandoverStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
+    return NfcHandover.fromEncodedStructure(structure)
+  }
+
+  public static isCorrectHandover(structure: unknown): structure is NfcHandoverStructure {
+    return (
+      Array.isArray(structure) &&
+      structure[0] instanceof Uint8Array &&
+      (structure[1] instanceof Uint8Array || structure[1] === null)
+    )
   }
 }

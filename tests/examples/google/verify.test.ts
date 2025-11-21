@@ -12,9 +12,9 @@ import { signingCertificate } from './signingCertificate'
  * @todo this test was failing because of a bug in the device authentication, but now it works, is this correct?
  *
  */
-describe.skip('Google CM Wallet mdoc implementation', () => {
+describe('Google CM Wallet mdoc implementation', () => {
   it('should verify DC API DeviceResponse from Google CM Wallet', async () => {
-    const verifierGeneratedNonce = 'UwQek7MemM55VM2Lc7UPPsdsxa-vejebSUo75B_G7vk'
+    const nonce = 'UwQek7MemM55VM2Lc7UPPsdsxa-vejebSUo75B_G7vk'
     const origin = 'https://ellis-occurrence-ac-smoking.trycloudflare.com'
     const clientId = `web-origin:${origin}`
 
@@ -27,11 +27,11 @@ describe.skip('Google CM Wallet mdoc implementation', () => {
             // to trust the signing certificate for now
             new Uint8Array(signingCertificate.rawData),
           ],
-          sessionTranscript: await SessionTranscript.calculateSessionTranscriptBytesForOid4VpDcApiDraft24(
+          sessionTranscript: await SessionTranscript.forOid4VpDcApiDraft24(
             {
               origin,
               clientId,
-              verifierGeneratedNonce,
+              nonce,
             },
             mdocContext
           ),
