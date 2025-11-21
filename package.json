@@ -31,9 +31,6 @@
     "release": "pnpm build && pnpm changeset publish --no-git-tag",
     "changeset-version": "pnpm changeset version && pnpm style:fix"
   },
-  "dependencies": {
-    "buffer": "^6.0.3"
-  },
   "devDependencies": {
     "@biomejs/biome": "^2.3.4",
     "@changesets/cli": "^2.29.7",
