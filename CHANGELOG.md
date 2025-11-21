@@ -1,5 +1,26 @@
 # @animo-id/mdoc
 
+## 0.6.0
+
+### Minor Changes
+
+- 153111e: - Major rework of the library, primairly the underlying CBOR structures
+  - Includes an `Issuer`, `Holder` and `Verifier` class that should make it easier to issue, hold and verify mDocs
+  - More aligned with the specification, w.r.t. naming conventions
+  - Simplified additions/modifitcations, so adding newer features will be a lot simpler
+- fd7cc00: feat: add new openid4vp session transcript calculation methods.
+
+  NOTE that this introduces breaking chnages since `calculateSessionTranscriptBytesForOid4VpDcApi` has been renamed to `calculateSessionTranscriptBytesForOid4VpDcApiDraft24`. The `calculateSessionTranscriptBytesForOid4VpDcApi` method is now used for the latest (draft29/1.0) session transcript structure.
+
+  In addtion, `calculateSessionTranscriptBytesForOid4Vp` has been renamed to `calculateSessionTranscriptBytesForOid4VpDraft18`. The `calculateSessionTranscriptBytesForOid4Vp` method is now used for the latest (draft29/1.0) session transcript structure.
+
+- 0311619: fix: use variable map size for map encoding
+
+### Patch Changes
+
+- 2963990: feat: native JS implementation of byte encoding and decoding
+- 3f19ace: fix: always true statement throws error. In the DeviceResponse model there was an always true if statement that throws an error before allowing the creation of the response.
+
 ## 0.5.2
 
 ### Patch Changes
