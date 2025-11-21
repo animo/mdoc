@@ -25,6 +25,12 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
 }
 
 const base64ToBytes = (base64: string): Uint8Array => {
+  // Validate input - only base64 characters and padding are allowed
+  const validBase64Regex = /^[A-Za-z0-9+/]*={0,2}$/
+  if (!validBase64Regex.test(base64)) {
+    throw new Error('Invalid base64 string: contains invalid characters')
+  }
+
   // Remove padding
   const cleanBase64 = base64.replace(/=/g, '')
   const length = cleanBase64.length
@@ -50,6 +56,12 @@ const bytesToBase64Url = (bytes: Uint8Array): string => {
 }
 
 const base64UrlToBytes = (base64url: string): Uint8Array => {
+  // Validate input - only base64url characters (no padding) are allowed
+  const validBase64UrlRegex = /^[A-Za-z0-9_-]*$/
+  if (!validBase64UrlRegex.test(base64url)) {
+    throw new Error('Invalid base64url string: contains invalid characters')
+  }
+
   // Convert base64url to base64
   let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/')
   // Add padding if needed
@@ -69,6 +81,15 @@ const bytesToHex = (bytes: Uint8Array): string => {
 }
 
 const hexToBytes = (hex: string): Uint8Array => {
+  // Validate input - only hex characters are allowed, and length must be even
+  const validHexRegex = /^[0-9a-fA-F]*$/
+  if (!validHexRegex.test(hex)) {
+    throw new Error('Invalid hex string: contains invalid characters')
+  }
+  if (hex.length % 2 !== 0) {
+    throw new Error('Invalid hex string: length must be even')
+  }
+
   const bytes = new Uint8Array(hex.length / 2)
   for (let i = 0; i < hex.length; i += 2) {
     bytes[i / 2] = Number.parseInt(hex.substring(i, i + 2), 16)
