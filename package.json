@@ -10,14 +10,13 @@
     "dist"
   ],
   "publishConfig": {
-    "main": "./dist/index.js",
     "module": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
+    "types": "./dist/index.d.mts",
     "exports": {
       ".": {
         "import": "./dist/index.mjs",
-        "require": "./dist/index.js",
-        "types": "./dist/index.d.ts"
+        "require": "./dist/index.mjs",
+        "types": "./dist/index.d.mts"
       },
       "./package.json": "./package.json"
     }
@@ -26,7 +25,7 @@
     "types:check": "tsc --noEmit",
     "style:check": "biome check --unsafe",
     "style:fix": "biome check --write --unsafe",
-    "build": "tsdown src/index.ts --format cjs,esm --dts --clean --sourcemap",
+    "build": "tsdown src/index.ts --format esm --dts --clean --sourcemap",
     "test": "vitest",
     "release": "pnpm build && pnpm changeset publish --no-git-tag",
     "changeset-version": "pnpm changeset version && pnpm style:fix"
