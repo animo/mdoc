@@ -354,6 +354,57 @@ suite('Verification', () => {
     ).rejects.toThrow()
   })
 
+  test('Verify with skewSeconds allows time difference', async () => {
+    const issuer = new Issuer('org.iso.18013.5.1', mdocContext)
+
+    issuer.addIssuerNamespace('org.iso.18013.5.1.mDL', {
+      first_name: 'First',
+      last_name: 'Last',
+    })
+
+    // Create a credential that is valid from 5 minutes in the future
+    const now = new Date()
+    const validFromFuture = new Date(now.getTime() + 5 * 60 * 1000) // 5 minutes in future
+    const validUntilFuture = new Date(validFromFuture.getTime() + 30 * 365 * 24 * 60 * 60 * 1000) // 30 years
+
+    const issuerSigned = await issuer.sign({
+      signingKey: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
+      certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
+      algorithm: SignatureAlgorithm.ES256,
+      digestAlgorithm: 'SHA-256',
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      validityInfo: { signed, validFrom: validFromFuture, validUntil: validUntilFuture },
+    })
+
+    const encodedIssuerSigned = issuerSigned.encodedForOid4Vci
+    const credential = IssuerSigned.fromEncodedForOid4Vci(encodedIssuerSigned)
+
+    // Verification should fail with default skew (30 seconds)
+    await expect(
+      Holder.verifyIssuerSigned(
+        {
+          issuerSigned: credential,
+          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+          now,
+        },
+        mdocContext
+      )
+    ).rejects.toThrow()
+
+    // Verification should succeed with 10 minutes skew (600 seconds)
+    await expect(
+      Holder.verifyIssuerSigned(
+        {
+          issuerSigned: credential,
+          trustedCertificates: [new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData)],
+          now,
+          skewSeconds: 600,
+        },
+        mdocContext
+      )
+    ).resolves.toBeUndefined()
+  })
+
   test('Fail to verify with not matching device request', async () => {
     const issuer = new Issuer('org.iso.18013.5.1', mdocContext)
 

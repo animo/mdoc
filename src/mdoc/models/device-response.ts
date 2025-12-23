@@ -96,6 +96,7 @@ export class DeviceResponse extends CborStructure {
       trustedCertificates: Uint8Array[]
       now?: Date
       onCheck?: VerificationCallback
+      skewSeconds?: number
     },
     ctx: Pick<MdocContext, 'cose' | 'x509' | 'crypto'>
   ) {
@@ -120,6 +121,7 @@ export class DeviceResponse extends CborStructure {
           now: options.now,
           trustedCertificates: options.trustedCertificates,
           verificationCallback: onCheck,
+          skewSeconds: options.skewSeconds,
         },
         ctx
       )
