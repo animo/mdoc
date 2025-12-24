@@ -14,6 +14,7 @@ export class Verifier {
       trustedCertificates: Uint8Array[]
       now?: Date
       onCheck?: VerificationCallback
+      skewSeconds?: number
     },
     ctx: Pick<MdocContext, 'cose' | 'x509' | 'crypto'>
   ) {

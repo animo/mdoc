@@ -23,6 +23,7 @@ export class Holder {
       now?: Date
       disableCertificateChainValidation?: boolean
       trustedCertificates?: Array<Uint8Array>
+      skewSeconds?: number
     },
     ctx: Pick<MdocContext, 'cose' | 'x509'>
   ) {
