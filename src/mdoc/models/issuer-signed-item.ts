@@ -49,7 +49,7 @@ export class IssuerSignedItem extends CborStructure {
 
     const expectedDigest = digests.get(this.digestId)
 
-    return expectedDigest && compareBytes(digest, expectedDigest)
+    return expectedDigest !== undefined && compareBytes(digest, expectedDigest)
   }
 
   public matchCertificate(issuerAuth: IssuerAuth, ctx: Pick<MdocContext, 'x509'>) {
