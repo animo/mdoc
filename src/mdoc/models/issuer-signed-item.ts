@@ -6,53 +6,43 @@ import type { DataElementValue } from './data-element-value'
 import type { IssuerAuth } from './issuer-auth'
 import type { Namespace } from './namespace'
 
-export type IssuerSignedItemStructure = Map<
-  'digestID' | 'random' | 'elementIdentifier' | 'elementValue',
-  number | Uint8Array | DataElementIdentifier | DataElementValue
->
+export interface IssuerSignedItemStructure {
+  digestID: number
+  random: Uint8Array
+  elementIdentifier: DataElementIdentifier
+  elementValue: DataElementValue
+}
 
-export type IssuerSignedItemOptions =
-  | {
-      digestId: number
-      random: Uint8Array
-      elementIdentifier: DataElementIdentifier
-      elementValue: DataElementValue
-    }
-  | { issuerSignedItemStructure: IssuerSignedItemStructure }
+// NOTE: Id vs ID above
+export type IssuerSignedItemOptions = {
+  digestId: number
+  random: Uint8Array
+  elementIdentifier: DataElementIdentifier
+  elementValue: DataElementValue
+}
 
 export class IssuerSignedItem extends CborStructure {
   #issuerSignedItemStructure: IssuerSignedItemStructure
 
-  public constructor(options: IssuerSignedItemOptions) {
+  private constructor(options: IssuerSignedItemStructure) {
     super()
 
-    // We want to keep the order as is used by the signed mdoc
-    // to ensure we generate the same digest
-    if ('issuerSignedItemStructure' in options) {
-      this.#issuerSignedItemStructure = options.issuerSignedItemStructure
-    } else {
-      this.#issuerSignedItemStructure = new Map([
-        ['digestID', options.digestId],
-        ['random', options.random],
-        ['elementIdentifier', options.elementIdentifier],
-        ['elementValue', options.elementValue],
-      ])
-    }
+    this.#issuerSignedItemStructure = options
   }
 
   public get random(): Uint8Array {
-    return this.#issuerSignedItemStructure.get('random') as Uint8Array
+    return this.#issuerSignedItemStructure.random
   }
   public get elementIdentifier(): DataElementIdentifier {
-    return this.#issuerSignedItemStructure.get('elementIdentifier') as DataElementIdentifier
+    return this.#issuerSignedItemStructure.elementIdentifier
   }
 
   public get elementValue(): DataElementValue {
-    return this.#issuerSignedItemStructure.get('elementValue') as DataElementValue
+    return this.#issuerSignedItemStructure.elementValue
   }
 
   public get digestId(): number {
-    return this.#issuerSignedItemStructure.get('digestID') as number
+    return this.#issuerSignedItemStructure.digestID
   }
 
   public async isValid(namespace: Namespace, issuerAuth: IssuerAuth, ctx: Pick<MdocContext, 'crypto'>) {
@@ -89,12 +79,21 @@ export class IssuerSignedItem extends CborStructure {
     return this.#issuerSignedItemStructure
   }
 
+  public static fromOptions(options: IssuerSignedItemOptions) {
+    return new IssuerSignedItem({
+      digestID: options.digestId,
+      random: options.random,
+      elementIdentifier: options.elementIdentifier,
+      elementValue: options.elementValue,
+    })
+  }
+
   public static override fromEncodedStructure(
     encodedStructure: IssuerSignedItemStructure | Map<unknown, unknown>
   ): IssuerSignedItem {
-    return new IssuerSignedItem({
-      issuerSignedItemStructure: encodedStructure as IssuerSignedItemStructure,
-    })
+    return new IssuerSignedItem(
+      encodedStructure instanceof Map ? Object.fromEntries(encodedStructure.entries()) : encodedStructure
+    )
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): IssuerSignedItem {
