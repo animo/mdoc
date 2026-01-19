@@ -1,4 +1,4 @@
-import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import { type CborDecodeOptions, type CborEncodeOptions, cborDecode } from '../../cbor'
 import { CoseKey, type CoseKeyOptions, type CoseKeyStructure } from '../../cose/key/key'
 
 export type EReaderKeyStructure = CoseKeyStructure
@@ -7,9 +7,16 @@ export type EReaderKeyOptions = CoseKeyOptions
 
 export class EReaderKey extends CoseKey {
   /**
-   * Raw CBOR bytes (preserved from decode, for session transcript)
+   * Original CBOR bytes (preserved when decoding to ensure encode() returns identical bytes)
    */
-  public rawBytes?: Uint8Array
+  #rawBytes?: Uint8Array
+
+  public override encode(options?: CborEncodeOptions): Uint8Array {
+    if (this.#rawBytes && !options?.asDataItem) {
+      return this.#rawBytes
+    }
+    return super.encode(options)
+  }
 
   public static override fromEncodedStructure(
     encodedStructure: EReaderKeyStructure | Map<unknown, unknown>
@@ -21,7 +28,7 @@ export class EReaderKey extends CoseKey {
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): EReaderKey {
     const structure = cborDecode<Map<unknown, unknown>>(bytes, options)
     const key = EReaderKey.fromEncodedStructure(structure)
-    key.rawBytes = bytes
+    key.#rawBytes = bytes
     return key
   }
 }

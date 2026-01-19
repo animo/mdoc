@@ -25,16 +25,6 @@ export type SessionTranscriptOptions = {
   deviceEngagement?: DeviceEngagement
   eReaderKey?: EReaderKey
   handover: CborStructure
-  /**
-   * Raw CBOR bytes for DeviceEngagement (used for QR handover to preserve exact bytes)
-   * When provided, these bytes are used directly instead of re-encoding deviceEngagement
-   */
-  rawDeviceEngagementBytes?: Uint8Array
-  /**
-   * Raw CBOR bytes for EReaderKey (used for QR handover to preserve exact bytes)
-   * When provided, these bytes are used directly instead of re-encoding eReaderKey
-   */
-  rawEReaderKeyBytes?: Uint8Array
 }
 
 export class SessionTranscript extends CborStructure {
@@ -42,43 +32,28 @@ export class SessionTranscript extends CborStructure {
   public eReaderKey?: EReaderKey
   public handover: Handover
 
-  /**
-   * Raw CBOR bytes for DeviceEngagement (preserves exact bytes for QR handover)
-   */
-  private rawDeviceEngagementBytes?: Uint8Array
-
-  /**
-   * Raw CBOR bytes for EReaderKey (preserves exact bytes for QR handover)
-   */
-  private rawEReaderKeyBytes?: Uint8Array
-
   public constructor(options: SessionTranscriptOptions) {
     super()
     this.deviceEngagement = options.deviceEngagement
     this.eReaderKey = options.eReaderKey
     this.handover = options.handover
-    this.rawDeviceEngagementBytes = options.rawDeviceEngagementBytes
-    this.rawEReaderKeyBytes = options.rawEReaderKeyBytes
   }
 
   public encodedStructure(): SessionTranscriptStructure {
     const isProximityHandover = this.handover instanceof QrHandover || this.handover instanceof NfcHandover
 
     if (isProximityHandover) {
-      // QR/NFC handovers require raw bytes for exact CBOR encoding (session key derivation)
-      const deviceEngagementBytes = this.rawDeviceEngagementBytes ?? this.deviceEngagement?.rawBytes
-      const eReaderKeyBytes = this.rawEReaderKeyBytes ?? this.eReaderKey?.rawBytes
-
-      if (!deviceEngagementBytes) {
-        throw new Error('QR/NFC handover requires rawDeviceEngagementBytes or deviceEngagement.rawBytes')
+      if (!this.deviceEngagement) {
+        throw new Error('QR/NFC handover requires deviceEngagement')
       }
-      if (!eReaderKeyBytes) {
-        throw new Error('QR/NFC handover requires rawEReaderKeyBytes or eReaderKey.rawBytes')
+      if (!this.eReaderKey) {
+        throw new Error('QR/NFC handover requires eReaderKey')
       }
 
+      // encode() returns original bytes when decoded, ensuring consistent session key derivation
       return [
-        new DataItem<DeviceEngagementStructure>({ buffer: deviceEngagementBytes }),
-        new DataItem<EReaderKeyStructure>({ buffer: eReaderKeyBytes }),
+        new DataItem<DeviceEngagementStructure>({ buffer: this.deviceEngagement.encode() }),
+        new DataItem<EReaderKeyStructure>({ buffer: this.eReaderKey.encode() }),
         this.handover.encodedStructure(),
       ]
     }
@@ -91,26 +66,14 @@ export class SessionTranscript extends CborStructure {
    * Create a SessionTranscript for QR handover (ISO 18013-5 proximity presentation).
    *
    * For QR handover, exact CBOR bytes matter for session key derivation.
-   * - DeviceEngagement.rawBytes is auto-preserved when using DeviceEngagement.decode()
-   * - EReaderKey is auto-encoded with integer keys (RFC 8152)
-   *
-   * @param options.deviceEngagement - DeviceEngagement (use DeviceEngagement.decode() to preserve rawBytes)
-   * @param options.eReaderKey - The reader's ephemeral public key
-   * @param options.rawDeviceEngagementBytes - Optional explicit raw bytes (overrides deviceEngagement.rawBytes)
-   * @param options.rawEReaderKeyBytes - Optional explicit raw bytes for EReaderKey
+   * Use DeviceEngagement.decode() and EReaderKey.decode() to preserve original bytes -
+   * calling encode() on decoded objects will return the identical bytes.
    */
-  public static forQrHandover(options: {
-    deviceEngagement: DeviceEngagement
-    eReaderKey: EReaderKey
-    rawDeviceEngagementBytes?: Uint8Array
-    rawEReaderKeyBytes?: Uint8Array
-  }) {
+  public static forQrHandover(options: { deviceEngagement: DeviceEngagement; eReaderKey: EReaderKey }) {
     return new SessionTranscript({
       deviceEngagement: options.deviceEngagement,
       eReaderKey: options.eReaderKey,
       handover: new QrHandover(),
-      rawDeviceEngagementBytes: options.rawDeviceEngagementBytes,
-      rawEReaderKeyBytes: options.rawEReaderKeyBytes,
     })
   }
 
