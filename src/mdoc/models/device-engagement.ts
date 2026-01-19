@@ -29,6 +29,11 @@ export class DeviceEngagement extends CborStructure {
   public protocolInfo?: ProtocolInfo
   public extra?: Record<string, unknown>
 
+  /**
+   * Original CBOR bytes (preserved when decoding for QR handover session transcript)
+   */
+  public rawBytes?: Uint8Array
+
   public constructor(options: DeviceEngagementOptions) {
     super()
     this.version = options.version
@@ -92,6 +97,9 @@ export class DeviceEngagement extends CborStructure {
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceEngagement {
     const structure = cborDecode<DeviceEngagementStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return DeviceEngagement.fromEncodedStructure(structure)
+    const engagement = DeviceEngagement.fromEncodedStructure(structure)
+    // Preserve original bytes for QR handover session transcript
+    engagement.rawBytes = bytes
+    return engagement
   }
 }
