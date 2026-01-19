@@ -33,6 +33,7 @@ export class IssuerAuth extends Sign1 {
       now?: Date
       trustedCertificates?: Array<Uint8Array>
       disableCertificateChainValidation?: boolean
+      skewSeconds?: number
     },
     ctx: Pick<MdocContext, 'x509' | 'cose'>
   ) {
@@ -40,6 +41,7 @@ export class IssuerAuth extends Sign1 {
     const now = options.now ?? new Date()
     const disableCertificateChainValidation = options.disableCertificateChainValidation ?? false
     const trustedCertificates = options.trustedCertificates ?? []
+    const skewSeconds = options.skewSeconds ?? 30
 
     const onCheck = onCategoryCheck(verificationCallback, 'ISSUER_AUTH')
 
@@ -87,13 +89,16 @@ export class IssuerAuth extends Sign1 {
     })
 
     onCheck({
-      status: validityInfo.verifySigned(notBefore, notAfter) ? 'FAILED' : 'PASSED',
+      status: validityInfo.isSignedBetweenDates(notBefore, notAfter, skewSeconds) ? 'PASSED' : 'FAILED',
       check: 'The MSO signed date must be within the validity period of the certificate',
       reason: `The MSO signed date (${validityInfo.signed.toUTCString()}) must be within the validity period of the certificate (${notBefore.toUTCString()} to ${notAfter.toUTCString()})`,
     })
 
     onCheck({
-      status: now < validityInfo.validFrom || now > validityInfo.validUntil ? 'FAILED' : 'PASSED',
+      status:
+        validityInfo.isValidFromBeforeNow(now, skewSeconds) && validityInfo.isValidUntilAfterNow(now, skewSeconds)
+          ? 'PASSED'
+          : 'FAILED',
       check: 'The MSO must be valid at the time of verification',
       reason: `The MSO must be valid at the time of verification (${now.toUTCString()})`,
     })

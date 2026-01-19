@@ -89,15 +89,17 @@ export const mdocContext: MdocContext = {
       x5chain: Array<Uint8Array>
       now?: Date
     }) => {
-      const { trustedCertificates, x5chain: certificateChain } = input
-      if (certificateChain.length === 0) throw new Error('Certificate chain is empty')
+      const { trustedCertificates, x5chain: mdocCertificateChain } = input
+      if (mdocCertificateChain.length === 0) throw new Error('Certificate chain is empty')
 
-      const parsedLeafCertificate = new x509.X509Certificate(certificateChain[0])
+      const parsedLeafCertificate = new x509.X509Certificate(mdocCertificateChain[0])
+      const parsedMdocCertificates = mdocCertificateChain.map((c) => new x509.X509Certificate(c))
+      const parsedTrustedCertificates = trustedCertificates.map((c) => new x509.X509Certificate(c))
 
-      const parsedCertificates = certificateChain.map((c) => new x509.X509Certificate(c))
-
+      // Use both trusted and mdoc certificate to build chain
+      const certificatesToBuildChain = [...parsedMdocCertificates, ...parsedTrustedCertificates]
       const certificateChainBuilder = new x509.X509ChainBuilder({
-        certificates: parsedCertificates,
+        certificates: certificatesToBuildChain,
       })
 
       const chain = await certificateChainBuilder.build(parsedLeafCertificate)
@@ -106,13 +108,11 @@ export const mdocContext: MdocContext = {
       // has the leaf certificate as the first entry, while the `x509` library expects this as the last
       let parsedChain = chain.map((c) => new x509.X509Certificate(c.rawData)).reverse()
 
-      if (parsedChain.length !== certificateChain.length) {
+      // We allow longer parsed chain, in case the root cert was not part of the chain, but in the
+      // list of trusted certificates
+      if (parsedChain.length < mdocCertificateChain.length) {
         throw new Error('Could not parse the full chain. Likely due to incorrect ordering')
       }
-
-      const parsedTrustedCertificates = trustedCertificates.map(
-        (trustedCertificate) => new x509.X509Certificate(trustedCertificate)
-      )
 
       const trustedCertificateIndex = parsedChain.findIndex((cert) =>
         parsedTrustedCertificates.some((tCert) => cert.equal(tCert))
@@ -122,7 +122,12 @@ export const mdocContext: MdocContext = {
         throw new Error('No trusted certificate was found while validating the X.509 chain')
       }
 
-      // Pop everything off above the index of the trusted as it is not relevant for validation
+      // FIXME: we should remove this, and update all tests to use root cert for verification
+      // as the 'correct' way to verify is only using the root
+      // Currently if you provide a leaf certificate as trusted entities it will not verify any
+      // certificate, as we don't have the root, and can't verify the leaf without the authority key
+      // so basically it just does an equals match on whether the certificate is equal with a trusted
+      // certificate. But that also means you skip verification of the validity time of the cert
       parsedChain = parsedChain.slice(0, trustedCertificateIndex)
 
       // Verify the certificate with the publicKey of the certificate above

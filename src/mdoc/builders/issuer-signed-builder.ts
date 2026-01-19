@@ -40,11 +40,11 @@ export class IssuerSignedBuilder {
     const issuerNamespace = this.namespaces.issuerNamespaces.get(namespace) ?? []
 
     const issuerSignedItems = Object.entries(value).map(([k, v]) => {
-      return new IssuerSignedItem({
+      return IssuerSignedItem.fromOptions({
         digestId: randomUnsignedInteger(this.ctx),
+        random: this.ctx.crypto.random(32),
         elementIdentifier: k,
         elementValue: v,
-        random: this.ctx.crypto.random(32),
       })
     })
 
