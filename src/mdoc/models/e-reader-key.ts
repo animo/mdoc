@@ -1,4 +1,4 @@
-import { type CborDecodeOptions, type CborEncodeOptions, cborDecode } from '../../cbor'
+import { type CborDecodeOptions, type CborEncodeOptions, cborDecode, cborEncode, DataItem } from '../../cbor'
 import { CoseKey, type CoseKeyOptions, type CoseKeyStructure } from '../../cose/key/key'
 
 export type EReaderKeyStructure = CoseKeyStructure
@@ -12,7 +12,10 @@ export class EReaderKey extends CoseKey {
   #rawBytes?: Uint8Array
 
   public override encode(options?: CborEncodeOptions): Uint8Array {
-    if (this.#rawBytes && !options?.asDataItem) {
+    if (this.#rawBytes) {
+      if (options?.asDataItem) {
+        return cborEncode(new DataItem({ buffer: this.#rawBytes }))
+      }
       return this.#rawBytes
     }
     return super.encode(options)

@@ -1,4 +1,11 @@
-import { type CborDecodeOptions, type CborEncodeOptions, CborStructure, cborDecode } from '../../cbor'
+import {
+  type CborDecodeOptions,
+  type CborEncodeOptions,
+  CborStructure,
+  cborDecode,
+  cborEncode,
+  DataItem,
+} from '../../cbor'
 import { DeviceRetrievalMethod, type DeviceRetrievalMethodStructure } from './device-retrieval-method'
 import { ProtocolInfo, type ProtocolInfoStructure } from './protocol-info'
 import { Security, type SecurityStructure } from './security'
@@ -70,7 +77,10 @@ export class DeviceEngagement extends CborStructure {
   }
 
   public override encode(options?: CborEncodeOptions): Uint8Array {
-    if (this.#rawBytes && !options?.asDataItem) {
+    if (this.#rawBytes) {
+      if (options?.asDataItem) {
+        return cborEncode(new DataItem({ buffer: this.#rawBytes }))
+      }
       return this.#rawBytes
     }
     return super.encode(options)
