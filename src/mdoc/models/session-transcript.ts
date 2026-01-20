@@ -40,11 +40,41 @@ export class SessionTranscript extends CborStructure {
   }
 
   public encodedStructure(): SessionTranscriptStructure {
-    return [
-      this.deviceEngagement ? DataItem.fromData(this.deviceEngagement.encodedStructure()) : null,
-      this.eReaderKey ? DataItem.fromData(this.eReaderKey.encodedStructure()) : null,
-      this.handover.encodedStructure(),
-    ]
+    const isProximityHandover = this.handover instanceof QrHandover || this.handover instanceof NfcHandover
+
+    if (isProximityHandover) {
+      if (!this.deviceEngagement) {
+        throw new Error('QR/NFC handover requires deviceEngagement')
+      }
+      if (!this.eReaderKey) {
+        throw new Error('QR/NFC handover requires eReaderKey')
+      }
+
+      // encode() returns original bytes when decoded, ensuring consistent session key derivation
+      return [
+        new DataItem<DeviceEngagementStructure>({ buffer: this.deviceEngagement.encode() }),
+        new DataItem<EReaderKeyStructure>({ buffer: this.eReaderKey.encode() }),
+        this.handover.encodedStructure(),
+      ]
+    }
+
+    // OID4VP handovers don't use deviceEngagement/eReaderKey
+    return [null, null, this.handover.encodedStructure()]
+  }
+
+  /**
+   * Create a SessionTranscript for QR handover (ISO 18013-5 proximity presentation).
+   *
+   * For QR handover, exact CBOR bytes matter for session key derivation.
+   * Use DeviceEngagement.decode() and EReaderKey.decode() to preserve original bytes -
+   * calling encode() on decoded objects will return the identical bytes.
+   */
+  public static forQrHandover(options: { deviceEngagement: DeviceEngagement; eReaderKey: EReaderKey }) {
+    return new SessionTranscript({
+      deviceEngagement: options.deviceEngagement,
+      eReaderKey: options.eReaderKey,
+      handover: new QrHandover(),
+    })
   }
 
   public static async forOid4VpDcApiDraft24(

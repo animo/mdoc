@@ -1,4 +1,11 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import {
+  type CborDecodeOptions,
+  type CborEncodeOptions,
+  CborStructure,
+  cborDecode,
+  cborEncode,
+  DataItem,
+} from '../../cbor'
 import { DeviceRetrievalMethod, type DeviceRetrievalMethodStructure } from './device-retrieval-method'
 import { ProtocolInfo, type ProtocolInfoStructure } from './protocol-info'
 import { Security, type SecurityStructure } from './security'
@@ -28,6 +35,11 @@ export class DeviceEngagement extends CborStructure {
   public serverRetrievalMethods?: Array<ServerRetrievalMethod>
   public protocolInfo?: ProtocolInfo
   public extra?: Record<string, unknown>
+
+  /**
+   * Original CBOR bytes (preserved when decoding to ensure encode() returns identical bytes)
+   */
+  #rawBytes?: Uint8Array
 
   public constructor(options: DeviceEngagementOptions) {
     super()
@@ -64,6 +76,16 @@ export class DeviceEngagement extends CborStructure {
     return structure
   }
 
+  public override encode(options?: CborEncodeOptions): Uint8Array {
+    if (this.#rawBytes) {
+      if (options?.asDataItem) {
+        return cborEncode(new DataItem({ buffer: this.#rawBytes }))
+      }
+      return this.#rawBytes
+    }
+    return super.encode(options)
+  }
+
   public static override fromEncodedStructure(
     encodedStructure: DeviceEngagementStructure | Map<unknown, unknown>
   ): DeviceEngagement {
@@ -92,6 +114,8 @@ export class DeviceEngagement extends CborStructure {
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceEngagement {
     const structure = cborDecode<DeviceEngagementStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return DeviceEngagement.fromEncodedStructure(structure)
+    const engagement = DeviceEngagement.fromEncodedStructure(structure)
+    engagement.#rawBytes = bytes
+    return engagement
   }
 }
