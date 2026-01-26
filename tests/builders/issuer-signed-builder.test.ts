@@ -2,7 +2,7 @@ import { X509Certificate } from '@peculiar/x509'
 import { describe, expect, test } from 'vitest'
 import { CoseKey, DateOnly, type IssuerSigned, SignatureAlgorithm } from '../../src'
 import { IssuerSignedBuilder } from '../../src/mdoc/builders/issuer-signed-builder'
-import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
+import { DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { mdocContext } from '../context'
 
 const claims = {
@@ -43,12 +43,16 @@ describe('issuer signed builder', () => {
       'org.iso.18013.5.1',
       claims
     )
+
+    const coseKey = CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK)
+    expect(coseKey.jwk).toMatchObject(ISSUER_PRIVATE_KEY_JWK)
+
     issuerSigned = await issuerSignedBuilder.sign({
-      signingKey: CoseKey.fromJwk(ISSUER_PRIVATE_KEY_JWK),
+      signingKey: coseKey,
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -90,7 +94,7 @@ describe('issuer signed builder', () => {
   test('set correct device key', () => {
     const { deviceKeyInfo } = issuerSigned.issuerAuth.mobileSecurityObject
     expect(deviceKeyInfo?.deviceKey).toBeDefined()
-    expect(deviceKeyInfo.deviceKey.jwk).toEqual(DEVICE_JWK)
+    expect(deviceKeyInfo.deviceKey.jwk).toEqual(DEVICE_JWK_PUBLIC)
   })
 
   test('should include the namespace and attributes', () => {

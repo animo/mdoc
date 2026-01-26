@@ -1,7 +1,8 @@
 import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
-import { EDeviceKey, type EDeviceKeyStructure } from './e-device-key'
+import type { EncodedCoseKeyStructure } from '../../cose'
+import { EDeviceKey } from './e-device-key'
 
-export type SecurityStructure = [number, DataItem<EDeviceKeyStructure>]
+export type SecurityStructure = [number, DataItem<EncodedCoseKeyStructure>]
 
 export type SecurityOptions = {
   cipherSuiteIdentifier: number
