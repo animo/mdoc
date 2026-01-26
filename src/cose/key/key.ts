@@ -12,6 +12,7 @@ import type { Curve } from './curve'
 import { coseKeyToJwk, coseOptionsJwkMap, jwkCoseOptionsMap, jwkToCoseKey } from './jwk'
 import type { KeyOps } from './key-operation'
 import { KeyType } from './key-type'
+import { TypedMap } from '../../utils/TypedMap'
 
 export enum CoseKeyParameter {
   KeyType = 1,
@@ -89,46 +90,20 @@ export class CoseKey extends CborStructure {
     this.k = options.k as Uint8Array
   }
 
-  public encodedStructure(): CoseKeyStructure {
-    const structure: CoseKeyStructure = { [CoseKeyParameter.KeyType]: this.keyType }
+  public encodedStructure() {
+    const structure: TypedMap<CoseKeyStructure> =  TypedMap.wrap([
+    [CoseKeyParameter.KeyType, this.keyType],
+    [CoseKeyParameter.KeyId, this.keyId],
+    [CoseKeyParameter.Algorithm, this.algorithm],
+    [CoseKeyParameter.KeyOps, this.keyOps],
+    [CoseKeyParameter.BaseIv, this.baseIv],
+    [CoseKeyParameter.CurveOrK, this.curve ?? this.k],
+    [CoseKeyParameter.X, this.x],
+    [CoseKeyParameter.Y, this.y],
+    [CoseKeyParameter.D, this.d],
+    ])
 
-    if (this.keyId) {
-      structure[CoseKeyParameter.KeyId] = this.keyId
-    }
-
-    if (this.algorithm) {
-      structure[CoseKeyParameter.Algorithm] = this.algorithm
-    }
-
-    if (this.keyOps) {
-      structure[CoseKeyParameter.KeyOps] = this.keyOps
-    }
-
-    if (this.baseIv) {
-      structure[CoseKeyParameter.BaseIv] = this.baseIv
-    }
-
-    if (this.curve) {
-      structure[CoseKeyParameter.CurveOrK] = this.curve
-    }
-
-    if (this.x) {
-      structure[CoseKeyParameter.X] = this.x
-    }
-
-    if (this.y) {
-      structure[CoseKeyParameter.Y] = this.y
-    }
-
-    if (this.d) {
-      structure[CoseKeyParameter.D] = this.d
-    }
-
-    if (this.k) {
-      structure[CoseKeyParameter.CurveOrK] = this.k
-    }
-
-    return structure
+  return structure.esMap
   }
 
   public static fromJwk(jwk: Record<string, unknown>) {
