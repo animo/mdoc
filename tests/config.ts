@@ -1,8 +1,12 @@
-export const DEVICE_JWK = {
+export const DEVICE_JWK_PUBLIC = {
   kty: 'EC',
   x: 'iBh5ynojixm_D0wfjADpouGbp6b3Pq6SuFHU3htQhVk',
   y: 'oxS1OAORJ7XNUHNfVFGeM8E0RQVFxWA62fJj-sxW03c',
   crv: 'P-256',
+}
+
+export const DEVICE_JWK_PRIVATE = {
+  ...DEVICE_JWK_PUBLIC,
   d: 'eRpAZr3eV5xMMnPG3kWjg90Y-bBff9LqmlQuk49HUtA',
 }
 

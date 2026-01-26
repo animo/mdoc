@@ -14,7 +14,7 @@ import {
   SignatureAlgorithm,
   Verifier,
 } from '../../src'
-import { DEVICE_JWK, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
+import { DEVICE_JWK_PRIVATE, DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { mdocContext } from '../context'
 
 const signed = new Date('2023-10-24T14:55:18Z')
@@ -37,7 +37,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -87,7 +87,7 @@ suite('Verification', () => {
         deviceRequest,
         issuerSigned: [credential],
         sessionTranscript: fakeSessionTranscript,
-        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK) },
+        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK_PRIVATE) },
       },
       mdocContext
     )
@@ -123,7 +123,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -173,7 +173,7 @@ suite('Verification', () => {
         deviceRequest,
         issuerSigned: [credential],
         sessionTranscript: fakeSessionTranscript,
-        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK) },
+        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK_PRIVATE) },
       },
       mdocContext
     )
@@ -215,7 +215,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -258,7 +258,7 @@ suite('Verification', () => {
         deviceRequest,
         issuerSigned: [credential],
         sessionTranscript: fakeSessionTranscript,
-        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK) },
+        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK_PRIVATE) },
       },
       mdocContext
     )
@@ -295,7 +295,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -347,7 +347,7 @@ suite('Verification', () => {
           deviceRequest,
           issuerSigned: [credential],
           sessionTranscript: fakeSessionTranscript,
-          signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK) },
+          signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK_PRIVATE) },
         },
         mdocContext
       )
@@ -372,7 +372,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom: validFromFuture, validUntil: validUntilFuture },
     })
 
@@ -418,7 +418,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK) },
+      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -468,7 +468,7 @@ suite('Verification', () => {
         deviceRequest,
         issuerSigned: [credential],
         sessionTranscript: fakeSessionTranscript,
-        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK) },
+        signature: { signingKey: CoseKey.fromJwk(DEVICE_JWK_PRIVATE) },
       },
       mdocContext
     )

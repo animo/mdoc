@@ -7,6 +7,7 @@ import {
   CoseKeyTypeNotSupportedForPrivateKeyExtractionError,
   CoseKNotDefinedError,
   CoseXNotDefinedError,
+  CoseYNotDefinedError,
 } from '../error'
 import type { Curve } from './curve'
 import { coseKeyToJwk, coseOptionsJwkMap, jwkCoseOptionsMap, jwkToCoseKey } from './jwk'
@@ -27,6 +28,7 @@ export enum CoseKeyParameter {
   D = -4,
 }
 
+export type EncodedCoseKeyStructure = Map<unknown, unknown>
 export type CoseKeyStructure = {
   [CoseKeyParameter.KeyType]: KeyType | string
   [CoseKeyParameter.KeyId]?: Uint8Array
@@ -89,43 +91,46 @@ export class CoseKey extends CborStructure {
     this.k = options.k as Uint8Array
   }
 
-  public encodedStructure(): CoseKeyStructure {
-    const structure: CoseKeyStructure = { [CoseKeyParameter.KeyType]: this.keyType }
+  public encodedStructure(): EncodedCoseKeyStructure {
+    // We need to use map, as keys are non-string
+    const structure = new Map()
+
+    structure.set(CoseKeyParameter.KeyType, this.keyType)
 
     if (this.keyId) {
-      structure[CoseKeyParameter.KeyId] = this.keyId
+      structure.set(CoseKeyParameter.KeyId, this.keyId)
     }
 
     if (this.algorithm) {
-      structure[CoseKeyParameter.Algorithm] = this.algorithm
+      structure.set(CoseKeyParameter.Algorithm, this.algorithm)
     }
 
     if (this.keyOps) {
-      structure[CoseKeyParameter.KeyOps] = this.keyOps
+      structure.set(CoseKeyParameter.KeyOps, this.keyOps)
     }
 
     if (this.baseIv) {
-      structure[CoseKeyParameter.BaseIv] = this.baseIv
+      structure.set(CoseKeyParameter.BaseIv, this.baseIv)
     }
 
     if (this.curve) {
-      structure[CoseKeyParameter.CurveOrK] = this.curve
+      structure.set(CoseKeyParameter.CurveOrK, this.curve)
     }
 
     if (this.x) {
-      structure[CoseKeyParameter.X] = this.x
+      structure.set(CoseKeyParameter.X, this.x)
     }
 
     if (this.y) {
-      structure[CoseKeyParameter.Y] = this.y
+      structure.set(CoseKeyParameter.Y, this.y)
     }
 
     if (this.d) {
-      structure[CoseKeyParameter.D] = this.d
+      structure.set(CoseKeyParameter.D, this.d)
     }
 
     if (this.k) {
-      structure[CoseKeyParameter.CurveOrK] = this.k
+      structure.set(CoseKeyParameter.CurveOrK, this.k)
     }
 
     return structure
@@ -150,36 +155,32 @@ export class CoseKey extends CborStructure {
     return new CoseKey(options)
   }
 
-  public static override fromEncodedStructure(encodedStructure: CoseKeyStructure | Map<unknown, unknown>): CoseKey {
-    let structure = encodedStructure as CoseKeyStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as CoseKeyStructure
+  public static override fromEncodedStructure(encodedStructure: EncodedCoseKeyStructure): CoseKey {
+    const keyType = encodedStructure.get(CoseKeyParameter.KeyType) as KeyType | undefined
+    if (!keyType) {
+      throw new CoseInvalidValueForKtyError()
     }
 
-    const curve =
-      structure[CoseKeyParameter.KeyType] === KeyType.Ec ? (structure[CoseKeyParameter.CurveOrK] as Curve) : undefined
-    const k =
-      structure[CoseKeyParameter.KeyType] === KeyType.Oct
-        ? (structure[CoseKeyParameter.CurveOrK] as Uint8Array)
-        : undefined
+    const curve = keyType === KeyType.Ec ? (encodedStructure.get(CoseKeyParameter.CurveOrK) as Curve) : undefined
+
+    const k = keyType === KeyType.Oct ? (encodedStructure.get(CoseKeyParameter.CurveOrK) as Uint8Array) : undefined
 
     return new CoseKey({
-      keyType: structure[CoseKeyParameter.KeyType],
-      keyId: structure[CoseKeyParameter.KeyId],
-      algorithm: structure[CoseKeyParameter.Algorithm],
-      keyOps: structure[CoseKeyParameter.KeyOps],
-      baseIv: structure[CoseKeyParameter.BaseIv],
+      keyType,
+      keyId: encodedStructure.get(CoseKeyParameter.KeyId) as Uint8Array | undefined,
+      algorithm: encodedStructure.get(CoseKeyParameter.Algorithm) as string | number | undefined,
+      keyOps: encodedStructure.get(CoseKeyParameter.KeyOps) as Array<string | KeyOps> | undefined,
+      baseIv: encodedStructure.get(CoseKeyParameter.BaseIv) as Uint8Array | undefined,
       curve,
-      x: structure[CoseKeyParameter.X],
-      y: structure[CoseKeyParameter.Y],
-      d: structure[CoseKeyParameter.D],
+      x: encodedStructure.get(CoseKeyParameter.X) as Uint8Array | undefined,
+      y: encodedStructure.get(CoseKeyParameter.Y) as Uint8Array | undefined,
+      d: encodedStructure.get(CoseKeyParameter.D) as Uint8Array | undefined,
       k,
     })
   }
 
   public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): CoseKey {
-    const structure = cborDecode<Map<unknown, unknown>>(bytes, options)
+    const structure = cborDecode<EncodedCoseKeyStructure>(bytes, options)
     return CoseKey.fromEncodedStructure(structure)
   }
 
@@ -193,7 +194,7 @@ export class CoseKey extends CborStructure {
     }
 
     if (!this.y) {
-      throw new CoseXNotDefinedError()
+      throw new CoseYNotDefinedError()
     }
 
     return concatBytes(Uint8Array.from([0x04]), this.x, this.y)
