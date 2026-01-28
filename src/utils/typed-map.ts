@@ -117,6 +117,28 @@ type EntriesArrayToSchema<T extends ReadonlyArray<readonly [any, any]>> = {
 const isExactOptional = (schema: z.ZodType) =>
   !schema.safeParse(undefined).success && z.object({ test: schema }).safeParse({}).success
 
+type EntriesBase = ReadonlyArray<
+  readonly [
+    string | number, // for now we only allow string or number keys
+    // biome-ignore lint/suspicious/noExplicitAny: no explanation
+    z.ZodType<any>,
+  ]
+>
+
+type InferredEntries<Entries extends EntriesBase> = {
+  [K in keyof Entries]: readonly [Entries[K][0], z.infer<Entries[K][1]>]
+}
+type InferredSchema<Entries extends EntriesBase> = EntriesArrayToSchema<InferredEntries<Entries>>
+
+type OptionalKeys<Entries extends EntriesBase> = Entries[number] extends infer E
+  ? E extends readonly [infer K, infer V]
+    ? // biome-ignore lint/suspicious/noExplicitAny: no explanation
+      V extends z.ZodExactOptional<any>
+      ? K
+      : never
+    : never
+  : never
+
 /**
  * Utility function to create a typed map codec.
  * Takes an array of [key, valueSchema] entries to support any key type (including non-string keys for CBOR).
@@ -130,19 +152,12 @@ const isExactOptional = (schema: z.ZodType) =>
  *
  * The resulting schema validates a Map and transforms it to TypedMap<Schema, never>.
  */
-
-export function typedMap<
-  const Entries extends ReadonlyArray<
-    readonly [
-      string | number, // for now we only allow string or number keys
-      // biome-ignore lint/suspicious/noExplicitAny: no explanation
-      z.ZodType<any>,
-    ]
-  >,
->(
+export function typedMap<const Entries extends EntriesBase>(
   entries: Entries,
   {
     allowAdditionalKeys = true,
+    encode,
+    decode,
   }: {
     /**
      * Whether to allow additional keys in the typed map
@@ -150,31 +165,41 @@ export function typedMap<
      * @default true
      */
     allowAdditionalKeys?: boolean
+
+    /**
+     * Allows overriding the encode function. The original encode method is passed as second
+     * argument, so you can use this method to pre/post process
+     */
+    encode?: (
+      decoded: TypedMap<InferredSchema<Entries>, OptionalKeys<Entries>>,
+      originalEncode: (decoded: TypedMap<InferredSchema<Entries>, OptionalKeys<Entries>>) => Map<unknown, unknown>
+    ) => Map<unknown, unknown>
+
+    /**
+     * Allows overriding the decode function. The original decode method is passed as second
+     * argument, so you can use this method to pre/post process
+     */
+    decode?: (
+      encoded: Map<unknown, unknown>,
+      originalDecode: (decoded: Map<unknown, unknown>) => TypedMap<InferredSchema<Entries>, OptionalKeys<Entries>>
+    ) => TypedMap<InferredSchema<Entries>, OptionalKeys<Entries>>
   } = {}
 ) {
-  type InferredEntries = { [K in keyof Entries]: readonly [Entries[K][0], z.infer<Entries[K][1]>] }
-  type InferredSchema = EntriesArrayToSchema<InferredEntries>
-
-  type OptionalKeys = Entries[number] extends infer E
-    ? E extends readonly [infer K, infer V]
-      ? // biome-ignore lint/suspicious/noExplicitAny: no explanation
-        V extends z.ZodExactOptional<any>
-        ? K
-        : never
-      : never
-    : never
-
   // Create a set of required keys (non-optional) for validation
   const requiredKeys = entries.filter(([, valueSchema]) => !isExactOptional(valueSchema)).map(([key]) => key)
 
   const schemaMap = new Map(entries)
+
+  const originalEncode = (decoded: TypedMap<InferredSchema<Entries>, OptionalKeys<Entries>>) => decoded.toMap()
+  const originalDecode = (encoded: Map<unknown, unknown>) =>
+    TypedMap.fromMap<InferredSchema<Entries>, OptionalKeys<Entries>>(encoded)
 
   return z.codec(
     // Input is untyped map
     z.map(z.unknown(), z.unknown()),
     // Output is typed map
     z
-      .instanceof<typeof TypedMap<InferredSchema, OptionalKeys>>(TypedMap)
+      .instanceof<typeof TypedMap<InferredSchema<Entries>, OptionalKeys<Entries>>>(TypedMap)
       .superRefine((map, ctx) => {
         // Check there's no additional keys in the map if not allowed
         const additionalKeys = Array.from(map.keys()).filter((key) => !schemaMap.has(key as string | number))
@@ -220,16 +245,27 @@ export function typedMap<
             continue
           }
 
+          // If key is not in the map, and also not required, skip validation
+          if (!hasKey && !requiredKeys.includes(key)) {
+            continue
+          }
+
           const parseResult = valueSchema.safeParse(value)
           if (!parseResult.success) {
-            parseResult.error.issues.map((issue) => ctx.addIssue(issue as zCore.$ZodSuperRefineIssue))
+            for (const issue of parseResult.error.issues) {
+              ctx.addIssue({
+                ...issue,
+                // NOTE: if we use numbers, zod-validation-error will use "index", thinking
+                // it's an array, that's confusing
+                path: [`${key}`, ...issue.path],
+              } as zCore.$ZodSuperRefineIssue)
+            }
           }
         }
       }),
     {
-      // biome-ignore lint/suspicious/noExplicitAny: Checked later
-      decode: (input) => new TypedMap<InferredSchema, OptionalKeys>(Array.from(input.entries()) as any),
-      encode: (output) => output.toMap() as Map<unknown, unknown>,
+      decode: (input) => (decode ? decode(input, originalDecode) : originalDecode(input)),
+      encode: (output) => (encode ? encode(output, originalEncode) : originalEncode(output)),
     }
   )
 }

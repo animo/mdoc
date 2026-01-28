@@ -3,6 +3,7 @@ import { expect, suite, test } from 'vitest'
 import {
   CoseKey,
   cborEncode,
+  DeviceKey,
   DeviceRequest,
   DeviceResponse,
   DocRequest,
@@ -37,7 +38,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -123,7 +124,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -215,7 +216,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -295,7 +296,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -372,7 +373,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom: validFromFuture, validUntil: validUntilFuture },
     })
 
@@ -418,7 +419,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 

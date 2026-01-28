@@ -19,12 +19,15 @@ describe('sign1', () => {
     expect(sign1.payload).toBeDefined()
     expect(sign1.signature).toBeDefined()
   })
+
   ;[sign1TestVector01, sign1TestVector02].map(async (testVector) => {
     test(`${testVector.title} :: ${testVector.description}`, async () => {
       const key = CoseKey.fromJwk(testVector.key)
 
       const sign1 = Sign1.fromDecodedStructure({
-        protected: ProtectedHeaders.decode(hex.decode(testVector['sign1::sign'].protectedHeaders.cborHex)),
+        protected: ProtectedHeaders.fromDecodedStructure(
+          cborDecode(hex.decode(testVector['sign1::sign'].protectedHeaders.cborHex))
+        ),
         unprotected: UnprotectedHeaders.decode(hex.decode(testVector['sign1::sign'].unprotectedHeaders.cborHex)),
         payload: hex.decode(testVector['sign1::sign'].payload),
         signature: cborDecode<Sign1>(hex.decode(testVector['sign1::sign'].expectedOutput.cborHex)).signature,
