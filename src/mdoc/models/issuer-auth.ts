@@ -1,28 +1,46 @@
-import { type CborDecodeOptions, cborDecode, DataItem } from '../../cbor/index.js'
+import z from 'zod'
+import { cborDecode, DataItem } from '../../cbor/index.js'
 import type { MdocContext } from '../../context.js'
-import { CosePayloadInvalidStructureError, CosePayloadMustBeDefinedError } from '../../cose/error.js'
-import { Sign1, type Sign1Options, type Sign1Structure } from '../../cose/sign1.js'
+import { CosePayloadMustBeDefinedError } from '../../cose/error.js'
+import { Sign1, type Sign1EncodedStructure, type Sign1Options } from '../../cose/sign1.js'
+import { zUint8Array } from '../../utils/zod.js'
 import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback.js'
-import { MobileSecurityObject, type MobileSecurityObjectStructure } from './mobile-security-object.js'
+import { MobileSecurityObject, type MobileSecurityObjectEncodedStructure } from './mobile-security-object.js'
 
-export type IssuerAuthStructure = Sign1Structure
-export type IssuerAuthOptions = Sign1Options
+export type IssuerAuthEncodedStructure = Sign1EncodedStructure
+export type IssuerAuthOptions = Omit<Sign1Options, 'payload'> & {
+  payload?: Sign1Options['payload'] | MobileSecurityObject
+}
 
 export class IssuerAuth extends Sign1 {
+  public static create(options: IssuerAuthOptions): IssuerAuth {
+    return super.create({
+      ...options,
+      payload:
+        options.payload instanceof MobileSecurityObject
+          ? options.payload.encode({ asDataItem: true })
+          : options.payload,
+    }) as IssuerAuth
+  }
+
+  // NOTE: currently lazy loaded and validated, but i think that's fine?
   public get mobileSecurityObject(): MobileSecurityObject {
     if (!this.payload) {
       throw new CosePayloadMustBeDefinedError()
     }
 
-    const dataItem = cborDecode<DataItem<MobileSecurityObjectStructure>>(this.payload, {
-      unwrapTopLevelDataItem: false,
-    })
-
-    if (!(dataItem instanceof DataItem)) {
-      throw new CosePayloadInvalidStructureError()
-    }
-
-    const mso = MobileSecurityObject.decode(dataItem.buffer)
+    const mso = zUint8Array
+      .transform((payload) =>
+        cborDecode(payload, {
+          unwrapTopLevelDataItem: false,
+        })
+      )
+      .pipe(
+        z
+          .instanceof<typeof DataItem<MobileSecurityObjectEncodedStructure>>(DataItem)
+          .transform((di) => MobileSecurityObject.fromEncodedStructure(di.data))
+      )
+      .parse(this.payload)
 
     return mso
   }
@@ -101,20 +119,6 @@ export class IssuerAuth extends Sign1 {
           : 'FAILED',
       check: 'The MSO must be valid at the time of verification',
       reason: `The MSO must be valid at the time of verification (${now.toUTCString()})`,
-    })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
-    const data = cborDecode<IssuerAuthStructure>(bytes, options)
-    return IssuerAuth.fromEncodedStructure(data)
-  }
-
-  public static override fromEncodedStructure(encodedStructure: IssuerAuthStructure): IssuerAuth {
-    return new IssuerAuth({
-      protectedHeaders: encodedStructure[0],
-      unprotectedHeaders: encodedStructure[1],
-      payload: encodedStructure[2],
-      signature: encodedStructure[3],
     })
   }
 }

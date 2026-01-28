@@ -1,35 +1,35 @@
-import { type CborDecodeOptions, CborStructure } from '../../cbor/cbor-structure.js'
+import z from 'zod'
+import { CborStructure } from '../../cbor/cbor-structure.js'
 import { cborDecode, cborEncode } from '../../cbor/parser.js'
+import { zUint8Array } from '../../utils/zod.js'
 
-export type ProtectedHeadersStructure = Uint8Array
+// TODO: typedMap with known keys (Header enum)
+
+export const protectedHeadersEncodedStructure = zUint8Array
+export const protectedHeadersDecodedStructure = z.map(z.number(), z.unknown())
+
+export type ProtectedHeadersDecodedStructure = z.infer<typeof protectedHeadersDecodedStructure>
+export type ProtectedHeadersEncodedStructure = z.infer<typeof protectedHeadersEncodedStructure>
 
 export type ProtectedHeaderOptions = {
-  protectedHeaders?: Map<unknown, unknown> | Uint8Array
+  protectedHeaders?: ProtectedHeadersDecodedStructure
 }
 
-export class ProtectedHeaders extends CborStructure {
-  public headers?: Map<unknown, unknown>
+export class ProtectedHeaders extends CborStructure<
+  ProtectedHeadersEncodedStructure,
+  ProtectedHeadersDecodedStructure
+> {
+  public static override encodingSchema = z.codec(protectedHeadersEncodedStructure, protectedHeadersDecodedStructure, {
+    // TODO: Senders SHOULD encode a zero-length map as a zero-length string rather than as a zero-length map
+    encode: (decoded) => cborEncode(decoded) as Uint8Array<ArrayBuffer>,
+    decode: (encoded) => cborDecode(encoded),
+  })
 
-  public constructor(options: ProtectedHeaderOptions) {
-    super()
-
-    if (options.protectedHeaders instanceof Map) {
-      this.headers = options.protectedHeaders
-    } else if (options.protectedHeaders instanceof Uint8Array) {
-      this.headers = cborDecode<Map<unknown, unknown>>(options.protectedHeaders)
-    }
+  public get headers() {
+    return this.structure
   }
 
-  public encodedStructure(): ProtectedHeadersStructure {
-    return cborEncode(this.headers) ?? new Uint8Array()
-  }
-
-  public static override fromEncodedStructure(encodedStructure: ProtectedHeadersStructure): ProtectedHeaders {
-    return new ProtectedHeaders({ protectedHeaders: encodedStructure })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): ProtectedHeaders {
-    const map = cborDecode<ProtectedHeadersStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return ProtectedHeaders.fromEncodedStructure(map)
+  public static create(options: ProtectedHeaderOptions) {
+    return this.fromDecodedStructure(options.protectedHeaders ?? new Map())
   }
 }

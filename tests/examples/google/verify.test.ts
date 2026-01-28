@@ -3,7 +3,6 @@ import { DeviceResponse, SessionTranscript } from '../../../src'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
 import { rootCertificate } from './rootCertificate'
-import { signingCertificate } from './signingCertificate'
 
 /*
  *
@@ -21,12 +20,7 @@ describe('Google CM Wallet mdoc implementation', () => {
     await expect(
       DeviceResponse.decode(deviceResponse).verify(
         {
-          trustedCertificates: [
-            new Uint8Array(rootCertificate.rawData),
-            // FIXME: verification fails when only trusting root certificate. We need
-            // to trust the signing certificate for now
-            new Uint8Array(signingCertificate.rawData),
-          ],
+          trustedCertificates: [new Uint8Array(rootCertificate.rawData)],
           sessionTranscript: await SessionTranscript.forOid4VpDcApiDraft24(
             {
               origin,

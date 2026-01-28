@@ -1,17 +1,21 @@
+import z from 'zod'
 import { Handover } from './handover'
 
-export type QrHandoverStructure = null
+const qrHandoverSchema = z.null()
+export type QrHandoverStructure = z.infer<typeof qrHandoverSchema>
 
-export class QrHandover extends Handover {
-  public encodedStructure(): QrHandoverStructure {
-    return null
+export class QrHandover extends Handover<QrHandoverStructure> {
+  public static override encodingSchema = qrHandoverSchema
+
+  public override get requiresReaderKey() {
+    return true
   }
 
-  public static override fromEncodedStructure(_encodedStructure: QrHandoverStructure): QrHandover {
-    return new QrHandover()
+  public override get requiresDeviceEngagement() {
+    return true
   }
 
-  public static isCorrectHandover(structure: unknown): structure is QrHandoverStructure {
-    return structure === null
+  public static create() {
+    return new QrHandover(null)
   }
 }

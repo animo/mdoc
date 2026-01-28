@@ -1,14 +1,24 @@
-import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
-import { DeviceNamespaces, type DeviceNamespacesStructure } from './device-namespaces'
+import { z } from 'zod'
+import { CborStructure, DataItem } from '../../cbor'
+import { DeviceNamespaces, type DeviceNamespacesEncodedStructure } from './device-namespaces'
 import type { DocType } from './doctype'
-import { SessionTranscript, type SessionTranscriptStructure } from './session-transcript'
+import { SessionTranscript, sessionTranscriptEncodedSchema } from './session-transcript'
 
-export type DeviceAuthenticationStructure = [
-  string,
-  SessionTranscriptStructure,
-  DocType,
-  DataItem<DeviceNamespacesStructure>,
-]
+const deviceAuthenticationEncodedSchema = z.tuple([
+  z.literal('DeviceAuthentication'),
+  sessionTranscriptEncodedSchema,
+  z.string(),
+  z.instanceof<typeof DataItem<DeviceNamespacesEncodedStructure>>(DataItem),
+])
+
+const deviceAuthenticationDecodedSchema = z.object({
+  sessionTranscript: z.instanceof(SessionTranscript),
+  docType: z.string(),
+  deviceNamespaces: z.instanceof(DeviceNamespaces),
+})
+
+export type DeviceAuthenticationDecodedStructure = z.infer<typeof deviceAuthenticationDecodedSchema>
+export type DeviceAuthenticationEncodedStructure = z.infer<typeof deviceAuthenticationEncodedSchema>
 
 export type DeviceAuthenticationOptions = {
   sessionTranscript: SessionTranscript | Uint8Array
@@ -16,39 +26,51 @@ export type DeviceAuthenticationOptions = {
   deviceNamespaces: DeviceNamespaces
 }
 
-export class DeviceAuthentication extends CborStructure {
-  public sessionTranscript: SessionTranscript | Uint8Array
-  public docType: DocType
-  public deviceNamespaces: DeviceNamespaces
+export class DeviceAuthentication extends CborStructure<
+  DeviceAuthenticationEncodedStructure,
+  DeviceAuthenticationDecodedStructure
+> {
+  public static override encodingSchema = z.codec(
+    deviceAuthenticationEncodedSchema,
+    deviceAuthenticationDecodedSchema,
+    {
+      decode: ([, sessionTranscript, docType, deviceNamespacesDataItem]) => ({
+        sessionTranscript: SessionTranscript.fromEncodedStructure(sessionTranscript),
+        docType,
+        deviceNamespaces: DeviceNamespaces.fromEncodedStructure(deviceNamespacesDataItem.data),
+      }),
+      encode: ({ sessionTranscript, docType, deviceNamespaces }) =>
+        [
+          'DeviceAuthentication',
+          sessionTranscript.encodedStructure,
+          docType,
+          DataItem.fromData(deviceNamespaces.encodedStructure),
+        ] satisfies DeviceAuthenticationEncodedStructure,
+    }
+  )
 
-  public constructor(options: DeviceAuthenticationOptions) {
-    super()
-    this.sessionTranscript = options.sessionTranscript
-    this.docType = options.docType
-    this.deviceNamespaces = options.deviceNamespaces
+  public get sessionTranscript() {
+    return this.structure.sessionTranscript
   }
 
-  public encodedStructure(): DeviceAuthenticationStructure {
-    return [
-      'DeviceAuthentication',
-      this.sessionTranscript instanceof SessionTranscript
-        ? this.sessionTranscript.encodedStructure()
-        : cborDecode(this.sessionTranscript),
-      this.docType,
-      DataItem.fromData(this.deviceNamespaces.encodedStructure()),
-    ]
+  public get docType() {
+    return this.structure.docType
   }
 
-  public static override fromEncodedStructure(encodedStructure: DeviceAuthenticationStructure): DeviceAuthentication {
-    return new DeviceAuthentication({
-      sessionTranscript: SessionTranscript.fromEncodedStructure(encodedStructure[1]),
-      docType: encodedStructure[2],
-      deviceNamespaces: DeviceNamespaces.fromEncodedStructure(encodedStructure[3].data),
+  public get deviceNamespaces() {
+    return this.structure.deviceNamespaces
+  }
+
+  public static create(options: DeviceAuthenticationOptions): DeviceAuthentication {
+    const sessionTranscript =
+      options.sessionTranscript instanceof SessionTranscript
+        ? options.sessionTranscript
+        : SessionTranscript.decode(options.sessionTranscript)
+
+    return this.fromDecodedStructure({
+      sessionTranscript,
+      docType: options.docType,
+      deviceNamespaces: options.deviceNamespaces,
     })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceAuthentication {
-    const structure = cborDecode<DeviceAuthenticationStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return DeviceAuthentication.fromEncodedStructure(structure)
   }
 }

@@ -1,23 +1,29 @@
-import {
-  type CborDecodeOptions,
-  type CborEncodeOptions,
-  CborStructure,
-  cborDecode,
-  cborEncode,
-  DataItem,
-} from '../../cbor'
-import { DeviceRetrievalMethod, type DeviceRetrievalMethodStructure } from './device-retrieval-method'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
+import { TypedMap, typedMap } from '../../utils'
+import { DeviceRetrievalMethod, type DeviceRetrievalMethodEncodedStructure } from './device-retrieval-method'
 import { ProtocolInfo, type ProtocolInfoStructure } from './protocol-info'
-import { Security, type SecurityStructure } from './security'
-import { ServerRetrievalMethod, type ServerRetrievalMethodStructure } from './server-retrieval-method'
+import { Security, type SecurityEncodedStructure } from './security'
+import { ServerRetrievalMethod, type ServerRetrievalMethodEncodedStructure } from './server-retrieval-method'
 
-export type DeviceEngagementStructure = {
-  0: string
-  1: SecurityStructure
-  2?: Array<DeviceRetrievalMethodStructure>
-  3?: Array<ServerRetrievalMethodStructure>
-  4?: ProtocolInfoStructure
-} & Record<number, unknown>
+enum DeviceEngagementKeys {
+  Version = 0,
+  Security = 1,
+  DeviceRetrievalMethods = 2,
+  ServerRetrievalMethods = 3,
+  ProtocolInfo = 4,
+}
+
+const deviceEngagementSchema = typedMap([
+  [DeviceEngagementKeys.Version, z.string()],
+  [DeviceEngagementKeys.Security, z.instanceof(Security)],
+  [DeviceEngagementKeys.DeviceRetrievalMethods, z.array(z.instanceof(DeviceRetrievalMethod)).exactOptional()],
+  [DeviceEngagementKeys.ServerRetrievalMethods, z.array(z.instanceof(ServerRetrievalMethod)).exactOptional()],
+  [DeviceEngagementKeys.ProtocolInfo, z.instanceof(ProtocolInfo).exactOptional()],
+] as const)
+
+export type DeviceEngagementEncodedStructure = z.input<typeof deviceEngagementSchema>
+export type DeviceEngagementDecodedStructure = z.output<typeof deviceEngagementSchema>
 
 export type DeviceEngagementOptions = {
   version: string
@@ -25,97 +31,120 @@ export type DeviceEngagementOptions = {
   deviceRetrievalMethods?: Array<DeviceRetrievalMethod>
   serverRetrievalMethods?: Array<ServerRetrievalMethod>
   protocolInfo?: ProtocolInfo
-  extra?: Record<string, unknown>
 }
 
-export class DeviceEngagement extends CborStructure {
-  public version: string
-  public security: Security
-  public deviceRetrievalMethods?: Array<DeviceRetrievalMethod>
-  public serverRetrievalMethods?: Array<ServerRetrievalMethod>
-  public protocolInfo?: ProtocolInfo
-  public extra?: Record<string, unknown>
+export class DeviceEngagement extends CborStructure<
+  DeviceEngagementEncodedStructure,
+  DeviceEngagementDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return z.codec(deviceEngagementSchema.in, deviceEngagementSchema.out, {
+      decode: (input) => {
+        const map: DeviceEngagementDecodedStructure = TypedMap.fromMap(input)
 
-  /**
-   * Original CBOR bytes (preserved when decoding to ensure encode() returns identical bytes)
-   */
-  #rawBytes?: Uint8Array
+        map.set(
+          DeviceEngagementKeys.Security,
+          Security.fromEncodedStructure(input.get(DeviceEngagementKeys.Security) as SecurityEncodedStructure)
+        )
 
-  public constructor(options: DeviceEngagementOptions) {
-    super()
-    this.version = options.version
-    this.security = options.security
-    this.deviceRetrievalMethods = options.deviceRetrievalMethods
-    this.serverRetrievalMethods = options.serverRetrievalMethods
-    this.protocolInfo = options.protocolInfo
-    this.extra = options.extra
-  }
+        if (input.has(DeviceEngagementKeys.DeviceRetrievalMethods)) {
+          const deviceMethods = input.get(
+            DeviceEngagementKeys.DeviceRetrievalMethods
+          ) as DeviceRetrievalMethodEncodedStructure[]
+          map.set(
+            DeviceEngagementKeys.DeviceRetrievalMethods,
+            deviceMethods.map((encoded) => DeviceRetrievalMethod.fromEncodedStructure(encoded))
+          )
+        }
 
-  public encodedStructure(): DeviceEngagementStructure {
-    let structure: DeviceEngagementStructure = {
-      0: this.version,
-      1: this.security.encodedStructure(),
-    }
+        if (input.has(DeviceEngagementKeys.ServerRetrievalMethods)) {
+          const serverMethods = input.get(
+            DeviceEngagementKeys.ServerRetrievalMethods
+          ) as ServerRetrievalMethodEncodedStructure[]
+          map.set(
+            DeviceEngagementKeys.ServerRetrievalMethods,
+            serverMethods.map((encoded) => ServerRetrievalMethod.fromEncodedStructure(encoded))
+          )
+        }
 
-    if (this.deviceRetrievalMethods) {
-      structure[2] = this.deviceRetrievalMethods.map((drm) => drm.encodedStructure())
-    }
+        if (input.has(DeviceEngagementKeys.ProtocolInfo)) {
+          map.set(
+            DeviceEngagementKeys.ProtocolInfo,
+            ProtocolInfo.fromEncodedStructure(input.get(DeviceEngagementKeys.ProtocolInfo) as ProtocolInfoStructure)
+          )
+        }
 
-    if (this.serverRetrievalMethods) {
-      structure[3] = this.serverRetrievalMethods.map((srm) => srm.encodedStructure())
-    }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
 
-    if (this.protocolInfo) {
-      structure[4] = this.protocolInfo.encodedStructure()
-    }
+        map.set(DeviceEngagementKeys.Security, output.get(DeviceEngagementKeys.Security).encodedStructure)
 
-    if (this.extra) {
-      structure = { ...structure, ...this.extra }
-    }
+        const deviceRetrievalMethods = output.get(DeviceEngagementKeys.DeviceRetrievalMethods)
+        if (deviceRetrievalMethods) {
+          map.set(
+            DeviceEngagementKeys.DeviceRetrievalMethods,
+            deviceRetrievalMethods.map((drm) => drm.encodedStructure)
+          )
+        }
 
-    return structure
-  }
+        const serverRetrievalMethods = output.get(DeviceEngagementKeys.ServerRetrievalMethods)
+        if (serverRetrievalMethods) {
+          map.set(
+            DeviceEngagementKeys.ServerRetrievalMethods,
+            serverRetrievalMethods.map((srm) => srm.encodedStructure)
+          )
+        }
 
-  public override encode(options?: CborEncodeOptions): Uint8Array {
-    if (this.#rawBytes) {
-      if (options?.asDataItem) {
-        return cborEncode(new DataItem({ buffer: this.#rawBytes }))
-      }
-      return this.#rawBytes
-    }
-    return super.encode(options)
-  }
+        const protocolInfo = output.get(DeviceEngagementKeys.ProtocolInfo)
+        if (protocolInfo) {
+          map.set(DeviceEngagementKeys.ProtocolInfo, protocolInfo.encodedStructure)
+        }
 
-  public static override fromEncodedStructure(
-    encodedStructure: DeviceEngagementStructure | Map<unknown, unknown>
-  ): DeviceEngagement {
-    let structure = encodedStructure as DeviceEngagementStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as DeviceEngagementStructure
-    }
-
-    const definedKeys = ['0', '1', '2', '3', '4']
-    const extras: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(structure)) {
-      if (definedKeys.includes(k)) continue
-      extras[k] = v
-    }
-
-    return new DeviceEngagement({
-      version: structure[0],
-      security: Security.fromEncodedStructure(structure[1]),
-      deviceRetrievalMethods: structure[2] ? structure[2].map(DeviceRetrievalMethod.fromEncodedStructure) : undefined,
-      serverRetrievalMethods: structure[3] ? structure[3].map(ServerRetrievalMethod.fromEncodedStructure) : undefined,
-      protocolInfo: structure[4] ? ProtocolInfo.fromEncodedStructure(structure[4]) : undefined,
-      extra: extras,
+        return map
+      },
     })
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceEngagement {
-    const structure = cborDecode<DeviceEngagementStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    const engagement = DeviceEngagement.fromEncodedStructure(structure)
-    engagement.#rawBytes = bytes
-    return engagement
+  public get version() {
+    return this.structure.get(DeviceEngagementKeys.Version)
+  }
+
+  public get security() {
+    return this.structure.get(DeviceEngagementKeys.Security)
+  }
+
+  public get deviceRetrievalMethods() {
+    return this.structure.get(DeviceEngagementKeys.DeviceRetrievalMethods)
+  }
+
+  public get serverRetrievalMethods() {
+    return this.structure.get(DeviceEngagementKeys.ServerRetrievalMethods)
+  }
+
+  public get protocolInfo() {
+    return this.structure.get(DeviceEngagementKeys.ProtocolInfo)
+  }
+
+  public static create(options: DeviceEngagementOptions): DeviceEngagement {
+    const map = new Map<number, unknown>([
+      [DeviceEngagementKeys.Version, options.version],
+      [DeviceEngagementKeys.Security, options.security],
+    ])
+
+    if (options.deviceRetrievalMethods !== undefined) {
+      map.set(DeviceEngagementKeys.DeviceRetrievalMethods, options.deviceRetrievalMethods)
+    }
+
+    if (options.serverRetrievalMethods !== undefined) {
+      map.set(DeviceEngagementKeys.ServerRetrievalMethods, options.serverRetrievalMethods)
+    }
+
+    if (options.protocolInfo !== undefined) {
+      map.set(DeviceEngagementKeys.ProtocolInfo, options.protocolInfo)
+    }
+
+    return this.fromEncodedStructure(map)
   }
 }

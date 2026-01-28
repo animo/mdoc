@@ -1,59 +1,40 @@
-import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import z from 'zod'
 import type { MdocContext } from '../../context'
+import { zUint8Array } from '../../utils/zod'
 import { Handover } from './handover'
 import type { Oid4vpDcApiDraft24HandoverInfo } from './oid4vp-dc-api-draft24-handover-info'
 import type { Oid4vpDcApiHandoverInfo } from './oid4vp-dc-api-handover-info'
 
-export type Oid4vpDcApiHandoverStructure = [string, Uint8Array]
+const oid4vpDcApiHandoverEncodedSchema = z.tuple([z.literal('OpenID4VPDCAPIHandover'), zUint8Array])
+const oid4vpDcApiHandoverDecodedSchema = zUint8Array
+
+export type Oid4vpDcApiHandoverEncodedStructure = z.infer<typeof oid4vpDcApiHandoverEncodedSchema>
+export type Oid4vpDcApiHandoverDecodedStructure = z.infer<typeof oid4vpDcApiHandoverDecodedSchema>
 
 export type Oid4vpDcApiHandoverOptions = {
-  oid4vpDcApiHandoverInfo?: Oid4vpDcApiHandoverInfo | Oid4vpDcApiDraft24HandoverInfo
-  oid4vpDcApiHandoverInfoHash?: Uint8Array
+  oid4vpDcApiHandoverInfo: Oid4vpDcApiHandoverInfo | Oid4vpDcApiDraft24HandoverInfo
 }
 
-export class Oid4vpDcApiHandover extends Handover {
-  public oid4vpDcApiHandoverInfo?: Oid4vpDcApiHandoverInfo | Oid4vpDcApiDraft24HandoverInfo
-  public oid4vpDcApiHandoverInfoHash?: Uint8Array
+export class Oid4vpDcApiHandover extends Handover<
+  Oid4vpDcApiHandoverEncodedStructure,
+  Oid4vpDcApiHandoverDecodedStructure
+> {
+  public static override encodingSchema = z.codec(oid4vpDcApiHandoverEncodedSchema, oid4vpDcApiHandoverDecodedSchema, {
+    encode: (handoverInfoHash) =>
+      ['OpenID4VPDCAPIHandover', handoverInfoHash] satisfies Oid4vpDcApiHandoverEncodedStructure,
+    decode: ([, handoverInfoHash]) => handoverInfoHash,
+  })
 
-  public constructor(options: Oid4vpDcApiHandoverOptions) {
-    super()
-    this.oid4vpDcApiHandoverInfo = options.oid4vpDcApiHandoverInfo
-    this.oid4vpDcApiHandoverInfoHash = options.oid4vpDcApiHandoverInfoHash
+  public static createFromHash(oid4vpDcApiHandoverInfoHash: Uint8Array) {
+    return this.fromDecodedStructure(oid4vpDcApiHandoverInfoHash)
   }
 
-  public async prepare(ctx: Pick<MdocContext, 'crypto'>) {
-    if (!this.oid4vpDcApiHandoverInfo && !this.oid4vpDcApiHandoverInfoHash) {
-      throw new Error(`Either the 'oid4vpDcApiHandoverInfo' or 'oid4vpDcApiHandoverInfoHash' must be set`)
-    }
-
-    if (this.oid4vpDcApiHandoverInfo) {
-      this.oid4vpDcApiHandoverInfoHash = await ctx.crypto.digest({
-        digestAlgorithm: 'SHA-256',
-        bytes: this.oid4vpDcApiHandoverInfo.encode(),
-      })
-    }
-  }
-
-  public encodedStructure(): Oid4vpDcApiHandoverStructure {
-    if (!this.oid4vpDcApiHandoverInfoHash) {
-      throw new Error('Call `prepare` first to create the hash over the handover info')
-    }
-
-    return ['OpenID4VPDCAPIHandover', this.oid4vpDcApiHandoverInfoHash]
-  }
-
-  public static override fromEncodedStructure(encodedStructure: Oid4vpDcApiHandoverStructure): Oid4vpDcApiHandover {
-    return new Oid4vpDcApiHandover({
-      oid4vpDcApiHandoverInfoHash: encodedStructure[1],
+  public static async create(options: Oid4vpDcApiHandoverOptions, ctx: Pick<MdocContext, 'crypto'>) {
+    const oid4vpDcApiHandoverInfoHash = await ctx.crypto.digest({
+      digestAlgorithm: 'SHA-256',
+      bytes: options.oid4vpDcApiHandoverInfo.encode(),
     })
-  }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Oid4vpDcApiHandover {
-    const structure = cborDecode<Oid4vpDcApiHandoverStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return Oid4vpDcApiHandover.fromEncodedStructure(structure)
-  }
-
-  public static isCorrectHandover(structure: unknown): structure is Oid4vpDcApiHandoverStructure {
-    return Array.isArray(structure) && structure[0] === 'OpenID4VPDCAPIHandover'
+    return this.fromDecodedStructure(oid4vpDcApiHandoverInfoHash)
   }
 }

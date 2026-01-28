@@ -15,7 +15,7 @@ import {
   type DigestId,
   type DocType,
   IssuerAuth,
-  IssuerNamespace,
+  IssuerNamespaces,
   IssuerSigned,
   IssuerSignedItem,
   MobileSecurityObject,
@@ -23,40 +23,42 @@ import {
   ValidityInfo,
   type ValidityInfoOptions,
   ValueDigests,
+  type ValueDigestsStructure,
 } from '../models'
 
 export class IssuerSignedBuilder {
   private docType: DocType
-  private namespaces: IssuerNamespace
+  private namespaces: IssuerNamespaces
   private ctx: Pick<MdocContext, 'cose' | 'crypto'>
 
   public constructor(docType: DocType, ctx: Pick<MdocContext, 'cose' | 'crypto'>) {
     this.docType = docType
     this.ctx = ctx
-    this.namespaces = new IssuerNamespace({ issuerNamespaces: new Map() })
+    this.namespaces = IssuerNamespaces.create({ issuerNamespaces: new Map() })
   }
 
-  public addIssuerNamespace(namespace: Namespace, value: Record<string | number, unknown>) {
-    const issuerNamespace = this.namespaces.issuerNamespaces.get(namespace) ?? []
+  public addIssuerNamespace(namespace: Namespace, values: Record<string, unknown> | Map<string, unknown>) {
+    const issuerNamespace = this.namespaces.getIssuerNamespace(namespace) ?? []
 
-    const issuerSignedItems = Object.entries(value).map(([k, v]) => {
-      return IssuerSignedItem.fromOptions({
+    const entries = values instanceof Map ? Array.from(values.entries()) : Object.entries(values)
+
+    const issuerSignedItems = entries.map(([key, value]) =>
+      IssuerSignedItem.fromOptions({
         digestId: randomUnsignedInteger(this.ctx),
         random: this.ctx.crypto.random(32),
-        elementIdentifier: k,
-        elementValue: v,
+        elementIdentifier: key,
+        elementValue: value,
       })
-    })
-
+    )
     issuerNamespace.push(...issuerSignedItems)
 
-    this.namespaces.issuerNamespaces.set(namespace, issuerNamespace)
+    this.namespaces.setIssuerNamespace(namespace, issuerNamespace)
 
     return this
   }
 
   private async convertIssuerNamespacesIntoValueDigests(digestAlgorithm: DigestAlgorithm): Promise<ValueDigests> {
-    const valueDigests = new Map<Namespace, Map<DigestId, Digest>>()
+    const valueDigests: ValueDigestsStructure = new Map()
 
     for (const [namespace, issuerSignedItems] of this.namespaces.issuerNamespaces) {
       const digests = new Map<DigestId, Digest>()
@@ -71,7 +73,7 @@ export class IssuerSignedBuilder {
       valueDigests.set(namespace, digests)
     }
 
-    return new ValueDigests({ valueDigests })
+    return ValueDigests.create({ digests: valueDigests })
   }
 
   public async sign(options: {
@@ -83,12 +85,14 @@ export class IssuerSignedBuilder {
     certificate: Uint8Array
   }): Promise<IssuerSigned> {
     const validityInfo =
-      options.validityInfo instanceof ValidityInfo ? options.validityInfo : new ValidityInfo(options.validityInfo)
+      options.validityInfo instanceof ValidityInfo ? options.validityInfo : ValidityInfo.create(options.validityInfo)
 
     const deviceKeyInfo =
-      options.deviceKeyInfo instanceof DeviceKeyInfo ? options.deviceKeyInfo : new DeviceKeyInfo(options.deviceKeyInfo)
+      options.deviceKeyInfo instanceof DeviceKeyInfo
+        ? options.deviceKeyInfo
+        : DeviceKeyInfo.create(options.deviceKeyInfo)
 
-    const mso = new MobileSecurityObject({
+    const mso = MobileSecurityObject.create({
       docType: this.docType,
       validityInfo,
       digestAlgorithm: options.digestAlgorithm,
@@ -96,11 +100,11 @@ export class IssuerSignedBuilder {
       valueDigests: await this.convertIssuerNamespacesIntoValueDigests(options.digestAlgorithm),
     })
 
-    const protectedHeaders = new ProtectedHeaders({
+    const protectedHeaders = ProtectedHeaders.create({
       protectedHeaders: new Map([[Header.Algorithm, options.algorithm]]),
     })
 
-    const unprotectedHeaders = new UnprotectedHeaders({
+    const unprotectedHeaders = UnprotectedHeaders.create({
       unprotectedHeaders: new Map([[Header.X5Chain, options.certificate]]),
     })
 
@@ -108,8 +112,8 @@ export class IssuerSignedBuilder {
       unprotectedHeaders.headers?.set(Header.KeyId, options.signingKey.keyId)
     }
 
-    const issuerAuth = new IssuerAuth({
-      payload: mso.encode({ asDataItem: true }),
+    const issuerAuth = IssuerAuth.create({
+      payload: mso,
       unprotectedHeaders,
       protectedHeaders,
     })
@@ -121,7 +125,7 @@ export class IssuerSignedBuilder {
       this.ctx
     )
 
-    return new IssuerSigned({
+    return IssuerSigned.create({
       issuerNamespaces: this.namespaces,
       issuerAuth,
     })

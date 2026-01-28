@@ -1,46 +1,60 @@
+import { z } from 'zod'
 import { CborStructure, DataItem } from '../../cbor'
-import { DeviceAuth, type DeviceAuthStructure } from './device-auth'
-import { DeviceNamespaces, type DeviceNamespacesStructure } from './device-namespaces'
+import { TypedMap, typedMap } from '../../utils'
+import { DeviceAuth, type DeviceAuthEncodedStructure } from './device-auth'
+import { DeviceNamespaces, type DeviceNamespacesEncodedStructure } from './device-namespaces'
 
-export type DeviceSignedStructure = {
-  nameSpaces: DataItem<DeviceNamespacesStructure>
-  deviceAuth: DeviceAuthStructure
-}
+const deviceSignedSchema = typedMap([
+  ['deviceNamespaces', z.instanceof(DeviceNamespaces)],
+  ['deviceAuth', z.instanceof(DeviceAuth)],
+] as const)
+
+export type DeviceSignedDecodedStructure = z.output<typeof deviceSignedSchema>
+export type DeviceSignedEncodedStructure = z.input<typeof deviceSignedSchema>
 
 export type DeviceSignedOptions = {
   deviceNamespaces: DeviceNamespaces
   deviceAuth: DeviceAuth
 }
 
-export class DeviceSigned extends CborStructure {
-  public deviceNamespaces: DeviceNamespaces
-  public deviceAuth: DeviceAuth
+export class DeviceSigned extends CborStructure<DeviceSignedEncodedStructure, DeviceSignedDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(deviceSignedSchema.in, deviceSignedSchema.out, {
+      decode: (input) => {
+        const map: DeviceSignedDecodedStructure = TypedMap.fromMap(input)
 
-  public constructor(options: DeviceSignedOptions) {
-    super()
-    this.deviceNamespaces = options.deviceNamespaces
-    this.deviceAuth = options.deviceAuth
-  }
+        const nameSpaces = input.get('nameSpaces') as DataItem
+        map.set(
+          'deviceNamespaces',
+          DeviceNamespaces.fromEncodedStructure(nameSpaces.data as DeviceNamespacesEncodedStructure)
+        )
+        map.set('deviceAuth', DeviceAuth.fromEncodedStructure(input.get('deviceAuth') as DeviceAuthEncodedStructure))
 
-  public encodedStructure(): DeviceSignedStructure {
-    return {
-      nameSpaces: DataItem.fromData(this.deviceNamespaces.encodedStructure()),
-      deviceAuth: this.deviceAuth.encodedStructure(),
-    }
-  }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
+        map.set('nameSpaces', DataItem.fromData(output.get('deviceNamespaces').encodedStructure))
+        map.set('deviceAuth', output.get('deviceAuth').encodedStructure)
 
-  public static override fromEncodedStructure(
-    encodedStructure: DeviceSignedStructure | Map<unknown, unknown>
-  ): DeviceSigned {
-    let structure = encodedStructure as DeviceSignedStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as DeviceSignedStructure
-    }
-
-    return new DeviceSigned({
-      deviceAuth: DeviceAuth.fromEncodedStructure(structure.deviceAuth),
-      deviceNamespaces: DeviceNamespaces.fromEncodedStructure(structure.nameSpaces.data),
+        return map
+      },
     })
+  }
+
+  public get deviceNamespaces() {
+    return this.structure.get('deviceNamespaces')
+  }
+
+  public get deviceAuth() {
+    return this.structure.get('deviceAuth')
+  }
+
+  public static create(options: DeviceSignedOptions): DeviceSigned {
+    const map: DeviceSignedDecodedStructure = new TypedMap([
+      ['deviceNamespaces', options.deviceNamespaces],
+      ['deviceAuth', options.deviceAuth],
+    ])
+    return this.fromDecodedStructure(map)
   }
 }

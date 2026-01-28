@@ -1,31 +1,22 @@
-import { type CborDecodeOptions, CborStructure } from '../../cbor/cbor-structure.js'
-import { cborDecode } from '../../cbor/parser.js'
-import type { Header } from './defaults.js'
+import z from 'zod'
+import { CborStructure } from '../../cbor/cbor-structure.js'
 
-export type UnprotectedHeadersStructure = Map<Header | unknown, unknown>
+export const unprotectedHeadersStructure = z.map(z.number(), z.unknown())
 
-export type UnprotectedHeadersOptions = {
-  unprotectedHeaders?: Map<Header | unknown, unknown>
+export type UnprotectedHeadersStructure = z.infer<typeof unprotectedHeadersStructure>
+
+export type UnprotectedHeaderOptions = {
+  unprotectedHeaders?: UnprotectedHeadersStructure
 }
 
-export class UnprotectedHeaders extends CborStructure {
-  public headers?: Map<Header | unknown, unknown>
+export class UnprotectedHeaders extends CborStructure<UnprotectedHeadersStructure> {
+  public static override encodingSchema = unprotectedHeadersStructure
 
-  public constructor(options: UnprotectedHeadersOptions) {
-    super()
-    this.headers = options.unprotectedHeaders
+  public get headers() {
+    return this.structure
   }
 
-  public encodedStructure(): UnprotectedHeadersStructure {
-    return this.headers ?? new Map()
-  }
-
-  public static override fromEncodedStructure(encodedStructure: UnprotectedHeadersStructure): UnprotectedHeaders {
-    return new UnprotectedHeaders({ unprotectedHeaders: encodedStructure })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): UnprotectedHeaders {
-    const map = cborDecode<UnprotectedHeadersStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return UnprotectedHeaders.fromEncodedStructure(map)
+  public static create(options: UnprotectedHeaderOptions) {
+    return this.fromDecodedStructure(options.unprotectedHeaders ?? new Map())
   }
 }

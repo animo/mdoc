@@ -1,12 +1,34 @@
+import { z } from 'zod'
 import { CborStructure } from '../../cbor'
+import { typedMap } from '../../utils'
+import { zUint8Array } from '../../utils/zod'
 
-export type BleOptionsStructure = {
-  0: boolean
-  1: boolean
-  10?: Uint8Array
-  11?: Uint8Array
-  20?: Uint8Array
+enum BleOptionsKeys {
+  PeripheralServerMode = 0,
+  CentralClientMode = 1,
+  PeripheralServerModeUuid = 10,
+  CentralClientModeUuid = 11,
+  PeripheralServerModeDeviceAddress = 20,
 }
+
+// BleOptions uses integer keys per spec:
+// BleOptions = {
+//   0 : bool,   // Supports peripheral server mode
+//   1 : bool,   // Supports central client mode
+//   ? 10 : bstr, // UUID for peripheral server mode
+//   ? 11 : bstr, // UUID for central client mode
+//   ? 20 : bstr  // BLE Device Address
+// }
+const bleOptionsSchema = typedMap([
+  [BleOptionsKeys.PeripheralServerMode, z.boolean()],
+  [BleOptionsKeys.CentralClientMode, z.boolean()],
+  [BleOptionsKeys.PeripheralServerModeUuid, zUint8Array.exactOptional()],
+  [BleOptionsKeys.CentralClientModeUuid, zUint8Array.exactOptional()],
+  [BleOptionsKeys.PeripheralServerModeDeviceAddress, zUint8Array.exactOptional()],
+] as const)
+
+export type BleOptionsEncodedStructure = z.input<typeof bleOptionsSchema>
+export type BleOptionsDecodedStructure = z.output<typeof bleOptionsSchema>
 
 export type BleOptionsOptions = {
   peripheralServerMode: boolean
@@ -16,58 +38,47 @@ export type BleOptionsOptions = {
   peripheralServerModeDeviceAddress?: Uint8Array
 }
 
-export class BleOptions extends CborStructure {
-  public peripheralServerMode: boolean
-  public centralClientMode: boolean
-  public peripheralServerModeUuid?: Uint8Array
-  public centralClientModeUuid?: Uint8Array
-  public peripheralServerModeDeviceAddress?: Uint8Array
+export class BleOptions extends CborStructure<BleOptionsEncodedStructure, BleOptionsDecodedStructure> {
+  public static override encodingSchema = bleOptionsSchema
 
-  public constructor(options: BleOptionsOptions) {
-    super()
-    this.peripheralServerMode = options.peripheralServerMode
-    this.centralClientMode = options.centralClientMode
-    this.peripheralServerModeUuid = options.peripheralServerModeUuid
-    this.centralClientModeUuid = options.centralClientModeUuid
-    this.peripheralServerModeDeviceAddress = options.peripheralServerModeDeviceAddress
+  public get peripheralServerMode() {
+    return this.structure.get(BleOptionsKeys.PeripheralServerMode)
   }
 
-  public encodedStructure(): BleOptionsStructure {
-    const structure: BleOptionsStructure = {
-      0: this.peripheralServerMode,
-      1: this.centralClientMode,
-    }
-
-    if (this.peripheralServerModeUuid) {
-      structure[10] = this.peripheralServerModeUuid
-    }
-
-    if (this.centralClientModeUuid) {
-      structure[11] = this.centralClientModeUuid
-    }
-
-    if (this.peripheralServerModeDeviceAddress) {
-      structure[20] = this.peripheralServerModeDeviceAddress
-    }
-
-    return structure
+  public get centralClientMode() {
+    return this.structure.get(BleOptionsKeys.CentralClientMode)
   }
 
-  public static override fromEncodedStructure(
-    encodedStructure: BleOptionsStructure | Map<number, unknown>
-  ): CborStructure {
-    let structure = encodedStructure as BleOptionsStructure
+  public get peripheralServerModeUuid() {
+    return this.structure.get(BleOptionsKeys.PeripheralServerModeUuid)
+  }
 
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as BleOptionsStructure
+  public get centralClientModeUuid() {
+    return this.structure.get(BleOptionsKeys.CentralClientModeUuid)
+  }
+
+  public get peripheralServerModeDeviceAddress() {
+    return this.structure.get(BleOptionsKeys.PeripheralServerModeDeviceAddress)
+  }
+
+  public static create(options: BleOptionsOptions): BleOptions {
+    const map = new Map<number, unknown>([
+      [BleOptionsKeys.PeripheralServerMode, options.peripheralServerMode],
+      [BleOptionsKeys.CentralClientMode, options.centralClientMode],
+    ])
+
+    if (options.peripheralServerModeUuid !== undefined) {
+      map.set(BleOptionsKeys.PeripheralServerModeUuid, options.peripheralServerModeUuid)
     }
 
-    return new BleOptions({
-      peripheralServerMode: structure[0],
-      centralClientMode: structure[1],
-      peripheralServerModeUuid: structure[10],
-      centralClientModeUuid: structure[11],
-      peripheralServerModeDeviceAddress: structure[20],
-    })
+    if (options.centralClientModeUuid !== undefined) {
+      map.set(BleOptionsKeys.CentralClientModeUuid, options.centralClientModeUuid)
+    }
+
+    if (options.peripheralServerModeDeviceAddress !== undefined) {
+      map.set(BleOptionsKeys.PeripheralServerModeDeviceAddress, options.peripheralServerModeDeviceAddress)
+    }
+
+    return this.fromEncodedStructure(map)
   }
 }

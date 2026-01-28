@@ -1,4 +1,4 @@
-import crypto from 'node:crypto'
+import crypto, { timingSafeEqual } from 'node:crypto'
 import { p256 } from '@noble/curves/nist.js'
 import { hmac } from '@noble/hashes/hmac.js'
 import { sha256 } from '@noble/hashes/sha2.js'
@@ -25,7 +25,7 @@ export const mdocContext: MdocContext = {
       const digest = 'sha256'
       const result = await hkdf(digest, ikm, salt, infoAsBytes, 32)
 
-      return new CoseKey({
+      return CoseKey.create({
         keyOps: [KeyOps.Sign, KeyOps.Verify],
         keyType: KeyType.Oct,
         k: result,
@@ -37,34 +37,25 @@ export const mdocContext: MdocContext = {
   cose: {
     mac0: {
       sign: async (input) => {
-        const { key, mac0 } = input
-        return hmac(sha256, key.privateKey, mac0.toBeAuthenticated)
+        const { key, toBeAuthenticated } = input
+        return hmac(sha256, key.privateKey, toBeAuthenticated)
       },
       verify: async (input) => {
         const { mac0, key } = input
 
-        if (!mac0.tag) {
-          throw new Error('tag is required for mac0 verification')
-        }
-
-        return mac0.tag === hmac(sha256, key.privateKey, mac0.toBeAuthenticated)
+        return timingSafeEqual(mac0.tag, hmac(sha256, key.privateKey, mac0.toBeAuthenticated))
       },
     },
     sign1: {
       sign: async (input) => {
-        const { key, sign1 } = input
-        return p256.sign(sign1.toBeSigned, key.privateKey, { format: 'compact' })
+        const { key, toBeSigned } = input
+        return p256.sign(toBeSigned, key.privateKey, { format: 'compact' })
       },
       verify: async (input) => {
         const { sign1, key } = input
-        const { toBeSigned, signature } = sign1
-
-        if (!signature) {
-          throw new Error('signature is required for sign1 verification')
-        }
 
         // lowS is needed after upgrade of @noble/curves to keep existing tests passing
-        return p256.verify(signature, toBeSigned, key.publicKey, { lowS: false })
+        return p256.verify(sign1.signature, sign1.toBeSigned, key.publicKey, { lowS: false })
       },
     },
   },

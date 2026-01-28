@@ -18,13 +18,13 @@ export interface MdocContext {
 
   cose: {
     sign1: {
-      sign: (input: { sign1: Sign1; key: CoseKey }) => MaybePromise<Uint8Array>
+      sign: (input: { toBeSigned: Uint8Array; key: CoseKey }) => MaybePromise<Uint8Array>
 
       verify(input: { key: CoseKey; sign1: Sign1 }): MaybePromise<boolean>
     }
 
     mac0: {
-      sign: (input: { key: CoseKey; mac0: Mac0 }) => MaybePromise<Uint8Array>
+      sign: (input: { key: CoseKey; toBeAuthenticated: Uint8Array }) => MaybePromise<Uint8Array>
 
       verify(input: { mac0: Mac0; key: CoseKey }): MaybePromise<boolean>
     }

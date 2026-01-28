@@ -1,6 +1,17 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import z from 'zod'
+import { CborStructure } from '../../cbor'
+import { zUint8Array } from '../../utils/zod'
 
-export type Oid4vpHandoverInfoStructure = [string, string, Uint8Array | null, string]
+const oid4vpHandoverInfoEncodedSchema = z.tuple([z.string(), z.string(), zUint8Array.nullable(), z.string()])
+const oid4vpHandoverInfoDecodedSchema = z.object({
+  clientId: z.string(),
+  nonce: z.string(),
+  jwkThumbprint: zUint8Array.nullable(),
+  responseUri: z.string(),
+})
+
+export type Oid4vpHandoverInfoEncodedStructure = z.infer<typeof oid4vpHandoverInfoEncodedSchema>
+export type Oid4vpHandoverInfoDecodedStructure = z.infer<typeof oid4vpHandoverInfoDecodedSchema>
 
 export type Oid4vpHandoverInfoOptions = {
   clientId: string
@@ -9,35 +20,38 @@ export type Oid4vpHandoverInfoOptions = {
   responseUri: string
 }
 
-export class Oid4vpHandoverInfo extends CborStructure {
-  public clientId: string
-  public nonce: string
-  public jwkThumbprint?: Uint8Array
-  public responseUri: string
+export class Oid4vpHandoverInfo extends CborStructure<
+  Oid4vpHandoverInfoEncodedStructure,
+  Oid4vpHandoverInfoDecodedStructure
+> {
+  public static override encodingSchema = z.codec(oid4vpHandoverInfoEncodedSchema, oid4vpHandoverInfoDecodedSchema, {
+    encode: ({ clientId, nonce, jwkThumbprint, responseUri }) =>
+      [clientId, nonce, jwkThumbprint, responseUri] satisfies Oid4vpHandoverInfoEncodedStructure,
+    decode: ([clientId, nonce, jwkThumbprint, responseUri]) => ({ clientId, nonce, jwkThumbprint, responseUri }),
+  })
 
-  public constructor(options: Oid4vpHandoverInfoOptions) {
-    super()
-    this.clientId = options.clientId
-    this.nonce = options.nonce
-    this.jwkThumbprint = options.jwkThumbprint
-    this.responseUri = options.responseUri
+  public get clientId() {
+    return this.structure.clientId
   }
 
-  public encodedStructure(): Oid4vpHandoverInfoStructure {
-    return [this.clientId, this.nonce, this.jwkThumbprint ?? null, this.responseUri]
+  public get nonce() {
+    return this.structure.nonce
   }
 
-  public static override fromEncodedStructure(encodedStructure: Oid4vpHandoverInfoStructure): Oid4vpHandoverInfo {
-    return new Oid4vpHandoverInfo({
-      clientId: encodedStructure[0],
-      nonce: encodedStructure[1],
-      jwkThumbprint: encodedStructure[2] ?? undefined,
-      responseUri: encodedStructure[3],
+  public get jwkThumbprint() {
+    return this.structure.jwkThumbprint
+  }
+
+  public get responseUri() {
+    return this.structure.responseUri
+  }
+
+  public static create(options: Oid4vpHandoverInfoOptions) {
+    return this.fromDecodedStructure({
+      clientId: options.clientId,
+      nonce: options.nonce,
+      jwkThumbprint: options.jwkThumbprint ?? null,
+      responseUri: options.responseUri,
     })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Oid4vpHandoverInfo {
-    const structure = cborDecode<Oid4vpHandoverInfoStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return Oid4vpHandoverInfo.fromEncodedStructure(structure)
   }
 }

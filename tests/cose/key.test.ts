@@ -7,7 +7,7 @@ import { base64url } from '../../src/utils'
 
 describe('cose key', () => {
   test('create ec key instance', () => {
-    const key = new CoseKey({
+    const key = CoseKey.create({
       keyType: KeyType.Ec,
     })
 
@@ -20,7 +20,7 @@ describe('cose key', () => {
   })
 
   test('create ec key instance with public key', () => {
-    const key = new CoseKey({
+    const key = CoseKey.create({
       keyType: KeyType.Ec,
       curve: Curve['P-256'],
       keyOps: [KeyOps.Verify],
@@ -40,7 +40,7 @@ describe('cose key', () => {
   })
 
   test('create ec key instance with private key', () => {
-    const key = new CoseKey({
+    const key = CoseKey.create({
       keyType: KeyType.Ec,
       curve: Curve['P-256'],
       keyOps: [KeyOps.Sign],

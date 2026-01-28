@@ -1,28 +1,25 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
 
-export type KeyInfoStructure = Map<number, unknown>
+// KeyInfo uses integer keys (Map<number, unknown>)
+// Per spec: KeyInfo = { * int => any }
+const keyInfoSchema = z.map(z.number(), z.unknown())
+
+export type KeyInfoEncodedStructure = z.input<typeof keyInfoSchema>
+export type KeyInfoDecodedStructure = z.output<typeof keyInfoSchema>
+
 export type KeyInfoOptions = {
   keyInfo: Map<number, unknown>
 }
 
-export class KeyInfo extends CborStructure {
-  public keyInfo: Map<number, unknown>
+export class KeyInfo extends CborStructure<KeyInfoEncodedStructure, KeyInfoDecodedStructure> {
+  public static override encodingSchema = keyInfoSchema
 
-  public constructor(options: KeyInfoOptions) {
-    super()
-    this.keyInfo = options.keyInfo
+  public get keyInfo() {
+    return this.structure
   }
 
-  public encodedStructure(): KeyInfoStructure {
-    return this.keyInfo
-  }
-
-  public static override fromEncodedStructure(encodedStructure: KeyInfoStructure): KeyInfo {
-    return new KeyInfo({ keyInfo: encodedStructure })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): KeyInfo {
-    const structure = cborDecode<KeyInfoStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return KeyInfo.fromEncodedStructure(structure)
+  public static create(options: KeyInfoOptions): KeyInfo {
+    return this.fromEncodedStructure(options.keyInfo)
   }
 }

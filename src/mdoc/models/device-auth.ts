@@ -1,63 +1,69 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { type CoseKey, MacAlgorithm } from '../../cose'
+import { TypedMap, typedMap } from '../../utils'
 import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback'
-import { MdlError } from '../errors'
 import { DeviceAuthentication } from './device-authentication'
 import { DeviceMac, type DeviceMacStructure } from './device-mac'
 import { DeviceSignature, type DeviceSignatureStructure } from './device-signature'
 import type { Document } from './document'
 import type { SessionTranscript } from './session-transcript'
 
-export type DeviceAuthStructure = {
-  deviceSignature?: DeviceSignatureStructure
-  deviceMac?: DeviceMacStructure
-}
+const deviceAuthSchema = typedMap([
+  ['deviceSignature', z.instanceof(DeviceSignature).exactOptional()],
+  ['deviceMac', z.instanceof(DeviceMac).exactOptional()],
+] as const).refine(
+  (map) => [map.get('deviceMac'), map.get('deviceSignature')].filter((i) => i !== undefined).length === 1,
+  { error: () => 'deviceAuth must contain either a deviceMac or deviceSignature, but not both or neither' }
+)
+
+export type DeviceAuthDecodedStructure = z.output<typeof deviceAuthSchema>
+export type DeviceAuthEncodedStructure = z.input<typeof deviceAuthSchema>
 
 export type DeviceAuthOptions = {
   deviceSignature?: DeviceSignature
   deviceMac?: DeviceMac
 }
 
-export class DeviceAuth extends CborStructure {
-  public deviceSignature?: DeviceSignature
-  public deviceMac?: DeviceMac
+export class DeviceAuth extends CborStructure<DeviceAuthEncodedStructure, DeviceAuthDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(deviceAuthSchema.in, deviceAuthSchema.out, {
+      decode: (input) => {
+        const map: DeviceAuthDecodedStructure = TypedMap.fromMap(input)
 
-  public constructor(options: DeviceAuthOptions) {
-    super()
-
-    this.deviceSignature = options.deviceSignature
-    this.deviceMac = options.deviceMac
-
-    this.assertEitherMacOrSignature()
+        if (input.has('deviceSignature')) {
+          map.set(
+            'deviceSignature',
+            DeviceSignature.fromEncodedStructure(input.get('deviceSignature') as DeviceSignatureStructure)
+          )
+        }
+        if (input.has('deviceMac')) {
+          map.set('deviceMac', DeviceMac.fromEncodedStructure(input.get('deviceMac') as DeviceMacStructure))
+        }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
+        const deviceSignature = output.get('deviceSignature')
+        if (deviceSignature) {
+          map.set('deviceSignature', deviceSignature.encodedStructure)
+        }
+        const deviceMac = output.get('deviceMac')
+        if (deviceMac) {
+          map.set('deviceMac', deviceMac.encodedStructure)
+        }
+        return map
+      },
+    })
   }
 
-  private assertEitherMacOrSignature() {
-    if (this.deviceMac && this.deviceSignature) {
-      throw new MdlError('deviceAuth can only contain either a deviceMac or deviceSignature')
-    }
-
-    if (!this.deviceMac && !this.deviceSignature) {
-      throw new MdlError('deviceAuth must contain either a deviceMac or deviceSignature')
-    }
+  public get deviceSignature() {
+    return this.structure.get('deviceSignature')
   }
 
-  public encodedStructure(): DeviceAuthStructure {
-    this.assertEitherMacOrSignature()
-
-    if (this.deviceSignature) {
-      return {
-        deviceSignature: this.deviceSignature.encodedStructure(),
-      }
-    }
-
-    if (this.deviceMac) {
-      return {
-        deviceMac: this.deviceMac.encodedStructure(),
-      }
-    }
-
-    throw new MdlError('unreachable')
+  public get deviceMac() {
+    return this.structure.get('deviceMac')
   }
 
   public async verify(
@@ -75,7 +81,10 @@ export class DeviceAuth extends CborStructure {
 
     const { deviceKey } = options.document.issuerSigned.issuerAuth.mobileSecurityObject.deviceKeyInfo
 
-    if (!this.deviceMac && !this.deviceSignature) {
+    const deviceMac = this.structure.get('deviceMac')
+    const deviceSignature = this.structure.get('deviceSignature')
+
+    if (!deviceMac && !deviceSignature) {
       onCheck({
         status: 'FAILED',
         check: 'Device Auth must contain a deviceSignature or deviceMac element',
@@ -83,18 +92,16 @@ export class DeviceAuth extends CborStructure {
       return
     }
 
-    const deviceAuthenticationBytes = new DeviceAuthentication({
+    const deviceAuthenticationBytes = DeviceAuthentication.create({
       sessionTranscript: options.sessionTranscript,
       docType: options.document.docType,
       deviceNamespaces: options.document.deviceSigned.deviceNamespaces,
     }).encode({ asDataItem: true })
 
-    if (this.deviceSignature) {
+    if (deviceSignature) {
       try {
-        const ds = this.deviceSignature
-        ds.detachedContent = deviceAuthenticationBytes
-
-        const verificationResult = await ctx.cose.sign1.verify({ sign1: ds, key: deviceKey })
+        deviceSignature.detachedContent = deviceAuthenticationBytes
+        const verificationResult = await ctx.cose.sign1.verify({ sign1: deviceSignature, key: deviceKey })
 
         onCheck({
           status: verificationResult ? 'PASSED' : 'FAILED',
@@ -110,10 +117,8 @@ export class DeviceAuth extends CborStructure {
       return
     }
 
-    if (this.deviceMac) {
-      try {
-        this.deviceMac.signatureAlgorithmName === MacAlgorithm.HS256
-      } catch {
+    if (deviceMac) {
+      if (deviceMac.signatureAlgorithmName !== MacAlgorithm.HS256) {
         onCheck({
           status: 'FAILED',
           check: 'Device MAC must use alg 5 (HMAC 256/256)',
@@ -131,9 +136,8 @@ export class DeviceAuth extends CborStructure {
       }
 
       try {
-        this.deviceMac.detachedContent = deviceAuthenticationBytes
-
-        const isValid = await this.deviceMac.verify(
+        deviceMac.detachedContent = deviceAuthenticationBytes
+        const isValid = await deviceMac.verify(
           {
             publicKey: deviceKey,
             privateKey: options.ephemeralMacPrivateKey,
@@ -163,29 +167,15 @@ export class DeviceAuth extends CborStructure {
     })
   }
 
-  public static override fromEncodedStructure(
-    encodedStructure: DeviceAuthStructure | Map<string, unknown>
-  ): DeviceAuth {
-    let structure = encodedStructure as DeviceAuthStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = {
-        deviceMac: encodedStructure.get('deviceMac') as DeviceAuthStructure['deviceMac'],
-        deviceSignature: encodedStructure.get('deviceSignature') as DeviceAuthStructure['deviceSignature'],
-      }
+  public static create(options: DeviceAuthOptions): DeviceAuth {
+    const map: DeviceAuthDecodedStructure = new TypedMap([])
+    if (options.deviceSignature) {
+      map.set('deviceSignature', options.deviceSignature)
+    }
+    if (options.deviceMac) {
+      map.set('deviceMac', options.deviceMac)
     }
 
-    return new DeviceAuth({
-      deviceSignature: structure.deviceSignature
-        ? DeviceSignature.fromEncodedStructure(structure.deviceSignature)
-        : undefined,
-      deviceMac: structure.deviceMac ? DeviceMac.fromEncodedStructure(structure.deviceMac) : undefined,
-    })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): DeviceAuth {
-    const structure = cborDecode<DeviceAuthStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-
-    return DeviceAuth.fromEncodedStructure(structure)
+    return this.fromDecodedStructure(map)
   }
 }

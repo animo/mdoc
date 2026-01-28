@@ -1,16 +1,21 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
-import { DeviceSigned, type DeviceSignedStructure } from './device-signed'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
+import { TypedMap, typedMap } from '../../utils'
+import { DeviceSigned, type DeviceSignedEncodedStructure } from './device-signed'
 import type { DocType } from './doctype'
 import type { ErrorItems } from './error-items'
-import { IssuerSigned, type IssuerSignedStructure } from './issuer-signed'
+import { IssuerSigned, type IssuerSignedEncodedStructure } from './issuer-signed'
 import type { Namespace } from './namespace'
 
-export type DocumentStructure = {
-  docType: DocType
-  issuerSigned: IssuerSignedStructure
-  deviceSigned: DeviceSignedStructure
-  errors?: Map<Namespace, ErrorItems>
-}
+const documentSchema = typedMap([
+  ['docType', z.string()],
+  ['issuerSigned', z.instanceof(IssuerSigned)],
+  ['deviceSigned', z.instanceof(DeviceSigned)],
+  ['errors', z.map(z.string(), z.unknown()).exactOptional()],
+] as const)
+
+export type DocumentDecodedStructure = z.output<typeof documentSchema>
+export type DocumentEncodedStructure = z.input<typeof documentSchema>
 
 export type DocumentOptions = {
   docType: DocType
@@ -19,61 +24,72 @@ export type DocumentOptions = {
   errors?: Map<Namespace, ErrorItems>
 }
 
-export class Document extends CborStructure {
-  public docType: DocType
-  public issuerSigned: IssuerSigned
-  public deviceSigned: DeviceSigned
-  public errors?: Map<Namespace, ErrorItems>
+export class Document extends CborStructure<DocumentEncodedStructure, DocumentDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(documentSchema.in, documentSchema.out, {
+      decode: (input) => {
+        const map: DocumentDecodedStructure = TypedMap.fromMap(input)
 
-  public constructor(options: DocumentOptions) {
-    super()
-    this.docType = options.docType
-    this.issuerSigned = options.issuerSigned
-    this.deviceSigned = options.deviceSigned
-    this.errors = options.errors
-  }
+        map.set(
+          'issuerSigned',
+          IssuerSigned.fromEncodedStructure(input.get('issuerSigned') as IssuerSignedEncodedStructure)
+        )
+        map.set(
+          'deviceSigned',
+          DeviceSigned.fromEncodedStructure(input.get('deviceSigned') as DeviceSignedEncodedStructure)
+        )
 
-  public encodedStructure(): DocumentStructure {
-    const structure: DocumentStructure = {
-      docType: this.docType,
-      issuerSigned: this.issuerSigned.encodedStructure(),
-      deviceSigned: this.deviceSigned.encodedStructure(),
-    }
+        if (input.has('errors')) {
+          map.set('errors', input.get('errors') as Map<string, unknown>)
+        }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
+        map.set('issuerSigned', output.get('issuerSigned').encodedStructure)
+        map.set('deviceSigned', output.get('deviceSigned').encodedStructure)
 
-    if (this.errors) {
-      structure.errors = this.errors
-    }
-
-    return structure
-  }
-
-  public static override fromEncodedStructure(encodedStructure: DocumentStructure | Map<unknown, unknown>): Document {
-    let structure = encodedStructure as DocumentStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as DocumentStructure
-    }
-
-    return new Document({
-      docType: structure.docType,
-      issuerSigned: IssuerSigned.fromEncodedStructure(structure.issuerSigned),
-      deviceSigned: DeviceSigned.fromEncodedStructure(structure.deviceSigned),
-      errors: structure.errors,
+        return map
+      },
     })
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Document {
-    const structure = cborDecode<DocumentStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return Document.fromEncodedStructure(structure)
+  public get docType() {
+    return this.structure.get('docType')
+  }
+
+  public get issuerSigned() {
+    return this.structure.get('issuerSigned')
+  }
+
+  public get deviceSigned() {
+    return this.structure.get('deviceSigned')
+  }
+
+  public get errors() {
+    return this.structure.get('errors')
   }
 
   public getIssuerNamespace(namespace: Namespace) {
-    const issuerNamespaces = this.issuerSigned.issuerNamespaces?.issuerNamespaces
+    const issuerSigned = this.structure.get('issuerSigned')
+    const issuerNamespaces = issuerSigned?.issuerNamespaces?.issuerNamespaces
 
     if (!issuerNamespaces) {
       return undefined
     }
 
     return issuerNamespaces.get(namespace)
+  }
+
+  public static create(options: DocumentOptions): Document {
+    const map: DocumentDecodedStructure = new TypedMap([
+      ['docType', options.docType],
+      ['issuerSigned', options.issuerSigned],
+      ['deviceSigned', options.deviceSigned],
+    ])
+    if (options.errors) {
+      map.set('errors', options.errors)
+    }
+    return this.fromDecodedStructure(map)
   }
 }
