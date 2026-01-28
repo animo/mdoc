@@ -9,16 +9,16 @@ suite('oid4vp handover', () => {
   test('parse', () => {
     const oid4vpHandover = Oid4vpHandover.decode(hex.decode(cbor))
 
-    expect(oid4vpHandover.oid4vpHandoverInfoHash).toBeDefined()
+    expect(oid4vpHandover.handoverInfoHash).toBeDefined()
   })
 
   test('construct', () => {
-    const oid4vpHandover = new Oid4vpHandover({
-      oid4vpHandoverInfoHash: new Uint8Array([
+    const oid4vpHandover = Oid4vpHandover.createFromHash(
+      new Uint8Array([
         4, 139, 192, 83, 192, 4, 66, 175, 155, 142, 237, 73, 76, 239, 221, 157, 149, 36, 13, 37, 75, 4, 107, 17, 182,
         128, 19, 114, 42, 173, 56, 172,
-      ]),
-    })
+      ])
+    )
 
     expect(hex.encode(oid4vpHandover.encode())).toStrictEqual(cbor)
   })

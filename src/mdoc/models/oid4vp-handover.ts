@@ -22,6 +22,10 @@ export class Oid4vpHandover extends Handover<Oid4vpHandoverEncodedStructure, Oid
     })
   }
 
+  public get handoverInfoHash() {
+    return this.structure
+  }
+
   public static createFromHash(oid4vpHandoverInfoHash: Uint8Array) {
     return this.fromDecodedStructure(oid4vpHandoverInfoHash)
   }

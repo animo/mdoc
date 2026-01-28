@@ -18,6 +18,6 @@ export class QrHandover extends Handover<QrHandoverStructure> {
   }
 
   public static create() {
-    return new QrHandover(null)
+    return this.fromDecodedStructure(null)
   }
 }

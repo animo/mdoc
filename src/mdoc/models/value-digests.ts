@@ -28,7 +28,7 @@ export class ValueDigests extends CborStructure<ValueDigestsStructure> {
   }
 
   public static create(options: ValueDigestOptions) {
-    return new ValueDigests(valueDigestsSchema.parse(options.digests))
+    return this.fromEncodedStructure(options.digests)
   }
 
   public getDigestForNamespace(namespace: Namespace, digestId: DigestId) {

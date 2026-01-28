@@ -57,10 +57,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -143,10 +143,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -235,10 +235,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -315,10 +315,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -438,10 +438,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -479,10 +479,10 @@ suite('Verification', () => {
 
     const decodedDeviceResponse = DeviceResponse.fromEncodedForOid4Vp(encodedDeviceResponse)
 
-    const newDeviceRequest = new DeviceRequest({
+    const newDeviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
