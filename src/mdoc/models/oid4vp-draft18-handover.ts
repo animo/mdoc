@@ -25,15 +25,13 @@ export class Oid4vpDraft18Handover extends Handover<
   Oid4vpDraft18HandoverEncodedStructure,
   Oid4vpDraft18HandoverDecodedStructure
 > {
-  public static override encodingSchema = z.codec(
-    oid4vpDraft18HandoverEncodedSchema,
-    oid4vpDraft18HandoverDecodedSchema,
-    {
+  public static override get encodingSchema() {
+    return z.codec(oid4vpDraft18HandoverEncodedSchema, oid4vpDraft18HandoverDecodedSchema, {
       encode: ({ clientIdHash, responseUriHash, nonce }) =>
         [clientIdHash, responseUriHash, nonce] satisfies Oid4vpDraft18HandoverEncodedStructure,
       decode: ([clientIdHash, responseUriHash, nonce]) => ({ clientIdHash, responseUriHash, nonce }),
-    }
-  )
+    })
+  }
 
   public static async create(options: Oid4vpDraft18HandoverOptions, ctx: Pick<MdocContext, 'crypto'>) {
     const clientIdHash = await ctx.crypto.digest({

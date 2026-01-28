@@ -18,17 +18,19 @@ export type SecurityOptions = {
 }
 
 export class Security extends CborStructure<SecurityEncodedStructure, SecurityDecodedStructure> {
-  public static override encodingSchema = z.codec(securityEncodedSchema, securityDecodedSchema, {
-    decode: (input) => ({
-      cipherSuiteIdentifier: input[0],
-      // biome-ignore lint/suspicious/noExplicitAny: CoseKey encoded structure
-      eDeviceKey: EDeviceKey.fromEncodedStructure((input[1] as DataItem).data as any),
-    }),
-    encode: (output): SecurityEncodedStructure => [
-      output.cipherSuiteIdentifier,
-      DataItem.fromData(output.eDeviceKey.encodedStructure),
-    ],
-  })
+  public static override get encodingSchema() {
+    return z.codec(securityEncodedSchema, securityDecodedSchema, {
+      decode: (input) => ({
+        cipherSuiteIdentifier: input[0],
+        // biome-ignore lint/suspicious/noExplicitAny: CoseKey encoded structure
+        eDeviceKey: EDeviceKey.fromEncodedStructure((input[1] as DataItem).data as any),
+      }),
+      encode: (output): SecurityEncodedStructure => [
+        output.cipherSuiteIdentifier,
+        DataItem.fromData(output.eDeviceKey.encodedStructure),
+      ],
+    })
+  }
 
   public get cipherSuiteIdentifier() {
     return this.structure.cipherSuiteIdentifier

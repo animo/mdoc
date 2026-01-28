@@ -13,7 +13,9 @@ export type KeyInfoOptions = {
 }
 
 export class KeyInfo extends CborStructure<KeyInfoEncodedStructure, KeyInfoDecodedStructure> {
-  public static override encodingSchema = keyInfoSchema
+  public static override get encodingSchema() {
+    return keyInfoSchema
+  }
 
   public get keyInfo() {
     return this.structure

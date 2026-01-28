@@ -24,11 +24,13 @@ export class Oid4vpHandoverInfo extends CborStructure<
   Oid4vpHandoverInfoEncodedStructure,
   Oid4vpHandoverInfoDecodedStructure
 > {
-  public static override encodingSchema = z.codec(oid4vpHandoverInfoEncodedSchema, oid4vpHandoverInfoDecodedSchema, {
-    encode: ({ clientId, nonce, jwkThumbprint, responseUri }) =>
-      [clientId, nonce, jwkThumbprint, responseUri] satisfies Oid4vpHandoverInfoEncodedStructure,
-    decode: ([clientId, nonce, jwkThumbprint, responseUri]) => ({ clientId, nonce, jwkThumbprint, responseUri }),
-  })
+  public static override get encodingSchema() {
+    return z.codec(oid4vpHandoverInfoEncodedSchema, oid4vpHandoverInfoDecodedSchema, {
+      encode: ({ clientId, nonce, jwkThumbprint, responseUri }) =>
+        [clientId, nonce, jwkThumbprint, responseUri] satisfies Oid4vpHandoverInfoEncodedStructure,
+      decode: ([clientId, nonce, jwkThumbprint, responseUri]) => ({ clientId, nonce, jwkThumbprint, responseUri }),
+    })
+  }
 
   public get clientId() {
     return this.structure.clientId

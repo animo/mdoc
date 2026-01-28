@@ -30,10 +30,8 @@ export class DeviceAuthentication extends CborStructure<
   DeviceAuthenticationEncodedStructure,
   DeviceAuthenticationDecodedStructure
 > {
-  public static override encodingSchema = z.codec(
-    deviceAuthenticationEncodedSchema,
-    deviceAuthenticationDecodedSchema,
-    {
+  public static override get encodingSchema() {
+    return z.codec(deviceAuthenticationEncodedSchema, deviceAuthenticationDecodedSchema, {
       decode: ([, sessionTranscript, docType, deviceNamespacesDataItem]) => ({
         sessionTranscript: SessionTranscript.fromEncodedStructure(sessionTranscript),
         docType,
@@ -46,8 +44,8 @@ export class DeviceAuthentication extends CborStructure<
           docType,
           DataItem.fromData(deviceNamespaces.encodedStructure),
         ] satisfies DeviceAuthenticationEncodedStructure,
-    }
-  )
+    })
+  }
 
   public get sessionTranscript() {
     return this.structure.sessionTranscript

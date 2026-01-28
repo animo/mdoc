@@ -5,7 +5,9 @@ const qrHandoverSchema = z.null()
 export type QrHandoverStructure = z.infer<typeof qrHandoverSchema>
 
 export class QrHandover extends Handover<QrHandoverStructure> {
-  public static override encodingSchema = qrHandoverSchema
+  public static override get encodingSchema() {
+    return qrHandoverSchema
+  }
 
   public override get requiresReaderKey() {
     return true

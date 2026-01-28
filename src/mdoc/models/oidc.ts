@@ -16,15 +16,17 @@ export type OidcDecodedStructure = z.infer<typeof oidcDecodedSchema>
 export type OidcOptions = OidcDecodedStructure
 
 export class Oidc extends CborStructure<OidcEncodedStructure, OidcDecodedStructure> {
-  public static override encodingSchema = z.codec(oidcEncodedSchema, oidcDecodedSchema, {
-    decode: ([version, issuerUrl, serverRetrievalToken]) => ({
-      version,
-      issuerUrl,
-      serverRetrievalToken,
-    }),
-    encode: ({ version, issuerUrl, serverRetrievalToken }) =>
-      [version, issuerUrl, serverRetrievalToken] satisfies OidcEncodedStructure,
-  })
+  public static override get encodingSchema() {
+    return z.codec(oidcEncodedSchema, oidcDecodedSchema, {
+      decode: ([version, issuerUrl, serverRetrievalToken]) => ({
+        version,
+        issuerUrl,
+        serverRetrievalToken,
+      }),
+      encode: ({ version, issuerUrl, serverRetrievalToken }) =>
+        [version, issuerUrl, serverRetrievalToken] satisfies OidcEncodedStructure,
+    })
+  }
 
   public get version() {
     return this.structure.version

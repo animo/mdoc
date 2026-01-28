@@ -15,10 +15,12 @@ export type Oid4vpHandoverOptions = {
 }
 
 export class Oid4vpHandover extends Handover<Oid4vpHandoverEncodedStructure, Oid4vpHandoverDecodedStructure> {
-  public static override encodingSchema = z.codec(oid4vpHandoverEncodedSchema, oid4vpHandoverDecodedSchema, {
-    encode: (handoverInfoHash) => ['OpenID4VPHandover', handoverInfoHash] satisfies Oid4vpHandoverEncodedStructure,
-    decode: ([, handoverInfoHash]) => handoverInfoHash,
-  })
+  public static override get encodingSchema() {
+    return z.codec(oid4vpHandoverEncodedSchema, oid4vpHandoverDecodedSchema, {
+      encode: (handoverInfoHash) => ['OpenID4VPHandover', handoverInfoHash] satisfies Oid4vpHandoverEncodedStructure,
+      decode: ([, handoverInfoHash]) => handoverInfoHash,
+    })
+  }
 
   public static createFromHash(oid4vpHandoverInfoHash: Uint8Array) {
     return this.fromDecodedStructure(oid4vpHandoverInfoHash)

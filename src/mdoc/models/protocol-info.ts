@@ -5,5 +5,7 @@ const protocolInfoSchema = z.unknown()
 export type ProtocolInfoStructure = z.infer<typeof protocolInfoSchema>
 
 export class ProtocolInfo extends CborStructure<ProtocolInfoStructure> {
-  public static override encodingSchema = protocolInfoSchema
+  public static override get encodingSchema() {
+    return protocolInfoSchema
+  }
 }

@@ -21,7 +21,9 @@ export class KeyAuthorizations extends CborStructure<
   KeyAuthorizationsEncodedStructure,
   KeyAuthorizationsDecodedStructure
 > {
-  public static override encodingSchema = keyAuthorizationsSchema
+  public static override get encodingSchema() {
+    return keyAuthorizationsSchema
+  }
 
   public get namespaces() {
     return this.structure.get('nameSpaces')

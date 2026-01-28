@@ -19,11 +19,13 @@ export class Oid4vpDcApiHandover extends Handover<
   Oid4vpDcApiHandoverEncodedStructure,
   Oid4vpDcApiHandoverDecodedStructure
 > {
-  public static override encodingSchema = z.codec(oid4vpDcApiHandoverEncodedSchema, oid4vpDcApiHandoverDecodedSchema, {
-    encode: (handoverInfoHash) =>
-      ['OpenID4VPDCAPIHandover', handoverInfoHash] satisfies Oid4vpDcApiHandoverEncodedStructure,
-    decode: ([, handoverInfoHash]) => handoverInfoHash,
-  })
+  public static override get encodingSchema() {
+    return z.codec(oid4vpDcApiHandoverEncodedSchema, oid4vpDcApiHandoverDecodedSchema, {
+      encode: (handoverInfoHash) =>
+        ['OpenID4VPDCAPIHandover', handoverInfoHash] satisfies Oid4vpDcApiHandoverEncodedStructure,
+      decode: ([, handoverInfoHash]) => handoverInfoHash,
+    })
+  }
 
   public static createFromHash(oid4vpDcApiHandoverInfoHash: Uint8Array) {
     return this.fromDecodedStructure(oid4vpDcApiHandoverInfoHash)

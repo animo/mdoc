@@ -19,11 +19,13 @@ export class ProtectedHeaders extends CborStructure<
   ProtectedHeadersEncodedStructure,
   ProtectedHeadersDecodedStructure
 > {
-  public static override encodingSchema = z.codec(protectedHeadersEncodedStructure, protectedHeadersDecodedStructure, {
-    // TODO: Senders SHOULD encode a zero-length map as a zero-length string rather than as a zero-length map
-    encode: (decoded) => cborEncode(decoded) as Uint8Array<ArrayBuffer>,
-    decode: (encoded) => cborDecode(encoded),
-  })
+  public static override get encodingSchema() {
+    return z.codec(protectedHeadersEncodedStructure, protectedHeadersDecodedStructure, {
+      // TODO: Senders SHOULD encode a zero-length map as a zero-length string rather than as a zero-length map
+      encode: (decoded) => cborEncode(decoded) as Uint8Array<ArrayBuffer>,
+      decode: (encoded) => cborDecode(encoded),
+    })
+  }
 
   public get headers() {
     return this.structure

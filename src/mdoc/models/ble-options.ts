@@ -39,7 +39,9 @@ export type BleOptionsOptions = {
 }
 
 export class BleOptions extends CborStructure<BleOptionsEncodedStructure, BleOptionsDecodedStructure> {
-  public static override encodingSchema = bleOptionsSchema
+  public static override get encodingSchema() {
+    return bleOptionsSchema
+  }
 
   public get peripheralServerMode() {
     return this.structure.get(BleOptionsKeys.PeripheralServerMode)

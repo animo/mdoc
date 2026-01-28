@@ -13,14 +13,17 @@ export type IssuerAuthOptions = Omit<Sign1Options, 'payload'> & {
 }
 
 export class IssuerAuth extends Sign1 {
-  public static create(options: IssuerAuthOptions): IssuerAuth {
-    return super.create({
-      ...options,
-      payload:
-        options.payload instanceof MobileSecurityObject
-          ? options.payload.encode({ asDataItem: true })
-          : options.payload,
-    }) as IssuerAuth
+  public static create(options: IssuerAuthOptions, ctx: Pick<MdocContext, 'cose'>): Promise<IssuerAuth> {
+    return super.create(
+      {
+        ...options,
+        payload:
+          options.payload instanceof MobileSecurityObject
+            ? options.payload.encode({ asDataItem: true })
+            : options.payload,
+      },
+      ctx
+    ) as Promise<IssuerAuth>
   }
 
   // NOTE: currently lazy loaded and validated, but i think that's fine?

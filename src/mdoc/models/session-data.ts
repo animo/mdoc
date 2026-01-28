@@ -18,7 +18,9 @@ export type SessionDataOptions = {
 }
 
 export class SessionData extends CborStructure<SessionDataEncodedStructure, SessionDataDecodedStructure> {
-  public static override encodingSchema = sessionDataSchema
+  public static override get encodingSchema() {
+    return sessionDataSchema
+  }
 
   public get status() {
     return this.structure.get('status')

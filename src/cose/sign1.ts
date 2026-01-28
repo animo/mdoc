@@ -52,21 +52,23 @@ export type Sign1Options = {
 export class Sign1 extends CborStructure<Sign1EncodedStructure, Sign1DecodedStructure> {
   public static tag = 18
 
-  public static override encodingSchema = z.codec(sign1EncodedSchema, sign1DecodedSchema, {
-    encode: (decoded) =>
-      [
-        decoded.protected.encodedStructure,
-        decoded.unprotected.encodedStructure,
-        decoded.payload,
-        decoded.signature,
-      ] satisfies Sign1EncodedStructure,
-    decode: ([protectedHeaders, unprotected, payload, signature]) => ({
-      protected: ProtectedHeaders.fromEncodedStructure(protectedHeaders),
-      unprotected: UnprotectedHeaders.fromEncodedStructure(unprotected),
-      payload,
-      signature,
-    }),
-  })
+  public static override get encodingSchema() {
+    return z.codec(sign1EncodedSchema, sign1DecodedSchema, {
+      encode: (decoded) =>
+        [
+          decoded.protected.encodedStructure,
+          decoded.unprotected.encodedStructure,
+          decoded.payload,
+          decoded.signature,
+        ] satisfies Sign1EncodedStructure,
+      decode: ([protectedHeaders, unprotected, payload, signature]) => ({
+        protected: ProtectedHeaders.fromEncodedStructure(protectedHeaders),
+        unprotected: UnprotectedHeaders.fromEncodedStructure(unprotected),
+        payload,
+        signature,
+      }),
+    })
+  }
 
   public detachedPayload?: Uint8Array
   public externalAad?: Uint8Array

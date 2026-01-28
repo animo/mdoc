@@ -28,7 +28,9 @@ export type ItemsRequestOptions = {
 }
 
 export class ItemsRequest extends CborStructure<ItemsRequestEncodedStructure, ItemsRequestDecodedStructure> {
-  public static override encodingSchema = itemsRequestSchema
+  public static override get encodingSchema() {
+    return itemsRequestSchema
+  }
 
   public get docType() {
     return this.structure.get('docType')

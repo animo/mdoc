@@ -43,10 +43,8 @@ export class DeviceRetrievalMethod extends CborStructure<
   DeviceRetrievalMethodEncodedStructure,
   DeviceRetrievalMethodDecodedStructure
 > {
-  public static override encodingSchema = z.codec(
-    deviceRetrievalMethodEncodedSchema,
-    deviceRetrievalMethodDecodedSchema,
-    {
+  public static override get encodingSchema() {
+    return z.codec(deviceRetrievalMethodEncodedSchema, deviceRetrievalMethodDecodedSchema, {
       decode: ([type, version, retrievalOptions]) => {
         let options: RetrievalOptions | Map<unknown, unknown>
 
@@ -73,8 +71,8 @@ export class DeviceRetrievalMethod extends CborStructure<
           version,
           retrievalOptions instanceof CborStructure ? retrievalOptions.encodedStructure : retrievalOptions,
         ] satisfies DeviceRetrievalMethodEncodedStructure,
-    }
-  )
+    })
+  }
 
   public get type() {
     return this.structure.type

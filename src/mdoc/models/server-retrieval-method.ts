@@ -21,31 +21,33 @@ export class ServerRetrievalMethod extends CborStructure<
   ServerRetrievalMethodEncodedStructure,
   ServerRetrievalMethodDecodedStructure
 > {
-  public static override encodingSchema = z.codec(serverRetrievalMethodSchema.in, serverRetrievalMethodSchema.out, {
-    decode: (input) => {
-      const map: ServerRetrievalMethodDecodedStructure = TypedMap.fromMap(input)
+  public static override get encodingSchema() {
+    return z.codec(serverRetrievalMethodSchema.in, serverRetrievalMethodSchema.out, {
+      decode: (input) => {
+        const map: ServerRetrievalMethodDecodedStructure = TypedMap.fromMap(input)
 
-      if (input.has('webApi')) {
-        map.set('webApi', WebApi.fromEncodedStructure(input.get('webApi') as WebApiEncodedStructure))
-      }
-      if (input.has('oidc')) {
-        map.set('oidc', Oidc.fromEncodedStructure(input.get('oidc') as OidcEncodedStructure))
-      }
-      return map
-    },
-    encode: (output) => {
-      const map = output.toMap() as Map<unknown, unknown>
-      const webApi = output.get('webApi')
-      if (webApi) {
-        map.set('webApi', webApi.encodedStructure)
-      }
-      const oidc = output.get('oidc')
-      if (oidc) {
-        map.set('oidc', oidc.encodedStructure)
-      }
-      return map
-    },
-  })
+        if (input.has('webApi')) {
+          map.set('webApi', WebApi.fromEncodedStructure(input.get('webApi') as WebApiEncodedStructure))
+        }
+        if (input.has('oidc')) {
+          map.set('oidc', Oidc.fromEncodedStructure(input.get('oidc') as OidcEncodedStructure))
+        }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
+        const webApi = output.get('webApi')
+        if (webApi) {
+          map.set('webApi', webApi.encodedStructure)
+        }
+        const oidc = output.get('oidc')
+        if (oidc) {
+          map.set('oidc', oidc.encodedStructure)
+        }
+        return map
+      },
+    })
+  }
 
   public get webApi() {
     return this.structure.get('webApi')

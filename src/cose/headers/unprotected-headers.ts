@@ -10,7 +10,9 @@ export type UnprotectedHeaderOptions = {
 }
 
 export class UnprotectedHeaders extends CborStructure<UnprotectedHeadersStructure> {
-  public static override encodingSchema = unprotectedHeadersStructure
+  public static override get encodingSchema() {
+    return unprotectedHeadersStructure
+  }
 
   public get headers() {
     return this.structure

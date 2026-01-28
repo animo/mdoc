@@ -13,7 +13,9 @@ export type DeviceSignedItemsOptions = {
 }
 
 export class DeviceSignedItems extends CborStructure<DeviceSignedItemsStructure> {
-  public static override encodingSchema = deviceSignedItemsSchema
+  public static override get encodingSchema() {
+    return deviceSignedItemsSchema
+  }
 
   public get deviceSignedItems() {
     return this.structure

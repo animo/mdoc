@@ -66,7 +66,9 @@ export type CoseKeyOptions = {
 }
 
 export class CoseKey extends CborStructure<CoseKeyEncodedStructure, CoseKeyDecodedStructure> {
-  public static override encodingSchema = coseKeySchema
+  public static override get encodingSchema() {
+    return coseKeySchema
+  }
 
   public get keyType() {
     return this.structure.get(CoseKeyParameter.KeyType)
@@ -164,16 +166,19 @@ export class CoseKey extends CborStructure<CoseKeyEncodedStructure, CoseKeyDecod
       throw new CoseInvalidValueForKtyError('JWK does not contain required kty value')
     }
 
-    const options = Object.entries(jwk).reduce(
-      (prev, [key, value]) => ({
-        ...prev,
-        [jwkCoseOptionsMap[key] ?? key]:
-          typeof jwkToCoseKey[key as keyof typeof jwkToCoseKey] === 'function'
-            ? jwkToCoseKey[key as keyof typeof jwkToCoseKey](value)
-            : undefined,
-      }),
-      {} as CoseKeyOptions
-    )
+    const options = Object.entries(jwk).reduce((prev, [key, value]) => {
+      const mappedKey = jwkCoseOptionsMap[key] ?? key
+
+      const mapFunction = jwkToCoseKey[key as keyof typeof jwkToCoseKey]
+      const convertedValue = mapFunction ? mapFunction(value) : value
+
+      // Only include if value is not undefined
+      if (convertedValue !== undefined) {
+        return { ...prev, [mappedKey]: convertedValue }
+      }
+
+      return prev
+    }, {} as CoseKeyOptions)
 
     return CoseKey.create(options)
   }

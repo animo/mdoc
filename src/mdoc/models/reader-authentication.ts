@@ -26,10 +26,8 @@ export class ReaderAuthentication extends CborStructure<
   ReaderAuthenticationEncodedStructure,
   ReaderAuthenticationDecodedStructure
 > {
-  public static override encodingSchema = z.codec(
-    readerAuthenticationEncodedSchema,
-    readerAuthenticationDecodedSchema,
-    {
+  public static override get encodingSchema() {
+    return z.codec(readerAuthenticationEncodedSchema, readerAuthenticationDecodedSchema, {
       decode: ([, sessionTranscript, itemsRequestDataItem]) => ({
         sessionTranscript: SessionTranscript.fromEncodedStructure(sessionTranscript),
         itemsRequest: ItemsRequest.fromEncodedStructure(itemsRequestDataItem.data),
@@ -40,8 +38,8 @@ export class ReaderAuthentication extends CborStructure<
           sessionTranscript.encodedStructure,
           DataItem.fromData(itemsRequest.encodedStructure),
         ] satisfies ReaderAuthenticationEncodedStructure,
-    }
-  )
+    })
+  }
 
   public get sessionTranscript() {
     return this.structure.sessionTranscript

@@ -37,7 +37,9 @@ export class IssuerSignedItem extends CborStructure<
   IssuerSignedItemEncodedStructure,
   IssuerSignedItemDecodedStructure
 > {
-  public static override encodingSchema = issuerSignedItemSchema
+  public static override get encodingSchema() {
+    return issuerSignedItemSchema
+  }
 
   public get random() {
     return this.structure.get('random')

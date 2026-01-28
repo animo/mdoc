@@ -21,15 +21,13 @@ export class Oid4vpDcApiDraft24HandoverInfo extends CborStructure<
   Oid4vpDcApiDraft24HandoverInfoEncodedStructure,
   Oid4vpDcApiDraft24HandoverInfoDecodedStructure
 > {
-  public static override encodingSchema = z.codec(
-    oid4vpDcApiDraft24HandoverInfoSchema,
-    oid4vpDcApiDraft24HandoverInfoDecodedSchema,
-    {
+  public static override get encodingSchema() {
+    return z.codec(oid4vpDcApiDraft24HandoverInfoSchema, oid4vpDcApiDraft24HandoverInfoDecodedSchema, {
       encode: ({ origin, clientId, nonce }) =>
         [origin, clientId, nonce] satisfies Oid4vpDcApiDraft24HandoverInfoEncodedStructure,
       decode: ([origin, clientId, nonce]) => ({ origin, clientId, nonce }),
-    }
-  )
+    })
+  }
 
   public get origin() {
     return this.structure.origin

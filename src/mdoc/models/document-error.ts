@@ -11,7 +11,9 @@ export type DocumentErrorOptions = {
 }
 
 export class DocumentError extends CborStructure<DocumentErrorStructure> {
-  public static override encodingSchema = documentErrorSchema
+  public static override get encodingSchema() {
+    return documentErrorSchema
+  }
 
   /**
    * Map where keys are namespaces and values are error codes

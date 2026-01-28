@@ -46,23 +46,27 @@ export type Mac0Options = {
 export class Mac0 extends CborStructure<Mac0EncodedStructure, Mac0DecodedStructure> {
   public static tag = 17
 
-  public static override encodingSchema = z.codec(mac0EncodedSchema, mac0DecodedSchema, {
-    decode: ([protectedHeadersBytes, unprotectedHeadersMap, payload, tag]) => ({
-      protectedHeaders: ProtectedHeaders.fromEncodedStructure(
-        protectedHeadersBytes as ProtectedHeadersEncodedStructure
-      ),
-      unprotectedHeaders: UnprotectedHeaders.fromEncodedStructure(unprotectedHeadersMap as UnprotectedHeadersStructure),
-      payload,
-      tag,
-    }),
-    encode: ({ protectedHeaders, unprotectedHeaders, payload, tag }) =>
-      [
-        protectedHeaders.encodedStructure,
-        unprotectedHeaders.encodedStructure,
+  public static override get encodingSchema() {
+    return z.codec(mac0EncodedSchema, mac0DecodedSchema, {
+      decode: ([protectedHeadersBytes, unprotectedHeadersMap, payload, tag]) => ({
+        protectedHeaders: ProtectedHeaders.fromEncodedStructure(
+          protectedHeadersBytes as ProtectedHeadersEncodedStructure
+        ),
+        unprotectedHeaders: UnprotectedHeaders.fromEncodedStructure(
+          unprotectedHeadersMap as UnprotectedHeadersStructure
+        ),
         payload,
         tag,
-      ] satisfies Mac0EncodedStructure,
-  })
+      }),
+      encode: ({ protectedHeaders, unprotectedHeaders, payload, tag }) =>
+        [
+          protectedHeaders.encodedStructure,
+          unprotectedHeaders.encodedStructure,
+          payload,
+          tag,
+        ] satisfies Mac0EncodedStructure,
+    })
+  }
 
   public externalAad?: Uint8Array
   public detachedPayload?: Uint8Array

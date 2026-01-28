@@ -17,11 +17,13 @@ export type NfcHandoverOptions = {
 }
 
 export class NfcHandover extends Handover<NfcHandoverEncodedStructure, NfcHandoverDecodedStructure> {
-  public static override encodingSchema = z.codec(nfcHandoverEncodedSchema, nfcHandoverDecodedSchema, {
-    encode: ({ selectMessage, requestMessage }) =>
-      [selectMessage, requestMessage] satisfies NfcHandoverEncodedStructure,
-    decode: ([selectMessage, requestMessage]) => ({ selectMessage, requestMessage }),
-  })
+  public static override get encodingSchema() {
+    return z.codec(nfcHandoverEncodedSchema, nfcHandoverDecodedSchema, {
+      encode: ({ selectMessage, requestMessage }) =>
+        [selectMessage, requestMessage] satisfies NfcHandoverEncodedStructure,
+      decode: ([selectMessage, requestMessage]) => ({ selectMessage, requestMessage }),
+    })
+  }
 
   public get selectMessage() {
     return this.structure.selectMessage

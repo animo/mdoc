@@ -26,7 +26,9 @@ export type NfcOptionsOptions = {
 }
 
 export class NfcOptions extends CborStructure<NfcOptionsEncodedStructure, NfcOptionsDecodedStructure> {
-  public static override encodingSchema = nfcOptionsSchema
+  public static override get encodingSchema() {
+    return nfcOptionsSchema
+  }
 
   public get maxCommandDataLength() {
     return this.structure.get(NfcOptionsKeys.MaxCommandDataLength)

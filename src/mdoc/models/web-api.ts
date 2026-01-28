@@ -16,15 +16,17 @@ export type WebApiDecodedStructure = z.infer<typeof webApiDecodedSchema>
 export type WebApiOptions = WebApiDecodedStructure
 
 export class WebApi extends CborStructure<WebApiEncodedStructure, WebApiDecodedStructure> {
-  public static override encodingSchema = z.codec(webApiEncodedSchema, webApiDecodedSchema, {
-    encode: ({ version, issuerUrl, serverRetrievalToken }) =>
-      [version, issuerUrl, serverRetrievalToken] satisfies WebApiEncodedStructure,
-    decode: ([version, issuerUrl, serverRetrievalToken]) => ({
-      version,
-      issuerUrl,
-      serverRetrievalToken,
-    }),
-  })
+  public static override get encodingSchema() {
+    return z.codec(webApiEncodedSchema, webApiDecodedSchema, {
+      encode: ({ version, issuerUrl, serverRetrievalToken }) =>
+        [version, issuerUrl, serverRetrievalToken] satisfies WebApiEncodedStructure,
+      decode: ([version, issuerUrl, serverRetrievalToken]) => ({
+        version,
+        issuerUrl,
+        serverRetrievalToken,
+      }),
+    })
+  }
 
   public get version() {
     return this.structure.version

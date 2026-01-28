@@ -19,7 +19,9 @@ export type ValueDigestOptions = {
 }
 
 export class ValueDigests extends CborStructure<ValueDigestsStructure> {
-  public static override encodingSchema = valueDigestsSchema
+  public static override get encodingSchema() {
+    return valueDigestsSchema
+  }
 
   public get valueDigests() {
     return this.structure

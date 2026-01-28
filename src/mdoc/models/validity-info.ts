@@ -25,7 +25,9 @@ export type ValidityInfoOptions = {
 }
 
 export class ValidityInfo extends CborStructure<ValidityInfoEncodedStructure, ValidityInfoDecodedStructure> {
-  public static override encodingSchema = validityInfoSchema
+  public static override get encodingSchema() {
+    return validityInfoSchema
+  }
 
   public get signed() {
     return this.structure.get('signed')

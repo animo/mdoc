@@ -35,7 +35,9 @@ export type WifiOptionsOptions = {
 }
 
 export class WifiOptions extends CborStructure<WifiOptionsEncodedStructure, WifiOptionsDecodedStructure> {
-  public static override encodingSchema = wifiOptionsSchema
+  public static override get encodingSchema() {
+    return wifiOptionsSchema
+  }
 
   public get encodedStructure() {
     return this.structure.toMap() as WifiOptionsEncodedStructure

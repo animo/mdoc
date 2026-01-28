@@ -137,7 +137,7 @@ export class CborStructure<EncodedStructure = unknown, DecodedStructure = Encode
     },
     decodedStructure: DecodedStructureType<T>
   ): T {
-    const encodingSchema = (this.constructor as typeof CborStructure).encodingSchema
+    const encodingSchema = this.encodingSchema
     if (!encodingSchema) {
       throw new Error('fromDecodedStructure must be implemented when encodingSchema is not provided')
     }
