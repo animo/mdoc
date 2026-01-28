@@ -10,7 +10,8 @@ import { ValueDigests, type ValueDigestsStructure } from './value-digests'
 // Zod schema for MobileSecurityObject
 // MSO has string keys, so we use z.object and set mapsAsObjects: true
 const mobileSecurityObjectSchema = typedMap([
-  ['version', z.string()],
+  // mDOC only defines 1.0
+  ['version', z.literal('1.0')],
   ['digestAlgorithm', z.enum(['SHA-256', 'SHA-384', 'SHA-512'])],
   ['docType', z.string()],
   ['valueDigests', z.instanceof(ValueDigests)],
@@ -22,7 +23,7 @@ export type MobileSecurityObjectDecodedStructure = z.output<typeof mobileSecurit
 export type MobileSecurityObjectEncodedStructure = z.input<typeof mobileSecurityObjectSchema>
 
 export type MobileSecurityObjectOptions = {
-  version?: string
+  version?: '1.0'
   digestAlgorithm: DigestAlgorithm
   docType: DocType
   valueDigests: ValueDigests

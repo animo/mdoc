@@ -1,5 +1,13 @@
 import z from 'zod'
-import { addExtension, CborStructure, cborEncode } from '../cbor/index.js'
+import {
+  type AnyCborStructure,
+  addExtension,
+  CborStructure,
+  type CborStructureStaticThis,
+  cborDecode,
+  cborEncode,
+  type EncodedStructureType,
+} from '../cbor/index.js'
 import type { MdocContext } from '../context.js'
 import { zUint8Array } from '../utils/zod.js'
 import { CoseCertificateNotFoundError, CoseInvalidAlgorithmError, CosePayloadMustBeDefinedError } from './error.js'
@@ -135,6 +143,24 @@ export class Sign1 extends CborStructure<Sign1EncodedStructure, Sign1DecodedStru
     })
   }
 
+  /**
+   * Decodes CBOR bytes into a Sign1 instance.
+   * Uses the encodingSchema's decode() method to validate and transform the decoded data.
+   */
+  public static decode<T extends AnyCborStructure>(this: CborStructureStaticThis<T>, bytes: Uint8Array): T {
+    const rawStructure = cborDecode(bytes)
+
+    // May feel weird, but using new this makes TypeScript understand we may return a subclass
+    return new this(
+      // NOTE: If decoded with Sign1 tag, the cbor decoder already transforms to the class instances
+      // In that case we create new instance based on the decoded structure, to ensure we create the
+      // instance based on this (and ensure extended classes work)
+      rawStructure instanceof Sign1
+        ? rawStructure.decodedStructure
+        : this.fromEncodedStructure(rawStructure as EncodedStructureType<T>).decodedStructure
+    )
+  }
+
   public static toBeSigned(options: {
     payload: Uint8Array
     protectedHeaders: ProtectedHeaders
@@ -239,9 +265,8 @@ export class Sign1 extends CborStructure<Sign1EncodedStructure, Sign1DecodedStru
 addExtension({
   Class: Sign1,
   tag: Sign1.tag,
-  // TODO: why is the tag not being used?
   encode(instance: Sign1, encodeFn: (obj: unknown) => Uint8Array) {
     return encodeFn(instance)
   },
-  decode: Sign1.fromEncodedStructure,
+  decode: (encoded) => Sign1.fromEncodedStructure(encoded as Sign1EncodedStructure),
 })

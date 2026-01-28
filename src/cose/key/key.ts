@@ -1,7 +1,7 @@
 import { concatBytes } from '@noble/curves/utils.js'
 import { z } from 'zod'
 import { CborStructure } from '../../cbor'
-import { typedMap } from '../../utils'
+import { bytesToString, stringToBytes, TypedMap, typedMap } from '../../utils'
 import { zUint8Array } from '../../utils/zod'
 import {
   CoseDNotDefinedError,
@@ -35,7 +35,15 @@ export enum CoseKeyParameter {
 const coseKeySchema = typedMap([
   [CoseKeyParameter.KeyType, z.union([z.enum(KeyType), z.string()])],
   [CoseKeyParameter.KeyId, zUint8Array.exactOptional()],
-  [CoseKeyParameter.Algorithm, z.union([z.string(), z.number()]).exactOptional()],
+  [
+    CoseKeyParameter.Algorithm,
+    z
+      .union([
+        z.string({ error: 'Cose algorithm must be a string' }),
+        z.number({ error: 'Cose algorithm must be a number' }),
+      ])
+      .exactOptional(),
+  ],
   [CoseKeyParameter.KeyOps, z.array(z.union([z.enum(KeyOps), z.string()])).exactOptional()],
   [CoseKeyParameter.BaseIv, zUint8Array.exactOptional()],
   [CoseKeyParameter.CurveOrK, z.union([z.enum(Curve), zUint8Array]).exactOptional()],
@@ -51,7 +59,7 @@ export type CoseKeyEncodedStructure = z.input<typeof coseKeySchema>
 // Manual options type (user-facing API)
 export type CoseKeyOptions = {
   keyType: KeyType | string
-  keyId?: Uint8Array
+  keyId?: string
   algorithm?: string | number
   keyOps?: Array<KeyOps | string>
   baseIv?: Uint8Array
@@ -75,7 +83,8 @@ export class CoseKey extends CborStructure<CoseKeyEncodedStructure, CoseKeyDecod
   }
 
   public get keyId() {
-    return this.structure.get(CoseKeyParameter.KeyId)
+    const keyId = this.structure.get(CoseKeyParameter.KeyId)
+    return keyId ? bytesToString(keyId) : undefined
   }
 
   public get algorithm() {
@@ -119,45 +128,45 @@ export class CoseKey extends CborStructure<CoseKeyEncodedStructure, CoseKeyDecod
   }
 
   public static create(options: CoseKeyOptions): CoseKey {
-    const entries: Array<[CoseKeyParameter, unknown]> = [[CoseKeyParameter.KeyType, options.keyType]]
+    const map: CoseKeyDecodedStructure = new TypedMap([[CoseKeyParameter.KeyType, options.keyType]])
 
     if (options.keyId !== undefined) {
-      entries.push([CoseKeyParameter.KeyId, options.keyId])
+      map.set(CoseKeyParameter.KeyId, stringToBytes(options.keyId))
     }
 
     if (options.algorithm !== undefined) {
-      entries.push([CoseKeyParameter.Algorithm, options.algorithm])
+      map.set(CoseKeyParameter.Algorithm, options.algorithm)
     }
 
     if (options.keyOps !== undefined) {
-      entries.push([CoseKeyParameter.KeyOps, options.keyOps])
+      map.set(CoseKeyParameter.KeyOps, options.keyOps)
     }
 
     if (options.baseIv !== undefined) {
-      entries.push([CoseKeyParameter.BaseIv, options.baseIv])
+      map.set(CoseKeyParameter.BaseIv, options.baseIv)
     }
 
     if (options.curve !== undefined) {
-      entries.push([CoseKeyParameter.CurveOrK, options.curve])
+      map.set(CoseKeyParameter.CurveOrK, options.curve)
     }
 
     if (options.x !== undefined) {
-      entries.push([CoseKeyParameter.X, options.x])
+      map.set(CoseKeyParameter.X, options.x)
     }
 
     if (options.y !== undefined) {
-      entries.push([CoseKeyParameter.Y, options.y])
+      map.set(CoseKeyParameter.Y, options.y)
     }
 
     if (options.d !== undefined) {
-      entries.push([CoseKeyParameter.D, options.d])
+      map.set(CoseKeyParameter.D, options.d)
     }
 
     if (options.k !== undefined) {
-      entries.push([CoseKeyParameter.CurveOrK, options.k])
+      map.set(CoseKeyParameter.CurveOrK, options.k)
     }
 
-    return this.fromEncodedStructure(new Map(entries))
+    return this.fromDecodedStructure(map)
   }
 
   // TODO: add jwk zod schema
@@ -180,7 +189,7 @@ export class CoseKey extends CborStructure<CoseKeyEncodedStructure, CoseKeyDecod
       return prev
     }, {} as CoseKeyOptions)
 
-    return CoseKey.create(options)
+    return this.create(options)
   }
 
   public get publicKey() {

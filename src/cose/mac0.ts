@@ -182,9 +182,8 @@ export class Mac0 extends CborStructure<Mac0EncodedStructure, Mac0DecodedStructu
 addExtension({
   Class: Mac0,
   tag: Mac0.tag,
-  // TODO: why is the tag not being used?
   encode(instance: Mac0, encodeFn: (obj: unknown) => Uint8Array) {
     return encodeFn(instance.encodedStructure)
   },
-  decode: Mac0.fromEncodedStructure,
+  decode: (encoded) => Mac0.fromEncodedStructure(encoded as Mac0EncodedStructure),
 })
