@@ -163,11 +163,13 @@ export class IssuerSigned extends CborStructure<IssuerSignedEncodedStructure, Is
   }
 
   public static create(options: IssuerSignedOptions): IssuerSigned {
-    const map: IssuerSignedDecodedStructure = new TypedMap([['issuerAuth', options.issuerAuth]])
+    const map: IssuerSignedDecodedStructure = new TypedMap([])
 
     if (options.issuerNamespaces) {
       map.set('nameSpaces', options.issuerNamespaces)
     }
+
+    map.set('issuerAuth', options.issuerAuth)
 
     return this.fromDecodedStructure(map)
   }

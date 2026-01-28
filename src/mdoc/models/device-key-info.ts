@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { CborStructure } from '../../cbor'
 import { TypedMap, typedMap } from '../../utils'
-import { DeviceKey } from './device-key'
+import { DeviceKey, type DeviceKeyEncodedStructure } from './device-key'
 import { KeyAuthorizations, type KeyAuthorizationsEncodedStructure } from './key-authorizations'
 import { KeyInfo, type KeyInfoEncodedStructure } from './key-info'
 
@@ -26,8 +26,7 @@ export class DeviceKeyInfo extends CborStructure<DeviceKeyInfoEncodedStructure, 
       decode: (input) => {
         const map: DeviceKeyInfoDecodedStructure = TypedMap.fromMap(input)
 
-        // biome-ignore lint/suspicious/noExplicitAny: CoseKey encoded structure
-        map.set('deviceKey', DeviceKey.fromEncodedStructure(input.get('deviceKey') as any))
+        map.set('deviceKey', DeviceKey.fromEncodedStructure(input.get('deviceKey') as DeviceKeyEncodedStructure))
 
         if (input.has('keyAuthorizations')) {
           map.set(

@@ -1,8 +1,8 @@
 import { X509Certificate } from '@peculiar/x509'
 import { expect, suite, test } from 'vitest'
+import z from 'zod'
 import {
   CoseKey,
-  cborEncode,
   DeviceKey,
   DeviceRequest,
   DeviceResponse,
@@ -15,6 +15,7 @@ import {
   SignatureAlgorithm,
   Verifier,
 } from '../../src'
+import { Handover } from '../../src/mdoc/models/handover'
 import { DEVICE_JWK_PRIVATE, DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { mdocContext } from '../context'
 
@@ -252,7 +253,14 @@ suite('Verification', () => {
       ],
     })
 
-    const fakeSessionTranscript = cborEncode([1, 2, 3])
+    class CustomHandover extends Handover<null> {
+      static get encodingSchema() {
+        return z.null()
+      }
+    }
+    const fakeSessionTranscript = SessionTranscript.create({
+      handover: CustomHandover.fromEncodedStructure(null),
+    })
 
     const deviceResponse = await Holder.createDeviceResponseForDeviceRequest(
       {

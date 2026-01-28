@@ -3,7 +3,7 @@ import { CborStructure, DataItem } from '../../cbor'
 import type { MdocContext } from '../../context'
 import { DeviceEngagement, type DeviceEngagementEncodedStructure } from './device-engagement'
 import { EReaderKey, type EReaderKeyEncodedStructure } from './e-reader-key'
-import type { Handover } from './handover'
+import { Handover } from './handover'
 import { NfcHandover } from './nfc-handover'
 import {
   Oid4vpDcApiDraft24HandoverInfo,
@@ -33,9 +33,7 @@ export const sessionTranscriptEncodedSchema = z.tuple([
 const sessionTranscriptDecodedSchema = z.object({
   deviceEngagement: z.instanceof(DeviceEngagement).nullable(),
   eReaderKey: z.instanceof(EReaderKey).nullable(),
-  // NOTE: we limit to specific instances, which prevents extension, but that's not possible
-  // at the moment either way due to how the handover parsing works
-  handover: z.union(supportedHandoverStructures.map((h) => z.instanceof(h))),
+  handover: z.instanceof(Handover),
 })
 
 export type SessionTranscriptDecodedStructure = z.infer<typeof sessionTranscriptDecodedSchema>
@@ -121,6 +119,14 @@ export class SessionTranscript extends CborStructure<
 
   public get handover() {
     return this.structure.handover
+  }
+
+  public static create(options: SessionTranscriptOptions): SessionTranscript {
+    return this.fromDecodedStructure({
+      deviceEngagement: options.deviceEngagement ?? null,
+      eReaderKey: options.eReaderKey ?? null,
+      handover: options.handover,
+    })
   }
 
   /**

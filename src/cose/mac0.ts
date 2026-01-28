@@ -1,5 +1,13 @@
 import { z } from 'zod'
-import { addExtension, CborStructure, cborEncode } from '../cbor/index.js'
+import {
+  type AnyCborStructure,
+  addExtension,
+  CborStructure,
+  type CborStructureStaticThis,
+  cborDecode,
+  cborEncode,
+  type EncodedStructureType,
+} from '../cbor/index.js'
 import type { MdocContext } from '../context.js'
 import { SessionTranscript } from '../mdoc/models/session-transcript.js'
 import { zUint8Array } from '../utils/zod.js'
@@ -99,6 +107,24 @@ export class Mac0 extends CborStructure<Mac0EncodedStructure, Mac0DecodedStructu
       protectedHeaders: this.protectedHeaders,
       externalAad: this.externalAad,
     })
+  }
+
+  /**
+   * Decodes CBOR bytes into a Sign1 instance.
+   * Uses the encodingSchema's decode() method to validate and transform the decoded data.
+   */
+  public static decode<T extends AnyCborStructure>(this: CborStructureStaticThis<T>, bytes: Uint8Array): T {
+    const rawStructure = cborDecode(bytes)
+
+    // May feel weird, but using new this makes TypeScript understand we may return a subclass
+    return new this(
+      // NOTE: If decoded with Mac0 tag, the cbor decoder already transforms to the class instances
+      // In that case we create new instance based on the decoded structure, to ensure we create the
+      // instance based on this (and ensure extended classes work)
+      rawStructure instanceof Mac0
+        ? rawStructure.decodedStructure
+        : this.fromEncodedStructure(rawStructure as EncodedStructureType<T>).decodedStructure
+    )
   }
 
   public static toBeAuthenticated(options: {
