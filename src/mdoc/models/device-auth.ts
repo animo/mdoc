@@ -5,8 +5,8 @@ import { type CoseKey, MacAlgorithm } from '../../cose'
 import { TypedMap, typedMap } from '../../utils'
 import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback'
 import { DeviceAuthentication } from './device-authentication'
-import { DeviceMac, type DeviceMacStructure } from './device-mac'
-import { DeviceSignature, type DeviceSignatureStructure } from './device-signature'
+import { DeviceMac, type DeviceMacEncodedStructure } from './device-mac'
+import { DeviceSignature, type DeviceSignatureEncodedStructure } from './device-signature'
 import type { Document } from './document'
 import type { SessionTranscript } from './session-transcript'
 
@@ -35,11 +35,11 @@ export class DeviceAuth extends CborStructure<DeviceAuthEncodedStructure, Device
         if (input.has('deviceSignature')) {
           map.set(
             'deviceSignature',
-            DeviceSignature.fromEncodedStructure(input.get('deviceSignature') as DeviceSignatureStructure)
+            DeviceSignature.fromEncodedStructure(input.get('deviceSignature') as DeviceSignatureEncodedStructure)
           )
         }
         if (input.has('deviceMac')) {
-          map.set('deviceMac', DeviceMac.fromEncodedStructure(input.get('deviceMac') as DeviceMacStructure))
+          map.set('deviceMac', DeviceMac.fromEncodedStructure(input.get('deviceMac') as DeviceMacEncodedStructure))
         }
         return map
       },
@@ -100,7 +100,7 @@ export class DeviceAuth extends CborStructure<DeviceAuthEncodedStructure, Device
 
     if (deviceSignature) {
       try {
-        deviceSignature.detachedContent = deviceAuthenticationBytes
+        deviceSignature.detachedPayload = deviceAuthenticationBytes
         const verificationResult = await ctx.cose.sign1.verify({ sign1: deviceSignature, key: deviceKey })
 
         onCheck({
@@ -136,7 +136,7 @@ export class DeviceAuth extends CborStructure<DeviceAuthEncodedStructure, Device
       }
 
       try {
-        deviceMac.detachedContent = deviceAuthenticationBytes
+        deviceMac.detachedPayload = deviceAuthenticationBytes
         const isValid = await deviceMac.verify(
           {
             publicKey: deviceKey,
