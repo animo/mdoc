@@ -1,44 +1,50 @@
-import { type CborDecodeOptions, cborDecode } from '../../cbor'
+import z from 'zod'
+import { zUint8Array } from '../../utils/zod'
 import { Handover } from './handover'
 
-export type NfcHandoverStructure = [Uint8Array, Uint8Array | null]
+const nfcHandoverEncodedSchema = z.tuple([zUint8Array, zUint8Array.nullable()])
+const nfcHandoverDecodedSchema = z.object({
+  selectMessage: zUint8Array,
+  requestMessage: zUint8Array.nullable(),
+})
+
+export type NfcHandoverEncodedStructure = z.infer<typeof nfcHandoverEncodedSchema>
+export type NfcHandoverDecodedStructure = z.infer<typeof nfcHandoverDecodedSchema>
 
 export type NfcHandoverOptions = {
   selectMessage: Uint8Array
   requestMessage?: Uint8Array
 }
 
-export class NfcHandover extends Handover {
-  public selectMessage: Uint8Array
-  public requestMessage?: Uint8Array
-
-  public constructor(options: NfcHandoverOptions) {
-    super()
-    this.selectMessage = options.selectMessage
-    this.requestMessage = options.requestMessage
-  }
-
-  public encodedStructure(): NfcHandoverStructure {
-    return [this.selectMessage, this.requestMessage ?? null]
-  }
-
-  public static override fromEncodedStructure(encodedStructure: NfcHandoverStructure): NfcHandover {
-    return new NfcHandover({
-      selectMessage: encodedStructure[0],
-      requestMessage: encodedStructure[1] ?? undefined,
+export class NfcHandover extends Handover<NfcHandoverEncodedStructure, NfcHandoverDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(nfcHandoverEncodedSchema, nfcHandoverDecodedSchema, {
+      encode: ({ selectMessage, requestMessage }) =>
+        [selectMessage, requestMessage] satisfies NfcHandoverEncodedStructure,
+      decode: ([selectMessage, requestMessage]) => ({ selectMessage, requestMessage }),
     })
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): NfcHandover {
-    const structure = cborDecode<NfcHandoverStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return NfcHandover.fromEncodedStructure(structure)
+  public get selectMessage() {
+    return this.structure.selectMessage
   }
 
-  public static isCorrectHandover(structure: unknown): structure is NfcHandoverStructure {
-    return (
-      Array.isArray(structure) &&
-      structure[0] instanceof Uint8Array &&
-      (structure[1] instanceof Uint8Array || structure[1] === null)
-    )
+  public get requestMessage() {
+    return this.structure.requestMessage
+  }
+
+  public static create(options: NfcHandoverOptions) {
+    return this.fromDecodedStructure({
+      requestMessage: options.requestMessage ?? null,
+      selectMessage: options.selectMessage,
+    })
+  }
+
+  public override get requiresReaderKey() {
+    return true
+  }
+
+  public override get requiresDeviceEngagement() {
+    return true
   }
 }

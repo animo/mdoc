@@ -1,56 +1,70 @@
+import { z } from 'zod'
 import { CborStructure } from '../../cbor'
-import { Oidc, type OidcStructure } from './oidc'
-import { WebApi, type WebApiStructure } from './web-api'
+import { TypedMap, typedMap } from '../../utils'
+import { Oidc, type OidcEncodedStructure } from './oidc'
+import { WebApi, type WebApiEncodedStructure } from './web-api'
 
-export type ServerRetrievalMethodStructure = {
-  webApi?: WebApiStructure
-  oidc?: OidcStructure
-}
+const serverRetrievalMethodSchema = typedMap([
+  ['webApi', z.instanceof(WebApi).exactOptional()],
+  ['oidc', z.instanceof(Oidc).exactOptional()],
+] as const)
+
+export type ServerRetrievalMethodDecodedStructure = z.output<typeof serverRetrievalMethodSchema>
+export type ServerRetrievalMethodEncodedStructure = z.input<typeof serverRetrievalMethodSchema>
 
 export type ServerRetrievalMethodOptions = {
   webApi?: WebApi
   oidc?: Oidc
 }
 
-export class ServerRetrievalMethod extends CborStructure {
-  public webApi?: WebApi
-  public oidc?: Oidc
+export class ServerRetrievalMethod extends CborStructure<
+  ServerRetrievalMethodEncodedStructure,
+  ServerRetrievalMethodDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return z.codec(serverRetrievalMethodSchema.in, serverRetrievalMethodSchema.out, {
+      decode: (input) => {
+        const map: ServerRetrievalMethodDecodedStructure = TypedMap.fromMap(input)
 
-  public constructor(options: ServerRetrievalMethodOptions) {
-    super()
-    this.webApi = options.webApi
-    this.oidc = options.oidc
-  }
-
-  public encodedStructure(): ServerRetrievalMethodStructure {
-    const structure: ServerRetrievalMethodStructure = {}
-
-    if (this.webApi) {
-      structure.webApi = this.webApi.encodedStructure()
-    }
-
-    if (this.oidc) {
-      structure.oidc = this.oidc.encodedStructure()
-    }
-
-    return structure
-  }
-
-  public static override fromEncodedStructure(
-    encodedStructure: ServerRetrievalMethodStructure | Map<string, unknown>
-  ): ServerRetrievalMethod {
-    let structure = encodedStructure as ServerRetrievalMethodStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = {
-        webApi: encodedStructure.get('webApi') as ServerRetrievalMethodStructure['webApi'],
-        oidc: encodedStructure.get('oidc') as ServerRetrievalMethodStructure['oidc'],
-      }
-    }
-
-    return new ServerRetrievalMethod({
-      webApi: structure.webApi ? WebApi.fromEncodedStructure(structure.webApi) : undefined,
-      oidc: structure.oidc ? Oidc.fromEncodedStructure(structure.oidc) : undefined,
+        if (input.has('webApi')) {
+          map.set('webApi', WebApi.fromEncodedStructure(input.get('webApi') as WebApiEncodedStructure))
+        }
+        if (input.has('oidc')) {
+          map.set('oidc', Oidc.fromEncodedStructure(input.get('oidc') as OidcEncodedStructure))
+        }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
+        const webApi = output.get('webApi')
+        if (webApi) {
+          map.set('webApi', webApi.encodedStructure)
+        }
+        const oidc = output.get('oidc')
+        if (oidc) {
+          map.set('oidc', oidc.encodedStructure)
+        }
+        return map
+      },
     })
+  }
+
+  public get webApi() {
+    return this.structure.get('webApi')
+  }
+
+  public get oidc() {
+    return this.structure.get('oidc')
+  }
+
+  public static create(options: ServerRetrievalMethodOptions): ServerRetrievalMethod {
+    const map: ServerRetrievalMethodDecodedStructure = new TypedMap([])
+    if (options.webApi) {
+      map.set('webApi', options.webApi)
+    }
+    if (options.oidc) {
+      map.set('oidc', options.oidc)
+    }
+    return this.fromDecodedStructure(map)
   }
 }

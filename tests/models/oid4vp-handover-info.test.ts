@@ -22,7 +22,7 @@ suite('oid4vp handover', () => {
   })
 
   test('construct', () => {
-    const oid4vpHandoverInfo = new Oid4vpHandoverInfo({
+    const oid4vpHandoverInfo = Oid4vpHandoverInfo.create({
       clientId: 'x509_san_dns:example.com',
       nonce: 'exc7gBkxjx1rdc9udRrveKvSsJIq80avlXeLHhGwqtA',
       jwkThumbprint: new Uint8Array([

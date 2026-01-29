@@ -1,4 +1,4 @@
-import { addExtension } from '../cbor-x'
+import { addExtension } from 'cbor-x'
 
 const customInspectSymbol = Symbol.for('nodejs.util.inspect.custom')
 export class DateOnly {

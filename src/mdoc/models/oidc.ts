@@ -1,34 +1,50 @@
+import { z } from 'zod'
 import { CborStructure } from '../../cbor'
 
-export type OidcStructure = [number, string, string]
+// Oidc = [uint, tstr, tstr] - Array structure
+const oidcEncodedSchema = z.tuple([z.number(), z.string(), z.string()])
 
-export type OidcOptions = {
-  version: number
-  issuerUrl: string
-  serverRetrievalToken: string
-}
+// Easier structure for internal usage in class
+const oidcDecodedSchema = z.object({
+  version: z.number(),
+  issuerUrl: z.string(),
+  serverRetrievalToken: z.string(),
+})
 
-export class Oidc extends CborStructure {
-  public version: number
-  public issuerUrl: string
-  public serverRetrievalToken: string
+export type OidcEncodedStructure = z.infer<typeof oidcEncodedSchema>
+export type OidcDecodedStructure = z.infer<typeof oidcDecodedSchema>
+export type OidcOptions = OidcDecodedStructure
 
-  public constructor(options: OidcOptions) {
-    super()
-    this.version = options.version
-    this.issuerUrl = options.issuerUrl
-    this.serverRetrievalToken = options.serverRetrievalToken
+export class Oidc extends CborStructure<OidcEncodedStructure, OidcDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(oidcEncodedSchema, oidcDecodedSchema, {
+      decode: ([version, issuerUrl, serverRetrievalToken]) => ({
+        version,
+        issuerUrl,
+        serverRetrievalToken,
+      }),
+      encode: ({ version, issuerUrl, serverRetrievalToken }) =>
+        [version, issuerUrl, serverRetrievalToken] satisfies OidcEncodedStructure,
+    })
   }
 
-  public encodedStructure(): OidcStructure {
-    return [this.version, this.issuerUrl, this.serverRetrievalToken]
+  public get version() {
+    return this.structure.version
   }
 
-  public static override fromEncodedStructure(encodedStructure: OidcStructure): Oidc {
+  public get issuerUrl() {
+    return this.structure.issuerUrl
+  }
+
+  public get serverRetrievalToken() {
+    return this.structure.serverRetrievalToken
+  }
+
+  public static create(options: OidcOptions): Oidc {
     return new Oidc({
-      version: encodedStructure[0],
-      issuerUrl: encodedStructure[1],
-      serverRetrievalToken: encodedStructure[2],
+      version: options.version,
+      issuerUrl: options.issuerUrl,
+      serverRetrievalToken: options.serverRetrievalToken,
     })
   }
 }

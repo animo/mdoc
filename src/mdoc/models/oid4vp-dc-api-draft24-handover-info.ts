@@ -1,6 +1,15 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import z from 'zod'
+import { CborStructure } from '../../cbor'
 
-export type Oid4vpDcApiDraft24HandoverInfoStructure = [string, string, string]
+const oid4vpDcApiDraft24HandoverInfoSchema = z.tuple([z.string(), z.string(), z.string()])
+const oid4vpDcApiDraft24HandoverInfoDecodedSchema = z.object({
+  origin: z.string(),
+  clientId: z.string(),
+  nonce: z.string(),
+})
+
+export type Oid4vpDcApiDraft24HandoverInfoEncodedStructure = z.infer<typeof oid4vpDcApiDraft24HandoverInfoSchema>
+export type Oid4vpDcApiDraft24HandoverInfoDecodedStructure = z.infer<typeof oid4vpDcApiDraft24HandoverInfoDecodedSchema>
 
 export type Oid4vpDcApiDraft24HandoverInfoOptions = {
   origin: string
@@ -8,37 +17,35 @@ export type Oid4vpDcApiDraft24HandoverInfoOptions = {
   nonce: string
 }
 
-export class Oid4vpDcApiDraft24HandoverInfo extends CborStructure {
-  public origin: string
-  public clientId: string
-  public nonce: string
-
-  public constructor(options: Oid4vpDcApiDraft24HandoverInfoOptions) {
-    super()
-    this.origin = options.origin
-    this.clientId = options.clientId
-    this.nonce = options.nonce
-  }
-
-  public encodedStructure(): Oid4vpDcApiDraft24HandoverInfoStructure {
-    return [this.origin, this.clientId, this.nonce]
-  }
-
-  public static override fromEncodedStructure(
-    encodedStructure: Oid4vpDcApiDraft24HandoverInfoStructure
-  ): Oid4vpDcApiDraft24HandoverInfo {
-    return new Oid4vpDcApiDraft24HandoverInfo({
-      origin: encodedStructure[0],
-      clientId: encodedStructure[1],
-      nonce: encodedStructure[2],
+export class Oid4vpDcApiDraft24HandoverInfo extends CborStructure<
+  Oid4vpDcApiDraft24HandoverInfoEncodedStructure,
+  Oid4vpDcApiDraft24HandoverInfoDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return z.codec(oid4vpDcApiDraft24HandoverInfoSchema, oid4vpDcApiDraft24HandoverInfoDecodedSchema, {
+      encode: ({ origin, clientId, nonce }) =>
+        [origin, clientId, nonce] satisfies Oid4vpDcApiDraft24HandoverInfoEncodedStructure,
+      decode: ([origin, clientId, nonce]) => ({ origin, clientId, nonce }),
     })
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Oid4vpDcApiDraft24HandoverInfo {
-    const structure = cborDecode<Oid4vpDcApiDraft24HandoverInfoStructure>(bytes, {
-      ...(options ?? {}),
-      mapsAsObjects: false,
+  public get origin() {
+    return this.structure.origin
+  }
+
+  public get clientId() {
+    return this.structure.clientId
+  }
+
+  public get nonce() {
+    return this.structure.nonce
+  }
+
+  public static create(options: Oid4vpDcApiDraft24HandoverInfoOptions) {
+    return this.fromDecodedStructure({
+      origin: options.origin,
+      clientId: options.clientId,
+      nonce: options.nonce,
     })
-    return Oid4vpDcApiDraft24HandoverInfo.fromEncodedStructure(structure)
   }
 }

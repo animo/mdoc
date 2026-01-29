@@ -1,51 +1,49 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
+import { TypedMap, typedMap } from '../../utils'
 import type { DataElementIdentifier } from './data-element-identifier'
 import type { Namespace } from './namespace'
 
-export type KeyAuthorizationsStructure = {
-  nameSpaces?: Array<Namespace>
-  dataElements?: Map<Namespace, Array<DataElementIdentifier>>
-}
+const keyAuthorizationsSchema = typedMap([
+  ['nameSpaces', z.array(z.string()).exactOptional()],
+  ['dataElements', z.map(z.string(), z.array(z.string())).exactOptional()],
+] as const)
+
+export type KeyAuthorizationsEncodedStructure = z.input<typeof keyAuthorizationsSchema>
+export type KeyAuthorizationsDecodedStructure = z.output<typeof keyAuthorizationsSchema>
 
 export type KeyAuthorizationsOptions = {
   namespaces?: Array<Namespace>
   dataElements?: Map<Namespace, Array<DataElementIdentifier>>
 }
 
-export class KeyAuthorizations extends CborStructure {
-  public namespaces?: Array<Namespace>
-  public dataElements?: Map<Namespace, Array<DataElementIdentifier>>
-
-  public constructor(options: KeyAuthorizationsOptions) {
-    super()
-    this.namespaces = options.namespaces
-    this.dataElements = options.dataElements
+export class KeyAuthorizations extends CborStructure<
+  KeyAuthorizationsEncodedStructure,
+  KeyAuthorizationsDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return keyAuthorizationsSchema
   }
 
-  public encodedStructure(): KeyAuthorizationsStructure {
-    return {
-      nameSpaces: this.namespaces,
-      dataElements: this.dataElements,
-    }
+  public get namespaces() {
+    return this.structure.get('nameSpaces')
   }
 
-  public static override fromEncodedStructure(
-    encodedStructure: KeyAuthorizationsStructure | Map<string, unknown>
-  ): KeyAuthorizations {
-    let structure = encodedStructure as KeyAuthorizationsStructure
+  public get dataElements() {
+    return this.structure.get('dataElements')
+  }
 
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as KeyAuthorizationsStructure
+  public static create(options: KeyAuthorizationsOptions): KeyAuthorizations {
+    const map: KeyAuthorizationsDecodedStructure = new TypedMap([])
+
+    if (options.namespaces !== undefined) {
+      map.set('nameSpaces', options.namespaces)
     }
 
-    return new KeyAuthorizations({
-      namespaces: structure.nameSpaces,
-      dataElements: structure.dataElements,
-    })
-  }
+    if (options.dataElements !== undefined) {
+      map.set('dataElements', options.dataElements)
+    }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): KeyAuthorizations {
-    const structure = cborDecode<KeyAuthorizationsStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return KeyAuthorizations.fromEncodedStructure(structure)
+    return this.fromDecodedStructure(map)
   }
 }

@@ -1,6 +1,6 @@
 import { X509Certificate } from '@peculiar/x509'
 import { expect, suite, test } from 'vitest'
-import { CoseKey, hex, Issuer, SignatureAlgorithm } from '../../src'
+import { CoseKey, DeviceKey, hex, Issuer, SignatureAlgorithm } from '../../src'
 import { DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { deterministicMdocContext } from '../context'
 
@@ -24,7 +24,7 @@ suite('Issuance', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -62,7 +62,7 @@ suite('Issuance', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 

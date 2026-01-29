@@ -1,6 +1,5 @@
-import type { BleOptions, BleOptionsStructure } from './ble-options'
-import type { NfcOptions, NfcOptionsStructure } from './nfc-options'
-import type { WifiOptions, WifiOptionsStructure } from './wifi-options'
+import type { BleOptions } from './ble-options'
+import type { NfcOptions } from './nfc-options'
+import type { WifiOptions } from './wifi-options'
 
-export type RetrievalOptionsStructure = WifiOptionsStructure | BleOptionsStructure | NfcOptionsStructure
 export type RetrievalOptions = WifiOptions | BleOptions | NfcOptions

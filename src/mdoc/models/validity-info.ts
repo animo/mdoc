@@ -1,12 +1,22 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
+import { typedMap } from '../../utils'
 
-export type ValidityInfoStructure = {
-  signed: Date
-  validFrom: Date
-  validUntil: Date
-  expectedUpdate?: Date
-}
+// Zod schema for ValidityInfo validation
+// The CBOR date extension (tag 0) handles Date <-> ISO string conversion automatically
+// So we just use z.date() and let CBOR handle the encoding/decoding
+const validityInfoSchema = typedMap([
+  ['signed', z.date()],
+  ['validFrom', z.date()],
+  ['validUntil', z.date()],
+  ['expectedUpdate', z.date().exactOptional()],
+])
 
+// Infer structure type from Zod schema (this is the output type after decoding)
+export type ValidityInfoEncodedStructure = z.input<typeof validityInfoSchema>
+export type ValidityInfoDecodedStructure = z.output<typeof validityInfoSchema>
+
+// Manual options type (user-facing API)
 export type ValidityInfoOptions = {
   signed: Date
   validFrom: Date
@@ -14,18 +24,25 @@ export type ValidityInfoOptions = {
   expectedUpdate?: Date
 }
 
-export class ValidityInfo extends CborStructure {
-  public signed: Date
-  public validFrom: Date
-  public validUntil: Date
-  public expectedUpdate?: Date
+export class ValidityInfo extends CborStructure<ValidityInfoEncodedStructure, ValidityInfoDecodedStructure> {
+  public static override get encodingSchema() {
+    return validityInfoSchema
+  }
 
-  public constructor(options: ValidityInfoStructure) {
-    super()
-    this.signed = options.signed
-    this.validFrom = options.validFrom
-    this.validUntil = options.validUntil
-    this.expectedUpdate = options.expectedUpdate
+  public get signed() {
+    return this.structure.get('signed')
+  }
+
+  public get validFrom() {
+    return this.structure.get('validFrom')
+  }
+
+  public get validUntil() {
+    return this.structure.get('validUntil')
+  }
+
+  public get expectedUpdate() {
+    return this.structure.get('expectedUpdate')
   }
 
   public isSignedBetweenDates(notBefore: Date, notAfter: Date, skewSeconds = 30): boolean {
@@ -48,35 +65,17 @@ export class ValidityInfo extends CborStructure {
     return validFromWithSkew <= now
   }
 
-  public encodedStructure(): ValidityInfoStructure {
-    const structure: ValidityInfoStructure = {
-      signed: this.signed,
-      validFrom: this.validFrom,
-      validUntil: this.validUntil,
+  public static create(options: ValidityInfoOptions): ValidityInfo {
+    const encodedStructure = new Map([
+      ['signed', options.signed],
+      ['validFrom', options.validFrom],
+      ['validUntil', options.validUntil],
+    ])
+
+    if (options.expectedUpdate !== undefined) {
+      encodedStructure.set('expectedUpdate', options.expectedUpdate)
     }
 
-    if (this.expectedUpdate) {
-      structure.expectedUpdate = this.expectedUpdate
-    }
-
-    return structure
-  }
-
-  public static override fromEncodedStructure(
-    encodedStructure: ValidityInfoStructure | Map<string, unknown>
-  ): ValidityInfo {
-    let structure = encodedStructure as ValidityInfoStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as ValidityInfoStructure
-    }
-
-    return new ValidityInfo(structure)
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): ValidityInfo {
-    const structure = cborDecode<ValidityInfoStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-
-    return ValidityInfo.fromEncodedStructure(structure)
+    return this.fromEncodedStructure(encodedStructure)
   }
 }

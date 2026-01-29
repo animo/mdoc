@@ -21,23 +21,23 @@
     "types:check": "tsc --noEmit",
     "style:check": "biome check --unsafe",
     "style:fix": "biome check --write --unsafe",
-    "build": "tsdown src/index.ts --format esm --dts --clean --sourcemap",
+    "build": "tsdown",
     "test": "vitest",
     "release": "pnpm build && pnpm changeset publish --no-git-tag",
     "changeset-version": "pnpm changeset version && pnpm style:fix"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.11",
+    "@biomejs/biome": "2.3.13",
     "@changesets/cli": "^2.29.7",
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.0.1",
     "@panva/hkdf": "^1.2.1",
-    "@peculiar/x509": "^1.14.0",
-    "@types/node": "^24.10.0",
+    "@peculiar/x509": "^1.14.3",
+    "@types/node": "^25.1.0",
     "jose": "^6.1.0",
-    "tsdown": "^0.19.0",
+    "tsdown": "^0.20.1",
     "typescript": "~5.9.3",
-    "vitest": "^4.0.7"
+    "vitest": "^4.0.18"
   },
   "repository": {
     "type": "git",
@@ -58,5 +58,10 @@
     "m-doc-cbor-iso-18013-5-validator",
     "m-doc-cbor-iso-18013-5-encoder",
     "m-doc-cbor-iso-18013-5-decoder"
-  ]
+  ],
+  "dependencies": {
+    "cbor-x": "^1.6.0",
+    "zod": "^4.3.6",
+    "zod-validation-error": "^5.0.0"
+  }
 }

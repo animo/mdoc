@@ -1,20 +1,13 @@
-import { type CborDecodeOptions, cborDecode } from '../../cbor'
-import { Sign1, type Sign1Structure } from '../../cose/sign1'
+import type { MdocContext } from '../../context'
+import { Sign1, type Sign1DecodedStructure, type Sign1EncodedStructure, type Sign1Options } from '../../cose/sign1'
 
-export type DeviceSignatureStructure = Sign1Structure
+export type DeviceSignatureEncodedStructure = Sign1EncodedStructure
+export type DeviceSignatureDecodedStructure = Sign1DecodedStructure
+export type DeviceSignatureOptions = Sign1Options
 
 export class DeviceSignature extends Sign1 {
-  public static override fromEncodedStructure(encodedStructure: DeviceSignatureStructure): DeviceSignature {
-    return new DeviceSignature({
-      protectedHeaders: encodedStructure[0],
-      unprotectedHeaders: encodedStructure[1],
-      payload: encodedStructure[2],
-      signature: encodedStructure[3],
-    })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions) {
-    const data = cborDecode<DeviceSignatureStructure>(bytes, options)
-    return DeviceSignature.fromEncodedStructure(data)
+  // TODO: super should be generic, so we don't need this
+  public static create(options: DeviceSignatureOptions, ctx: Pick<MdocContext, 'cose'>) {
+    return super.create(options, ctx) as Promise<DeviceSignature>
   }
 }

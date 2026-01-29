@@ -1,40 +1,49 @@
-import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
-import type { EncodedCoseKeyStructure } from '../../cose'
+import { z } from 'zod'
+import { CborStructure, DataItem } from '../../cbor'
 import { EDeviceKey } from './e-device-key'
 
-export type SecurityStructure = [number, DataItem<EncodedCoseKeyStructure>]
+const securityEncodedSchema = z.tuple([z.number(), z.instanceof(DataItem)])
+
+const securityDecodedSchema = z.object({
+  cipherSuiteIdentifier: z.number(),
+  eDeviceKey: z.instanceof(EDeviceKey),
+})
+
+export type SecurityEncodedStructure = z.infer<typeof securityEncodedSchema>
+export type SecurityDecodedStructure = z.infer<typeof securityDecodedSchema>
 
 export type SecurityOptions = {
   cipherSuiteIdentifier: number
   eDeviceKey: EDeviceKey
 }
 
-export class Security extends CborStructure {
-  // TODO: enum
-  public cipherSuiteIdentifier: number
-  public eDeviceKey: EDeviceKey
-
-  public constructor(options: SecurityOptions) {
-    super()
-    this.cipherSuiteIdentifier = options.cipherSuiteIdentifier
-    this.eDeviceKey = options.eDeviceKey
-  }
-
-  public encodedStructure(): SecurityStructure {
-    return [this.cipherSuiteIdentifier, DataItem.fromData(this.eDeviceKey.encodedStructure())]
-  }
-
-  public static override fromEncodedStructure(encodedStructure: SecurityStructure): Security {
-    const eDeviceKeyStructure = encodedStructure[1].data
-
-    return new Security({
-      cipherSuiteIdentifier: encodedStructure[0],
-      eDeviceKey: EDeviceKey.fromEncodedStructure(eDeviceKeyStructure),
+export class Security extends CborStructure<SecurityEncodedStructure, SecurityDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(securityEncodedSchema, securityDecodedSchema, {
+      decode: (input) => ({
+        cipherSuiteIdentifier: input[0],
+        // biome-ignore lint/suspicious/noExplicitAny: CoseKey encoded structure
+        eDeviceKey: EDeviceKey.fromEncodedStructure((input[1] as DataItem).data as any),
+      }),
+      encode: (output): SecurityEncodedStructure => [
+        output.cipherSuiteIdentifier,
+        DataItem.fromData(output.eDeviceKey.encodedStructure),
+      ],
     })
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Security {
-    const structure = cborDecode<SecurityStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return Security.fromEncodedStructure(structure)
+  public get cipherSuiteIdentifier() {
+    return this.structure.cipherSuiteIdentifier
+  }
+
+  public get eDeviceKey() {
+    return this.structure.eDeviceKey
+  }
+
+  public static create(options: SecurityOptions): Security {
+    return this.fromDecodedStructure({
+      cipherSuiteIdentifier: options.cipherSuiteIdentifier,
+      eDeviceKey: options.eDeviceKey,
+    })
   }
 }

@@ -1,69 +1,84 @@
+import { z } from 'zod'
 import { CborStructure } from '../../cbor'
+import { typedMap } from '../../utils'
+import { zUint8Array } from '../../utils/zod'
 
-export type WifiOptionsStructure = {
-  0?: string
-  1?: number
-  2?: number
-  3?: Uint8Array
+enum WifiOptionsKeys {
+  Passphrase = 0,
+  OperatingClass = 1,
+  ChannelNumber = 2,
+  SupportedBands = 3,
 }
 
+// WifiOptions uses integer keys per spec:
+// WifiOptions = {
+//   ? 0: tstr,  // Pass-phrase
+//   ? 1: uint,  // Operating Class
+//   ? 2: uint,  // Channel Number
+//   ? 3: bstr   // Supported Bands
+// }
+const wifiOptionsSchema = typedMap([
+  [WifiOptionsKeys.Passphrase, z.string().exactOptional()],
+  [WifiOptionsKeys.OperatingClass, z.number().exactOptional()],
+  [WifiOptionsKeys.ChannelNumber, z.number().exactOptional()],
+  [WifiOptionsKeys.SupportedBands, zUint8Array.exactOptional()],
+] as const)
+
+export type WifiOptionsEncodedStructure = z.input<typeof wifiOptionsSchema>
+export type WifiOptionsDecodedStructure = z.output<typeof wifiOptionsSchema>
+
 export type WifiOptionsOptions = {
-  passPhrase?: string
+  passphrase?: string
   channelInfoOperatingClass?: number
   channelInfoChannelNumber?: number
   bandInfoSupportedBands?: Uint8Array
 }
 
-export class WifiOptions extends CborStructure {
-  public passPhrase?: string
-  public channelInfoOperatingClass?: number
-  public channelInfoChannelNumber?: number
-  public bandInfoSupportedBands?: Uint8Array
-
-  public constructor(options: WifiOptionsOptions) {
-    super()
-    this.passPhrase = options.passPhrase
-    this.channelInfoOperatingClass = options.channelInfoOperatingClass
-    this.channelInfoChannelNumber = options.channelInfoChannelNumber
-    this.bandInfoSupportedBands = options.bandInfoSupportedBands
+export class WifiOptions extends CborStructure<WifiOptionsEncodedStructure, WifiOptionsDecodedStructure> {
+  public static override get encodingSchema() {
+    return wifiOptionsSchema
   }
 
-  public encodedStructure(): WifiOptionsStructure {
-    const structure: WifiOptionsStructure = {}
-
-    if (this.passPhrase) {
-      structure[0] = this.passPhrase
-    }
-
-    if (this.channelInfoChannelNumber) {
-      structure[1] = this.channelInfoChannelNumber
-    }
-
-    if (this.channelInfoOperatingClass) {
-      structure[2] = this.channelInfoOperatingClass
-    }
-
-    if (this.bandInfoSupportedBands) {
-      structure[3] = this.bandInfoSupportedBands
-    }
-
-    return structure
+  public get encodedStructure() {
+    return this.structure.toMap() as WifiOptionsEncodedStructure
   }
 
-  public static override fromEncodedStructure(
-    encodedStructure: WifiOptionsStructure | Map<number, unknown>
-  ): WifiOptions {
-    let structure = encodedStructure as WifiOptionsStructure
+  public get passphrase() {
+    return this.structure.get(WifiOptionsKeys.Passphrase)
+  }
 
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as WifiOptionsStructure
+  public get channelInfoOperatingClass() {
+    return this.structure.get(WifiOptionsKeys.OperatingClass)
+  }
+
+  public get channelInfoChannelNumber() {
+    return this.structure.get(WifiOptionsKeys.ChannelNumber)
+  }
+
+  public get bandInfoSupportedBands() {
+    return this.structure.get(WifiOptionsKeys.SupportedBands)
+  }
+
+  public static create(options: WifiOptionsOptions): WifiOptions {
+    const entries: Array<[number, unknown]> = []
+
+    if (options.passphrase !== undefined) {
+      entries.push([WifiOptionsKeys.Passphrase, options.passphrase])
     }
 
-    return new WifiOptions({
-      passPhrase: structure[0],
-      channelInfoChannelNumber: structure[1],
-      channelInfoOperatingClass: structure[2],
-      bandInfoSupportedBands: structure[3],
-    })
+    if (options.channelInfoOperatingClass !== undefined) {
+      entries.push([WifiOptionsKeys.OperatingClass, options.channelInfoOperatingClass])
+    }
+
+    if (options.channelInfoChannelNumber !== undefined) {
+      entries.push([WifiOptionsKeys.ChannelNumber, options.channelInfoChannelNumber])
+    }
+
+    if (options.bandInfoSupportedBands !== undefined) {
+      entries.push([WifiOptionsKeys.SupportedBands, options.bandInfoSupportedBands])
+    }
+
+    const map = new Map(entries)
+    return this.fromEncodedStructure(map)
   }
 }

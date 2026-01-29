@@ -1,19 +1,31 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import { z } from 'zod'
+import { CborStructure } from '../../cbor'
 import type { MdocContext } from '../../context'
-import { compareBytes } from '../../utils'
+import { compareBytes, typedMap } from '../../utils'
+import { zUint8Array } from '../../utils/zod'
 import type { DataElementIdentifier } from './data-element-identifier'
 import type { DataElementValue } from './data-element-value'
 import type { IssuerAuth } from './issuer-auth'
 import type { Namespace } from './namespace'
 
-export interface IssuerSignedItemStructure {
-  digestID: number
-  random: Uint8Array
-  elementIdentifier: DataElementIdentifier
-  elementValue: DataElementValue
-}
+// IssuerSignedItem uses string keys per spec:
+// IssuerSignedItem = {
+//   "digestID" : uint,
+//   "random" : bstr,
+//   "elementIdentifier" : DataElementIdentifier,
+//   "elementValue" : DataElementValue
+// }
+export const issuerSignedItemSchema = typedMap([
+  ['digestID', z.number()],
+  ['random', zUint8Array],
+  ['elementIdentifier', z.string()],
+  ['elementValue', z.unknown()],
+])
 
-// NOTE: Id vs ID above
+export type IssuerSignedItemEncodedStructure = z.input<typeof issuerSignedItemSchema>
+export type IssuerSignedItemDecodedStructure = z.output<typeof issuerSignedItemSchema>
+
+// NOTE: Id vs ID above (user-facing API uses digestId, CBOR uses digestID)
 export type IssuerSignedItemOptions = {
   digestId: number
   random: Uint8Array
@@ -21,28 +33,28 @@ export type IssuerSignedItemOptions = {
   elementValue: DataElementValue
 }
 
-export class IssuerSignedItem extends CborStructure {
-  #issuerSignedItemStructure: IssuerSignedItemStructure
-
-  private constructor(options: IssuerSignedItemStructure) {
-    super()
-
-    this.#issuerSignedItemStructure = options
+export class IssuerSignedItem extends CborStructure<
+  IssuerSignedItemEncodedStructure,
+  IssuerSignedItemDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return issuerSignedItemSchema
   }
 
-  public get random(): Uint8Array {
-    return this.#issuerSignedItemStructure.random
-  }
-  public get elementIdentifier(): DataElementIdentifier {
-    return this.#issuerSignedItemStructure.elementIdentifier
+  public get random() {
+    return this.structure.get('random')
   }
 
-  public get elementValue(): DataElementValue {
-    return this.#issuerSignedItemStructure.elementValue
+  public get elementIdentifier() {
+    return this.structure.get('elementIdentifier')
   }
 
-  public get digestId(): number {
-    return this.#issuerSignedItemStructure.digestID
+  public get elementValue() {
+    return this.structure.get('elementValue')
+  }
+
+  public get digestId() {
+    return this.structure.get('digestID')
   }
 
   public async isValid(namespace: Namespace, issuerAuth: IssuerAuth, ctx: Pick<MdocContext, 'crypto'>) {
@@ -75,29 +87,13 @@ export class IssuerSignedItem extends CborStructure {
     return false
   }
 
-  public encodedStructure(): IssuerSignedItemStructure {
-    return this.#issuerSignedItemStructure
-  }
-
   public static fromOptions(options: IssuerSignedItemOptions) {
-    return new IssuerSignedItem({
-      digestID: options.digestId,
-      random: options.random,
-      elementIdentifier: options.elementIdentifier,
-      elementValue: options.elementValue,
-    })
-  }
-
-  public static override fromEncodedStructure(
-    encodedStructure: IssuerSignedItemStructure | Map<unknown, unknown>
-  ): IssuerSignedItem {
-    return new IssuerSignedItem(
-      encodedStructure instanceof Map ? Object.fromEntries(encodedStructure.entries()) : encodedStructure
-    )
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): IssuerSignedItem {
-    const structure = cborDecode<IssuerSignedItemStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return IssuerSignedItem.fromEncodedStructure(structure)
+    const map = new Map([
+      ['digestID', options.digestId],
+      ['random', options.random],
+      ['elementIdentifier', options.elementIdentifier],
+      ['elementValue', options.elementValue],
+    ])
+    return this.fromEncodedStructure(map)
   }
 }

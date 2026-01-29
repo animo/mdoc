@@ -1,56 +1,67 @@
-import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
-import { ItemsRequest, type ItemsRequestStructure } from './items-request'
-import { ReaderAuth, type ReaderAuthStructure } from './reader-auth'
+import { z } from 'zod'
+import { CborStructure, DataItem } from '../../cbor'
+import { TypedMap, typedMap } from '../../utils'
+import { ItemsRequest, type ItemsRequestEncodedStructure } from './items-request'
+import { ReaderAuth, type ReaderAuthEncodedStructure } from './reader-auth'
 
-export type DocRequestStructure = {
-  itemsRequest: DataItem<ItemsRequestStructure>
-  readerAuth?: ReaderAuthStructure
-}
+const docRequestSchema = typedMap([
+  ['itemsRequest', z.instanceof(ItemsRequest)],
+  ['readerAuth', z.instanceof(ReaderAuth).exactOptional()],
+] as const)
+
+export type DocRequestDecodedStructure = z.output<typeof docRequestSchema>
+export type DocRequestEncodedStructure = z.input<typeof docRequestSchema>
 
 export type DocRequestOptions = {
   itemsRequest: ItemsRequest
   readerAuth?: ReaderAuth
 }
 
-export class DocRequest extends CborStructure {
-  public itemsRequest: ItemsRequest
-  public readerAuth?: ReaderAuth
+export class DocRequest extends CborStructure<DocRequestEncodedStructure, DocRequestDecodedStructure> {
+  public static override get encodingSchema() {
+    return z.codec(docRequestSchema.in, docRequestSchema.out, {
+      decode: (input) => {
+        const map: DocRequestDecodedStructure = TypedMap.fromMap(input)
 
-  public constructor(options: DocRequestOptions) {
-    super()
-    this.itemsRequest = options.itemsRequest
-    this.readerAuth = options.readerAuth
-  }
+        const itemsRequestData = input.get('itemsRequest') as DataItem
+        map.set(
+          'itemsRequest',
+          ItemsRequest.fromEncodedStructure(itemsRequestData.data as ItemsRequestEncodedStructure)
+        )
 
-  public encodedStructure(): DocRequestStructure {
-    const structure: DocRequestStructure = {
-      itemsRequest: DataItem.fromData(this.itemsRequest.encodedStructure()),
-    }
+        if (input.has('readerAuth')) {
+          map.set('readerAuth', ReaderAuth.fromEncodedStructure(input.get('readerAuth') as ReaderAuthEncodedStructure))
+        }
 
-    if (this.readerAuth) {
-      structure.readerAuth = this.readerAuth.encodedStructure()
-    }
+        return map
+      },
+      encode: (output) => {
+        const map = output.toMap() as Map<unknown, unknown>
+        map.set('itemsRequest', DataItem.fromData(output.get('itemsRequest').encodedStructure))
 
-    return structure
-  }
+        const readerAuth = output.get('readerAuth')
+        if (readerAuth) {
+          map.set('readerAuth', readerAuth.encodedStructure)
+        }
 
-  public static override fromEncodedStructure(
-    encodedStructure: DocRequestStructure | Map<unknown, unknown>
-  ): DocRequest {
-    let structure = encodedStructure as DocRequestStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as DocRequestStructure
-    }
-
-    return new DocRequest({
-      itemsRequest: ItemsRequest.fromEncodedStructure(structure.itemsRequest.data),
-      readerAuth: structure.readerAuth ? ReaderAuth.fromEncodedStructure(structure.readerAuth) : undefined,
+        return map
+      },
     })
   }
 
-  public static decode(bytes: Uint8Array, options?: CborDecodeOptions): DocRequest {
-    const map = cborDecode<Map<unknown, unknown>>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return DocRequest.fromEncodedStructure(map)
+  public get itemsRequest() {
+    return this.structure.get('itemsRequest')
+  }
+
+  public get readerAuth() {
+    return this.structure.get('readerAuth')
+  }
+
+  public static create(options: DocRequestOptions): DocRequest {
+    const map: DocRequestDecodedStructure = new TypedMap([['itemsRequest', options.itemsRequest]])
+    if (options.readerAuth) {
+      map.set('readerAuth', options.readerAuth)
+    }
+    return this.fromDecodedStructure(map)
   }
 }

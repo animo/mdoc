@@ -1,8 +1,9 @@
 import { X509Certificate } from '@peculiar/x509'
 import { expect, suite, test } from 'vitest'
+import z from 'zod'
 import {
   CoseKey,
-  cborEncode,
+  DeviceKey,
   DeviceRequest,
   DeviceResponse,
   DocRequest,
@@ -14,6 +15,7 @@ import {
   SignatureAlgorithm,
   Verifier,
 } from '../../src'
+import { Handover } from '../../src/mdoc/models/handover'
 import { DEVICE_JWK_PRIVATE, DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { mdocContext } from '../context'
 
@@ -37,7 +39,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -57,10 +59,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -123,7 +125,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -143,10 +145,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -215,7 +217,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -235,10 +237,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -251,7 +253,14 @@ suite('Verification', () => {
       ],
     })
 
-    const fakeSessionTranscript = cborEncode([1, 2, 3])
+    class CustomHandover extends Handover<null> {
+      static get encodingSchema() {
+        return z.null()
+      }
+    }
+    const fakeSessionTranscript = SessionTranscript.create({
+      handover: CustomHandover.fromEncodedStructure(null),
+    })
 
     const deviceResponse = await Holder.createDeviceResponseForDeviceRequest(
       {
@@ -295,7 +304,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -315,10 +324,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -372,7 +381,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom: validFromFuture, validUntil: validUntilFuture },
     })
 
@@ -418,7 +427,7 @@ suite('Verification', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 
@@ -438,10 +447,10 @@ suite('Verification', () => {
       )
     ).resolves.toBeUndefined()
 
-    const deviceRequest = new DeviceRequest({
+    const deviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {
@@ -479,10 +488,10 @@ suite('Verification', () => {
 
     const decodedDeviceResponse = DeviceResponse.fromEncodedForOid4Vp(encodedDeviceResponse)
 
-    const newDeviceRequest = new DeviceRequest({
+    const newDeviceRequest = DeviceRequest.create({
       docRequests: [
-        new DocRequest({
-          itemsRequest: new ItemsRequest({
+        DocRequest.create({
+          itemsRequest: ItemsRequest.create({
             docType: 'org.iso.18013.5.1',
             namespaces: {
               'org.iso.18013.5.1.mDL': {

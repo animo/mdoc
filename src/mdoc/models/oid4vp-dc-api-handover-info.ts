@@ -1,6 +1,16 @@
-import { type CborDecodeOptions, CborStructure, cborDecode } from '../../cbor'
+import z from 'zod'
+import { CborStructure } from '../../cbor'
+import { zUint8Array } from '../../utils/zod'
 
-export type Oid4vpDcApiHandoverInfoStructure = [string, string, Uint8Array | null]
+const oid4vpDcApiHandoverInfoEncodedSchema = z.tuple([z.string(), z.string(), zUint8Array.nullable()])
+const oid4vpDcApiHandoverInfoDecodedSchema = z.object({
+  origin: z.string(),
+  nonce: z.string(),
+  jwkThumbprint: zUint8Array.nullable(),
+})
+
+export type Oid4vpDcApiHandoverInfoEncodedStructure = z.infer<typeof oid4vpDcApiHandoverInfoEncodedSchema>
+export type Oid4vpDcApiHandoverInfoDecodedStructure = z.infer<typeof oid4vpDcApiHandoverInfoDecodedSchema>
 
 export type Oid4vpDcApiHandoverInfoOptions = {
   origin: string
@@ -8,34 +18,35 @@ export type Oid4vpDcApiHandoverInfoOptions = {
   jwkThumbprint?: Uint8Array
 }
 
-export class Oid4vpDcApiHandoverInfo extends CborStructure {
-  public origin: string
-  public nonce: string
-  public jwkThumbprint?: Uint8Array
-
-  public constructor(options: Oid4vpDcApiHandoverInfoOptions) {
-    super()
-    this.origin = options.origin
-    this.nonce = options.nonce
-    this.jwkThumbprint = options.jwkThumbprint
-  }
-
-  public encodedStructure(): Oid4vpDcApiHandoverInfoStructure {
-    return [this.origin, this.nonce, this.jwkThumbprint ?? null]
-  }
-
-  public static override fromEncodedStructure(
-    encodedStructure: Oid4vpDcApiHandoverInfoStructure
-  ): Oid4vpDcApiHandoverInfo {
-    return new Oid4vpDcApiHandoverInfo({
-      origin: encodedStructure[0],
-      nonce: encodedStructure[1],
-      jwkThumbprint: encodedStructure[2] ?? undefined,
+export class Oid4vpDcApiHandoverInfo extends CborStructure<
+  Oid4vpDcApiHandoverInfoEncodedStructure,
+  Oid4vpDcApiHandoverInfoDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return z.codec(oid4vpDcApiHandoverInfoEncodedSchema, oid4vpDcApiHandoverInfoDecodedSchema, {
+      encode: ({ origin, nonce, jwkThumbprint }) =>
+        [origin, nonce, jwkThumbprint] satisfies Oid4vpDcApiHandoverInfoEncodedStructure,
+      decode: ([origin, nonce, jwkThumbprint]) => ({ origin, nonce, jwkThumbprint }),
     })
   }
 
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): Oid4vpDcApiHandoverInfo {
-    const structure = cborDecode<Oid4vpDcApiHandoverInfoStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return Oid4vpDcApiHandoverInfo.fromEncodedStructure(structure)
+  public get origin() {
+    return this.structure.origin
+  }
+
+  public get nonce() {
+    return this.structure.nonce
+  }
+
+  public get jwkThumbprint() {
+    return this.structure.jwkThumbprint
+  }
+
+  public static create(options: Oid4vpDcApiHandoverInfoOptions) {
+    return this.fromDecodedStructure({
+      origin: options.origin,
+      nonce: options.nonce,
+      jwkThumbprint: options.jwkThumbprint ?? null,
+    })
   }
 }

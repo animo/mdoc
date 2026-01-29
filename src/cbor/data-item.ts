@@ -1,7 +1,14 @@
-import { cborDecode, cborEncode } from '.'
-import { addExtension } from './cbor-x'
+import { addExtension } from 'cbor-x'
+import z from 'zod'
+import { cborDecode, cborEncode } from './parser'
 
-export type DataItemParams<T = unknown> =
+export const zDataItemCodec = (outputSchema: z.ZodType) =>
+  z.codec(z.instanceof(DataItem), outputSchema, {
+    encode: (data) => DataItem.fromData(data),
+    decode: (dataItem) => dataItem.data,
+  })
+
+export type DataItemOptions<T = unknown> =
   | {
       data: T
       buffer: Uint8Array
@@ -24,13 +31,13 @@ export class DataItem<T = unknown> {
   #data?: T
   #buffer: Uint8Array
 
-  constructor(params: DataItemParams<T>) {
-    if (!('data' in params) && !('buffer' in params)) {
+  public constructor(options: DataItemOptions<T>) {
+    if (!('data' in options) && !('buffer' in options)) {
       throw new Error('DataItem must be initialized with either the data or a buffer')
     }
 
-    if ('data' in params) this.#data = params.data
-    this.#buffer = 'buffer' in params ? params.buffer : cborEncode(params.data)
+    if ('data' in options) this.#data = options.data
+    this.#buffer = 'buffer' in options ? options.buffer : cborEncode(options.data)
   }
 
   public get data(): T {
@@ -47,6 +54,10 @@ export class DataItem<T = unknown> {
   public static fromData<T>(data: T): DataItem<T> {
     return new DataItem({ data })
   }
+
+  public static fromBuffer<T>(buffer: Uint8Array): DataItem<T> {
+    return new DataItem({ buffer })
+  }
 }
 
 addExtension({
@@ -56,6 +67,6 @@ addExtension({
     return encode(instance.buffer)
   },
   decode: (buffer: Uint8Array): object => {
-    return new DataItem({ buffer })
+    return DataItem.fromBuffer(buffer)
   },
 })

@@ -1,5 +1,5 @@
 import type { DocRequest } from '../mdoc/models/doc-request'
-import { IssuerNamespace } from '../mdoc/models/issuer-namespace'
+import { IssuerNamespaces } from '../mdoc/models/issuer-namespaces'
 import type { IssuerSigned } from '../mdoc/models/issuer-signed'
 import type { IssuerSignedItem } from '../mdoc/models/issuer-signed-item'
 import type { Namespace } from '../mdoc/models/namespace'
@@ -7,7 +7,7 @@ import type { Namespace } from '../mdoc/models/namespace'
 export const limitDisclosureToDeviceRequestNameSpaces = (
   issuerSigned: IssuerSigned,
   docRequest: DocRequest
-): IssuerNamespace => {
+): IssuerNamespaces => {
   const issuerNamespaces = new Map<Namespace, Array<IssuerSignedItem>>()
   for (const [namespace, nameSpaceFields] of docRequest.itemsRequest.namespaces.entries()) {
     const nsAttrs = issuerSigned.issuerNamespaces?.issuerNamespaces.get(namespace) ?? []
@@ -22,7 +22,7 @@ export const limitDisclosureToDeviceRequestNameSpaces = (
     issuerNamespaces.set(namespace, issuerSignedItems)
   }
 
-  return new IssuerNamespace({ issuerNamespaces })
+  return IssuerNamespaces.create({ issuerNamespaces })
 }
 
 const prepareIssuerSignedItem = (

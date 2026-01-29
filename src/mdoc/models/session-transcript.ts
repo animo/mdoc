@@ -1,8 +1,9 @@
-import { type CborDecodeOptions, CborStructure, cborDecode, DataItem } from '../../cbor'
+import { z } from 'zod'
+import { CborStructure, DataItem } from '../../cbor'
 import type { MdocContext } from '../../context'
-import { DeviceEngagement, type DeviceEngagementStructure } from './device-engagement'
-import { EReaderKey, type EReaderKeyStructure } from './e-reader-key'
-import type { Handover } from './handover'
+import { DeviceEngagement, type DeviceEngagementEncodedStructure } from './device-engagement'
+import { EReaderKey, type EReaderKeyEncodedStructure } from './e-reader-key'
+import { Handover } from './handover'
 import { NfcHandover } from './nfc-handover'
 import {
   Oid4vpDcApiDraft24HandoverInfo,
@@ -15,51 +16,117 @@ import { Oid4vpHandover } from './oid4vp-handover'
 import { Oid4vpHandoverInfo, type Oid4vpHandoverInfoOptions } from './oid4vp-handover-info'
 import { QrHandover } from './qr-handover'
 
-export type SessionTranscriptStructure = [
-  DataItem<DeviceEngagementStructure> | null,
-  DataItem<EReaderKeyStructure> | null,
-  unknown,
-]
+const supportedHandoverStructures = [
+  Oid4vpHandover,
+  Oid4vpDcApiHandover,
+  NfcHandover,
+  QrHandover,
+  Oid4vpDraft18Handover,
+] as const
+
+export const sessionTranscriptEncodedSchema = z.tuple([
+  z.instanceof<typeof DataItem<DeviceEngagementEncodedStructure>>(DataItem).nullable(),
+  z.instanceof<typeof DataItem<EReaderKeyEncodedStructure>>(DataItem).nullable(),
+  z.unknown(),
+])
+
+const sessionTranscriptDecodedSchema = z.object({
+  deviceEngagement: z.instanceof(DeviceEngagement).nullable(),
+  eReaderKey: z.instanceof(EReaderKey).nullable(),
+  handover: z.instanceof(Handover),
+})
+
+export type SessionTranscriptDecodedStructure = z.infer<typeof sessionTranscriptDecodedSchema>
+export type SessionTranscriptEncodedStructure = z.infer<typeof sessionTranscriptEncodedSchema>
 
 export type SessionTranscriptOptions = {
   deviceEngagement?: DeviceEngagement
   eReaderKey?: EReaderKey
-  handover: CborStructure
+  handover: Handover
 }
 
-export class SessionTranscript extends CborStructure {
-  public deviceEngagement?: DeviceEngagement
-  public eReaderKey?: EReaderKey
-  public handover: Handover
+export class SessionTranscript extends CborStructure<
+  SessionTranscriptEncodedStructure,
+  SessionTranscriptDecodedStructure
+> {
+  public static override get encodingSchema() {
+    return z.codec(sessionTranscriptEncodedSchema, sessionTranscriptDecodedSchema, {
+      decode: ([deviceEngagementDataItem, eReaderKeyDataItem, handoverData]): SessionTranscriptDecodedStructure => {
+        // TODO: this checks if it can be decoded, a smarter check could see that the handover
+        // is e.g. OpenId4VP handover but a value in that handover is incorrect
+        let handover: SessionTranscriptDecodedStructure['handover'] | null = null
+        for (const HandoverStructure of supportedHandoverStructures) {
+          handover = (HandoverStructure as typeof NfcHandover).tryDecodeHandover(handoverData)
+          if (handover) break
+        }
 
-  public constructor(options: SessionTranscriptOptions) {
-    super()
-    this.deviceEngagement = options.deviceEngagement
-    this.eReaderKey = options.eReaderKey
-    this.handover = options.handover
+        if (!handover) {
+          throw new Error('Could not establish handover structure for session transcript')
+        }
+
+        const deviceEngagement = deviceEngagementDataItem
+          ? DeviceEngagement.fromEncodedStructure(deviceEngagementDataItem.data)
+          : null
+        const eReaderKey = eReaderKeyDataItem ? EReaderKey.fromEncodedStructure(eReaderKeyDataItem.data) : null
+
+        return {
+          deviceEngagement,
+          eReaderKey,
+          handover,
+        }
+      },
+      encode: ({ deviceEngagement, eReaderKey, handover }): SessionTranscriptEncodedStructure => {
+        if (handover.requiresDeviceEngagement && !deviceEngagement) {
+          throw new Error(
+            `Session transcript has no deviceEngagement but ${handover.constructor.name} handover requires deviceEngagement`
+          )
+        }
+
+        if (!handover.requiresDeviceEngagement && deviceEngagement) {
+          throw new Error(
+            `Session transcript has deviceEngagement but ${handover.constructor.name} handover does not expect deviceEngagement.`
+          )
+        }
+
+        if (handover.requiresReaderKey && !eReaderKey) {
+          throw new Error(
+            `Session transcript has no eReaderKey but ${handover.constructor.name} handover requires eReaderKey`
+          )
+        }
+
+        if (!handover.requiresReaderKey && eReaderKey) {
+          throw new Error(
+            `Session transcript has eReaderKey but ${handover.constructor.name} handover does not expect eReaderKey.`
+          )
+        }
+
+        return [
+          deviceEngagement ? DataItem.fromData(deviceEngagement.encodedStructure) : null,
+          eReaderKey ? DataItem.fromData(eReaderKey.encodedStructure) : null,
+          handover.encodedStructure,
+        ]
+      },
+    })
   }
 
-  public encodedStructure(): SessionTranscriptStructure {
-    const isProximityHandover = this.handover instanceof QrHandover || this.handover instanceof NfcHandover
+  public get deviceEngagement() {
+    return this.structure.deviceEngagement
+  }
 
-    if (isProximityHandover) {
-      if (!this.deviceEngagement) {
-        throw new Error('QR/NFC handover requires deviceEngagement')
-      }
-      if (!this.eReaderKey) {
-        throw new Error('QR/NFC handover requires eReaderKey')
-      }
+  public get eReaderKey() {
+    return this.structure.eReaderKey
+  }
 
-      // encode() returns original bytes when decoded, ensuring consistent session key derivation
-      return [
-        new DataItem<DeviceEngagementStructure>({ buffer: this.deviceEngagement.encode() }),
-        new DataItem<EReaderKeyStructure>({ buffer: this.eReaderKey.encode() }),
-        this.handover.encodedStructure(),
-      ]
-    }
+  public get handover() {
+    return this.structure.handover
+  }
 
-    // OID4VP handovers don't use deviceEngagement/eReaderKey
-    return [null, null, this.handover.encodedStructure()]
+  public static create(options: SessionTranscriptOptions): SessionTranscript {
+    return this.fromDecodedStructure({
+      deviceEngagement: options.deviceEngagement ?? null,
+      eReaderKey: options.eReaderKey ?? null,
+      handover: options.handover,
+    })
   }
 
   /**
@@ -70,10 +137,10 @@ export class SessionTranscript extends CborStructure {
    * calling encode() on decoded objects will return the identical bytes.
    */
   public static forQrHandover(options: { deviceEngagement: DeviceEngagement; eReaderKey: EReaderKey }) {
-    return new SessionTranscript({
+    return this.fromDecodedStructure({
       deviceEngagement: options.deviceEngagement,
       eReaderKey: options.eReaderKey,
-      handover: new QrHandover(),
+      handover: QrHandover.create(),
     })
   }
 
@@ -81,27 +148,24 @@ export class SessionTranscript extends CborStructure {
     options: Oid4vpDcApiDraft24HandoverInfoOptions,
     ctx: Pick<MdocContext, 'crypto'>
   ) {
-    const info = new Oid4vpDcApiDraft24HandoverInfo(options)
-    const handover = new Oid4vpDcApiHandover({ oid4vpDcApiHandoverInfo: info })
-    await handover.prepare(ctx)
+    const info = Oid4vpDcApiDraft24HandoverInfo.create(options)
+    const handover = await Oid4vpDcApiHandover.create({ oid4vpDcApiHandoverInfo: info }, ctx)
 
-    return new SessionTranscript({ handover })
+    return this.fromDecodedStructure({ deviceEngagement: null, eReaderKey: null, handover })
   }
 
   public static async forOid4VpDcApi(options: Oid4vpDcApiHandoverInfoOptions, ctx: Pick<MdocContext, 'crypto'>) {
-    const info = new Oid4vpDcApiHandoverInfo(options)
-    const handover = new Oid4vpDcApiHandover({ oid4vpDcApiHandoverInfo: info })
-    await handover.prepare(ctx)
+    const info = Oid4vpDcApiHandoverInfo.create(options)
+    const handover = await Oid4vpDcApiHandover.create({ oid4vpDcApiHandoverInfo: info }, ctx)
 
-    return new SessionTranscript({ handover })
+    return this.fromDecodedStructure({ deviceEngagement: null, eReaderKey: null, handover })
   }
 
   public static async forOid4Vp(options: Oid4vpHandoverInfoOptions, ctx: Pick<MdocContext, 'crypto'>) {
-    const info = new Oid4vpHandoverInfo(options)
-    const handover = new Oid4vpHandover({ oid4vpHandoverInfo: info })
-    await handover.prepare(ctx)
+    const info = Oid4vpHandoverInfo.create(options)
+    const handover = await Oid4vpHandover.create({ oid4vpHandoverInfo: info }, ctx)
 
-    return new SessionTranscript({ handover })
+    return this.fromDecodedStructure({ deviceEngagement: null, eReaderKey: null, handover })
   }
 
   /**
@@ -112,55 +176,16 @@ export class SessionTranscript extends CborStructure {
     options: { clientId: string; responseUri: string; verifierGeneratedNonce: string; mdocGeneratedNonce: string },
     ctx: Pick<MdocContext, 'crypto'>
   ) {
-    const handover = new Oid4vpDraft18Handover({
-      clientId: options.clientId,
-      nonce: options.verifierGeneratedNonce,
-      mdocGeneratedNonce: options.mdocGeneratedNonce,
-      responseUri: options.responseUri,
-    })
-    await handover.prepare(ctx)
+    const handover = await Oid4vpDraft18Handover.create(
+      {
+        clientId: options.clientId,
+        nonce: options.verifierGeneratedNonce,
+        mdocGeneratedNonce: options.mdocGeneratedNonce,
+        responseUri: options.responseUri,
+      },
+      ctx
+    )
 
-    return new SessionTranscript({ handover })
-  }
-
-  public static override fromEncodedStructure(encodedStructure: SessionTranscriptStructure): SessionTranscript {
-    const deviceEngagementStructure = encodedStructure[0]?.data
-    const eReaderKeyStructure = encodedStructure[1]?.data
-    const handoverStructure = encodedStructure[2]
-
-    const isNfcHandover = NfcHandover.isCorrectHandover(handoverStructure)
-    const isQrHandover = QrHandover.isCorrectHandover(handoverStructure)
-    const isOid4vpHandover = Oid4vpHandover.isCorrectHandover(handoverStructure)
-    const isOid4vpDraft18Handover = Oid4vpDraft18Handover.isCorrectHandover(handoverStructure)
-    const isOid4vpDcApiHandover = Oid4vpDcApiHandover.isCorrectHandover(handoverStructure)
-
-    const handover = isNfcHandover
-      ? NfcHandover.fromEncodedStructure(handoverStructure)
-      : isQrHandover
-        ? QrHandover.fromEncodedStructure(handoverStructure)
-        : isOid4vpHandover
-          ? Oid4vpHandover.fromEncodedStructure(handoverStructure)
-          : isOid4vpDraft18Handover
-            ? Oid4vpDraft18Handover.fromEncodedStructure(handoverStructure)
-            : isOid4vpDcApiHandover
-              ? Oid4vpDcApiHandover.fromEncodedStructure(handoverStructure)
-              : undefined
-
-    if (!handover) {
-      throw new Error('Could not establish specific handover structure')
-    }
-
-    return new SessionTranscript({
-      deviceEngagement: deviceEngagementStructure
-        ? DeviceEngagement.fromEncodedStructure(deviceEngagementStructure)
-        : undefined,
-      eReaderKey: eReaderKeyStructure ? EReaderKey.fromEncodedStructure(eReaderKeyStructure) : undefined,
-      handover,
-    })
-  }
-
-  public static override decode(bytes: Uint8Array, options?: CborDecodeOptions): SessionTranscript {
-    const structure = cborDecode<SessionTranscriptStructure>(bytes, { ...(options ?? {}), mapsAsObjects: false })
-    return SessionTranscript.fromEncodedStructure(structure)
+    return this.fromDecodedStructure({ deviceEngagement: null, eReaderKey: null, handover })
   }
 }

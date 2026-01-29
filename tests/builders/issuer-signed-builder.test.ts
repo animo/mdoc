@@ -1,6 +1,6 @@
 import { X509Certificate } from '@peculiar/x509'
 import { describe, expect, test } from 'vitest'
-import { CoseKey, DateOnly, type IssuerSigned, SignatureAlgorithm } from '../../src'
+import { CoseKey, DateOnly, DeviceKey, type IssuerSigned, SignatureAlgorithm } from '../../src'
 import { IssuerSignedBuilder } from '../../src/mdoc/builders/issuer-signed-builder'
 import { DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { mdocContext } from '../context'
@@ -52,7 +52,7 @@ describe('issuer signed builder', () => {
       certificate: new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData),
       algorithm: SignatureAlgorithm.ES256,
       digestAlgorithm: 'SHA-256',
-      deviceKeyInfo: { deviceKey: CoseKey.fromJwk(DEVICE_JWK_PUBLIC) },
+      deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
       validityInfo: { signed, validFrom, validUntil },
     })
 

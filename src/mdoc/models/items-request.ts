@@ -1,53 +1,56 @@
+import { z } from 'zod'
 import { CborStructure } from '../../cbor'
+import { typedMap } from '../../utils'
 import type { DataElementIdentifier } from './data-element-identifier'
 import type { DocType } from './doctype'
-import type { IntentToRetain } from './itent-to-retain'
+import type { IntentToRetain } from './intent-to-retain'
 import type { Namespace } from './namespace'
 
-export type ItemsRequestStructure = {
-  docType: DocType
-  nameSpaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
-}
+const namespacesSchema = z.map(z.string(), z.map(z.string(), z.boolean()))
+
+// Zod schema for ItemsRequest
+const itemsRequestSchema = typedMap([
+  ['docType', z.string()],
+  ['nameSpaces', namespacesSchema],
+] as const)
+
+export type ItemsRequestEncodedStructure = z.input<typeof itemsRequestSchema>
+export type ItemsRequestDecodedStructure = z.output<typeof itemsRequestSchema>
+
+type NamespacesStructure = z.infer<typeof namespacesSchema>
 
 export type ItemsRequestOptions = {
   docType: DocType
   namespaces:
-    | Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+    | NamespacesStructure
+    // We allow record when creating for easier usage
     | Record<Namespace, Record<DataElementIdentifier, IntentToRetain>>
 }
 
-export class ItemsRequest extends CborStructure {
-  public docType: DocType
-  public namespaces: Map<Namespace, Map<DataElementIdentifier, IntentToRetain>>
+export class ItemsRequest extends CborStructure<ItemsRequestEncodedStructure, ItemsRequestDecodedStructure> {
+  public static override get encodingSchema() {
+    return itemsRequestSchema
+  }
 
-  public constructor(options: ItemsRequestOptions) {
-    super()
-    this.docType = options.docType
-    this.namespaces =
+  public get docType() {
+    return this.structure.get('docType')
+  }
+
+  public get namespaces() {
+    return this.structure.get('nameSpaces')
+  }
+
+  public static create(options: ItemsRequestOptions): ItemsRequest {
+    const namespaces =
       options.namespaces instanceof Map
         ? options.namespaces
         : new Map(Object.entries(options.namespaces).map(([ns, inner]) => [ns, new Map(Object.entries(inner))]))
-  }
 
-  public encodedStructure(): ItemsRequestStructure {
-    return {
-      docType: this.docType,
-      nameSpaces: this.namespaces,
-    }
-  }
+    const structure = new Map<unknown, unknown>([
+      ['docType', options.docType],
+      ['nameSpaces', namespaces],
+    ])
 
-  public static override fromEncodedStructure(
-    encodedStructure: ItemsRequestStructure | Map<unknown, unknown>
-  ): ItemsRequest {
-    let structure = encodedStructure as ItemsRequestStructure
-
-    if (encodedStructure instanceof Map) {
-      structure = Object.fromEntries(encodedStructure.entries()) as ItemsRequestStructure
-    }
-
-    return new ItemsRequest({
-      docType: structure.docType,
-      namespaces: structure.nameSpaces,
-    })
+    return this.fromEncodedStructure(structure)
   }
 }
