@@ -11,7 +11,8 @@ import { CoseKey, hex, KeyOps, KeyType, MacAlgorithm, type MdocContext, stringTo
 export const mdocContext: MdocContext = {
   crypto: {
     digest: async ({ digestAlgorithm, bytes }) => {
-      const digest = await crypto.subtle.digest(digestAlgorithm, bytes)
+      // Need to cast as Uint8Array<ArrayBuffer> since newer TypeScript versions made Uint8Array generic
+      const digest = await crypto.subtle.digest(digestAlgorithm, bytes as Uint8Array<ArrayBuffer>)
       return new Uint8Array(digest)
     },
     random: (length: number) => {
@@ -20,7 +21,10 @@ export const mdocContext: MdocContext = {
     calculateEphemeralMacKey: async (input) => {
       const { privateKey, publicKey, sessionTranscriptBytes, info } = input
       const ikm = p256.getSharedSecret(privateKey, publicKey, true).slice(1)
-      const salt = new Uint8Array(await crypto.subtle.digest('SHA-256', sessionTranscriptBytes))
+      // Need to cast as Uint8Array<ArrayBuffer> since newer TypeScript versions made Uint8Array generic
+      const salt = new Uint8Array(
+        await crypto.subtle.digest('SHA-256', sessionTranscriptBytes as Uint8Array<ArrayBuffer>)
+      )
       const infoAsBytes = stringToBytes(info)
       const digest = 'sha256'
       const result = await hkdf(digest, ikm, salt, infoAsBytes, 32)
