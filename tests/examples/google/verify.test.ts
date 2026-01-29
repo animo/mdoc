@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { DeviceResponse, SessionTranscript } from '../../../src'
+import { describe, expect, test } from 'vitest'
+import { DeviceResponse, hex, SessionTranscript } from '../../../src'
 import { mdocContext } from '../../context'
 import { deviceResponse } from './deviceResponse'
 import { rootCertificate } from './rootCertificate'
@@ -13,7 +13,7 @@ import { signingCertificate } from './signingCertificate'
  *
  */
 describe('Google CM Wallet mdoc implementation', () => {
-  it('should verify DC API DeviceResponse from Google CM Wallet', async () => {
+  test('should verify DC API DeviceResponse from Google CM Wallet', async () => {
     const nonce = 'UwQek7MemM55VM2Lc7UPPsdsxa-vejebSUo75B_G7vk'
     const origin = 'https://ellis-occurrence-ac-smoking.trycloudflare.com'
     const clientId = `web-origin:${origin}`
@@ -35,5 +35,9 @@ describe('Google CM Wallet mdoc implementation', () => {
         mdocContext
       )
     ).resolves.toBeUndefined()
+  })
+
+  test('decode and encode DeviceResponse gives same result', async () => {
+    expect(hex.encode(DeviceResponse.decode(deviceResponse).encode())).toEqual(hex.encode(deviceResponse))
   })
 })

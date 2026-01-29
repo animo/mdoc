@@ -5,7 +5,7 @@ import { DeviceAuth, type DeviceAuthEncodedStructure } from './device-auth'
 import { DeviceNamespaces, type DeviceNamespacesEncodedStructure } from './device-namespaces'
 
 const deviceSignedSchema = typedMap([
-  ['deviceNamespaces', z.instanceof(DeviceNamespaces)],
+  ['nameSpaces', z.instanceof(DeviceNamespaces)],
   ['deviceAuth', z.instanceof(DeviceAuth)],
 ] as const)
 
@@ -25,7 +25,7 @@ export class DeviceSigned extends CborStructure<DeviceSignedEncodedStructure, De
 
         const nameSpaces = input.get('nameSpaces') as DataItem
         map.set(
-          'deviceNamespaces',
+          'nameSpaces',
           DeviceNamespaces.fromEncodedStructure(nameSpaces.data as DeviceNamespacesEncodedStructure)
         )
         map.set('deviceAuth', DeviceAuth.fromEncodedStructure(input.get('deviceAuth') as DeviceAuthEncodedStructure))
@@ -34,7 +34,7 @@ export class DeviceSigned extends CborStructure<DeviceSignedEncodedStructure, De
       },
       encode: (output) => {
         const map = output.toMap() as Map<unknown, unknown>
-        map.set('nameSpaces', DataItem.fromData(output.get('deviceNamespaces').encodedStructure))
+        map.set('nameSpaces', DataItem.fromData(output.get('nameSpaces').encodedStructure))
         map.set('deviceAuth', output.get('deviceAuth').encodedStructure)
 
         return map
@@ -43,7 +43,7 @@ export class DeviceSigned extends CborStructure<DeviceSignedEncodedStructure, De
   }
 
   public get deviceNamespaces() {
-    return this.structure.get('deviceNamespaces')
+    return this.structure.get('nameSpaces')
   }
 
   public get deviceAuth() {
@@ -52,7 +52,7 @@ export class DeviceSigned extends CborStructure<DeviceSignedEncodedStructure, De
 
   public static create(options: DeviceSignedOptions): DeviceSigned {
     const map: DeviceSignedDecodedStructure = new TypedMap([
-      ['deviceNamespaces', options.deviceNamespaces],
+      ['nameSpaces', options.deviceNamespaces],
       ['deviceAuth', options.deviceAuth],
     ])
     return this.fromDecodedStructure(map)
