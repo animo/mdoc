@@ -21,7 +21,7 @@
     "types:check": "tsc --noEmit",
     "style:check": "biome check --unsafe",
     "style:fix": "biome check --write --unsafe",
-    "build": "tsdown src/index.ts --format esm --dts --clean --sourcemap",
+    "build": "tsdown",
     "test": "vitest",
     "release": "pnpm build && pnpm changeset publish --no-git-tag",
     "changeset-version": "pnpm changeset version && pnpm style:fix"

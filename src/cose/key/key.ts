@@ -1,7 +1,6 @@
-import { concatBytes } from '@noble/curves/utils.js'
 import { z } from 'zod'
 import { CborStructure } from '../../cbor'
-import { bytesToString, stringToBytes, TypedMap, typedMap } from '../../utils'
+import { bytesToString, concatBytes, stringToBytes, TypedMap, typedMap } from '../../utils'
 import { zUint8Array } from '../../utils/zod'
 import {
   CoseDNotDefinedError,
@@ -213,7 +212,7 @@ export class CoseKey extends CborStructure<CoseKeyEncodedStructure, CoseKeyDecod
       throw new CoseYNotDefinedError()
     }
 
-    return concatBytes(Uint8Array.from([0x04]), this.x, this.y)
+    return concatBytes([Uint8Array.from([0x04]), this.x, this.y])
   }
 
   public get privateKey() {

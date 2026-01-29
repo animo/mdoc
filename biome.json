@@ -53,7 +53,20 @@
         "noThisInStatic": "off"
       },
       "correctness": {
-        "noUnusedImports": "error"
+        "noUnusedImports": "error",
+        "noUndeclaredDependencies": {
+          "level": "error",
+          "options": {
+            "devDependencies": [
+              "tests",
+              "**/*.test.ts",
+              "**/*.spec.ts",
+              "**/tests/**",
+              "**/__tests__/**",
+              "**/tsdown.config.mts"
+            ]
+          }
+        }
       }
     }
   },
