@@ -1,4 +1,4 @@
-import { Encoder, type Options } from './cbor-x'
+import { Encoder, type Options } from 'cbor-x'
 import { DataItem } from './data-item'
 
 export type CborOptions = Options & {

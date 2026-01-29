@@ -1,5 +1,5 @@
+import { addExtension } from 'cbor-x'
 import z from 'zod'
-import { addExtension } from './cbor-x'
 import { cborDecode, cborEncode } from './parser'
 
 export const zDataItemCodec = (outputSchema: z.ZodType) =>
