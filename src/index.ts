@@ -20,6 +20,7 @@ export * from './holder'
 export * from './iso-mdoc-dc-api'
 export * from './issuer'
 export * from './mdoc'
+export { findAgeOverCandidate, parseAgeOverIdentifier } from './utils/ageOver'
 export {
   collectDeviceSignedElements,
   type DeviceSignedElement,
