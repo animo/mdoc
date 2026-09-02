@@ -1,6 +1,7 @@
 import { CborStructure } from '@owf/cose'
 import z from 'zod'
 import { ErrorItems, errorItemsSchema } from './error-items'
+import type { Namespace } from './namespace'
 
 const errorsEncodedSchema = z.map(z.string(), errorItemsSchema)
 const errorsDecodedSchema = z.map(z.string(), z.instanceof(ErrorItems))
@@ -34,5 +35,20 @@ export class Errors extends CborStructure<ErrorsEncodedStructure, ErrorsDecodedS
         return errorsDecoded
       },
     })
+  }
+
+  /**
+   * Map where keys are namespaces and values are the errored data elements within that namespace
+   */
+  public get errors() {
+    return this.structure
+  }
+
+  public getErrorItems(namespace: Namespace) {
+    return this.structure.get(namespace)
+  }
+
+  public static create(options: ErrorsOptions) {
+    return this.fromDecodedStructure(options.errors)
   }
 }
