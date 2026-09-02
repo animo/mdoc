@@ -10,10 +10,14 @@ import {
 import { base64url, stringToBytes } from '@owf/identity-common'
 import { z } from 'zod'
 import type { MdocContext } from '../../context'
+import {
+  describeUnauthorizedDeviceSignedElements,
+  findUnauthorizedDeviceSignedElements,
+} from '../../utils/keyAuthorizations'
 import { limitDisclosureToDeviceRequestNameSpaces } from '../../utils/limitDisclosure'
 import { verifyDocRequestsWithIssuerSigned } from '../../utils/verifyDocRequestsWithIssuerSigned'
 import { defaultVerificationCallback, type VerificationCallback } from '../check-callback'
-import { EitherSignatureOrMacMustBeProvidedError } from '../errors'
+import { DeviceKeyNotAuthorizedError, EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
 import { DeviceAuthentication } from './device-authentication'
 import { DeviceMac } from './device-mac'
@@ -170,6 +174,18 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
       category: 'DOCUMENT_FORMAT',
     })
 
+    // 18013-5 8.3.2.1.2.3 Table 8: an mdoc returning a status other than 0 must not return documents.
+    const status = this.structure.get('status')
+    onCheck({
+      status: status === 0 || !documents?.length ? 'PASSED' : 'FAILED',
+      check: 'Device Response must not include documents when the status is not 0.',
+      category: 'DOCUMENT_FORMAT',
+      reason:
+        status !== 0 && documents?.length
+          ? `Device Response has status ${status} but returned ${documents.length} document(s)`
+          : undefined,
+    })
+
     const returnValue: DeviceResponseVerificationResult = []
     for (const document of documents ?? []) {
       await document.deviceSigned.deviceAuth.verify(
@@ -267,6 +283,16 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
     const disclosedIssuerNamespace = limitDisclosureToDeviceRequestNameSpaces(options.issuerSigned, docRequest)
 
     const deviceNamespaces = options.deviceNamespaces ?? DeviceNamespaces.create({ deviceNamespaces: new Map() })
+
+    // 18013-5 9.1.3.4 binds the mdoc as well as the mdoc reader, so refuse to authenticate elements
+    // the device key is not authorized for rather than emit a response every reader must reject.
+    const unauthorized = findUnauthorizedDeviceSignedElements({
+      deviceNamespaces,
+      keyAuthorizations: options.issuerSigned.issuerAuth.mobileSecurityObject.deviceKeyInfo.keyAuthorizations,
+    })
+    if (unauthorized.length > 0) {
+      throw new DeviceKeyNotAuthorizedError(describeUnauthorizedDeviceSignedElements(unauthorized))
+    }
 
     const deviceAuthenticationBytes = DeviceAuthentication.create({
       sessionTranscript: options.sessionTranscript,

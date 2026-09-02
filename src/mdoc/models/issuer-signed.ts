@@ -110,6 +110,20 @@ export class IssuerSigned extends CborStructure<IssuerSignedEncodedStructure, Is
           check: `Issuer Auth must include digests for namespace: ${ns}`,
         })
 
+        // 18013-5 8.3.2.1.2.2: the mdoc shall not include two or more IssuerSignedItem elements with
+        // the same element identifier in a single namespace and document.
+        const elementIdentifiers = nsItems.map((item) => item.elementIdentifier)
+        const duplicates = new Set(elementIdentifiers.filter((id, index) => elementIdentifiers.indexOf(id) !== index))
+        onCheck({
+          status: duplicates.size === 0 ? 'PASSED' : 'FAILED',
+          check: `Namespace ${ns} must not include multiple elements with the same element identifier`,
+          reason: duplicates.size
+            ? `Namespace ${ns} includes multiple elements for ${Array.from(duplicates)
+                .map((id) => `'${id}'`)
+                .join(', ')}`
+            : undefined,
+        })
+
         const verifications = await Promise.all(
           nsItems.map(async (ev) => {
             const isValid = await ev.isValid(ns, this.issuerAuth, ctx)

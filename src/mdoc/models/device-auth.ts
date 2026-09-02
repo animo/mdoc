@@ -1,7 +1,17 @@
 import { CborStructure, type CoseKey, MacAlgorithm, TypedMap, typedMap } from '@owf/cose'
 import { z } from 'zod'
 import type { MdocContext } from '../../context'
-import { defaultVerificationCallback, onCategoryCheck, type VerificationCallback } from '../check-callback'
+import {
+  collectDeviceSignedElements,
+  describeUnauthorizedDeviceSignedElements,
+  findUnauthorizedDeviceSignedElements,
+} from '../../utils/keyAuthorizations'
+import {
+  defaultVerificationCallback,
+  onCategoryCheck,
+  type VerificationAssessment,
+  type VerificationCallback,
+} from '../check-callback'
 import { DeviceAuthentication } from './device-authentication'
 import { DeviceMac, type DeviceMacEncodedStructure } from './device-mac'
 import { DeviceSignature, type DeviceSignatureEncodedStructure } from './device-signature'
@@ -78,6 +88,8 @@ export class DeviceAuth extends CborStructure<DeviceAuthEncodedStructure, Device
     const onCheck = onCategoryCheck(verificationCallback, 'DEVICE_AUTH')
 
     const { deviceKey } = options.document.issuerSigned.issuerAuth.mobileSecurityObject.deviceKeyInfo
+
+    this.verifyKeyAuthorizations(options.document, onCheck)
 
     const deviceMac = this.structure.get('deviceMac')
     const deviceSignature = this.structure.get('deviceSignature')
@@ -165,6 +177,32 @@ export class DeviceAuth extends CborStructure<DeviceAuthEncodedStructure, Device
       status: 'FAILED',
       check: 'No Device Signature or Device Mac found on Device Auth',
       reason: 'No Device Signature or Device Mac found on Device Auth',
+    })
+  }
+
+  /**
+   * The mdoc reader half of the ISO/IEC 18013-5 9.1.3.4 key authorization rule, which
+   * {@link findUnauthorizedDeviceSignedElements} states in full. `DeviceResponse` enforces the
+   * mdoc half of the same rule when it creates a response.
+   */
+  private verifyKeyAuthorizations(
+    document: Document,
+    onCheck: (item: Omit<VerificationAssessment, 'category'>) => void
+  ) {
+    const { deviceNamespaces } = document.deviceSigned
+
+    // The check only applies when the mdoc actually authenticated device-signed elements.
+    if (collectDeviceSignedElements(deviceNamespaces).length === 0) return
+
+    const unauthorized = findUnauthorizedDeviceSignedElements({
+      deviceNamespaces,
+      keyAuthorizations: document.issuerSigned.issuerAuth.mobileSecurityObject.deviceKeyInfo.keyAuthorizations,
+    })
+
+    onCheck({
+      status: unauthorized.length === 0 ? 'PASSED' : 'FAILED',
+      check: 'Device signed elements must be authorized by the key authorizations in the mobile security object',
+      reason: unauthorized.length ? describeUnauthorizedDeviceSignedElements(unauthorized) : undefined,
     })
   }
 

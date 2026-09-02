@@ -20,5 +20,11 @@ export * from './holder'
 export * from './iso-mdoc-dc-api'
 export * from './issuer'
 export * from './mdoc'
+export {
+  collectDeviceSignedElements,
+  type DeviceSignedElement,
+  describeUnauthorizedDeviceSignedElements,
+  findUnauthorizedDeviceSignedElements,
+} from './utils/keyAuthorizations'
 export { limitDisclosureToDeviceRequestNameSpaces } from './utils/limitDisclosure'
 export * from './verifier'

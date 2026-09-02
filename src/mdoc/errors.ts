@@ -7,6 +7,13 @@ export class MdlError extends Error {
 
 export class MdlParseError extends MdlError {}
 export class EitherSignatureOrMacMustBeProvidedError extends MdlError {}
+
+/**
+ * ISO/IEC 18013-5 9.1.3.4 forbids an mdoc from authenticating device-signed elements its device key
+ * is not authorized for in the MSO's `KeyAuthorizations`. Creating such a response would produce
+ * one every conformant mdoc reader has to reject, so it is refused up front.
+ */
+export class DeviceKeyNotAuthorizedError extends MdlError {}
 export class AtLeastOneCertificateRequiredError extends MdlError {}
 export class SignatureAlgorithmDoesNotMatchSigningKeyAlgorithmError extends MdlError {}
 export class UnableToExtractX5ChainFromCwtError extends MdlError {}
