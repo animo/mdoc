@@ -75,7 +75,8 @@ describe('IsoMdocDcApi round trip', () => {
       mdocContext
     )
 
-    expect(verificationResult).toHaveLength(1)
+    expect(verificationResult.documents).toHaveLength(1)
+    expect(verificationResult.deviceRequestMatch?.success).toBe(true)
     expect(deviceResponse.documents?.[0].docType).toBe(mdlDocType)
 
     // Only the requested elements are disclosed.

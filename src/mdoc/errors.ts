@@ -1,3 +1,5 @@
+import type { VerificationAssessment, VerificationCallback } from './check-callback.js'
+
 // biome-ignore format: no explanation
 export class MdlError extends Error {
   constructor(message: string = new.target.name) {
@@ -41,3 +43,20 @@ export class InvalidDcApiRequestError extends MdlError {}
 export class InvalidDcApiResponseError extends MdlError {}
 export class InvalidEncryptionInfoError extends MdlError {}
 export class InvalidEncryptedResponseError extends MdlError {}
+
+/**
+ * A verification check failed.
+ *
+ * Verification reports every check it runs through a {@link VerificationCallback}; the default
+ * callback turns the first `FAILED` check into this error. `assessment` is that check, including
+ * the structured `result` of the checks that produce one, so that a caller which does not collect
+ * the checks itself does not have to parse the message to learn what failed.
+ */
+export class VerificationError extends MdlError {
+  public readonly assessment: VerificationAssessment
+
+  public constructor(message: string, assessment: VerificationAssessment) {
+    super(message)
+    this.assessment = assessment
+  }
+}

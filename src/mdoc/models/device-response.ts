@@ -15,7 +15,12 @@ import {
   findUnauthorizedDeviceSignedElements,
 } from '../../utils/keyAuthorizations'
 import { limitDisclosureToDeviceRequestNameSpaces } from '../../utils/limitDisclosure'
-import { verifyDocRequestsWithIssuerSigned } from '../../utils/verifyDocRequestsWithIssuerSigned'
+import {
+  type DeviceRequestElementOptions,
+  type DeviceRequestMatchResult,
+  matchDeviceRequest,
+  reportDeviceRequestMatch,
+} from '../../utils/matchDeviceRequest'
 import { defaultVerificationCallback, type VerificationCallback } from '../check-callback'
 import { DeviceKeyNotAuthorizedError, EitherSignatureOrMacMustBeProvidedError } from '../errors'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
@@ -56,7 +61,19 @@ export type DeviceResponseOptions = {
   status?: number
 }
 
-export type DeviceResponseVerificationResult = Array<IssuerAuthVerificationResult & { document: Document }>
+export type DocumentVerificationResult = IssuerAuthVerificationResult & { document: Document }
+
+export type DeviceResponseVerificationResult = {
+  /**
+   * One entry per document in the device response, in response order.
+   */
+  documents: Array<DocumentVerificationResult>
+  /**
+   * How the response matches the device request, per doc request and per requested element. Only
+   * present when `deviceRequest` was provided.
+   */
+  deviceRequestMatch?: DeviceRequestMatchResult
+}
 
 /**
  * A single document to disclose in a device response, authenticated with either a device signature
@@ -147,6 +164,12 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
   public async verify(
     options: {
       deviceRequest?: DeviceRequest
+      /**
+       * Per-element match options for `deviceRequest`, for elements that are optional or that may
+       * be answered from `deviceSigned`. Every element not named here is required and must be
+       * issuer-signed.
+       */
+      deviceRequestElements?: DeviceRequestElementOptions
       sessionTranscript: SessionTranscript | Uint8Array
       ephemeralReaderKey?: CoseKey
       disableCertificateChainValidation?: boolean
@@ -186,7 +209,7 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
           : undefined,
     })
 
-    const returnValue: DeviceResponseVerificationResult = []
+    const documentResults: Array<DocumentVerificationResult> = []
     for (const document of documents ?? []) {
       await document.deviceSigned.deviceAuth.verify(
         {
@@ -210,7 +233,7 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
           },
           ctx
         )
-      returnValue.push({
+      documentResults.push({
         trustedIssuanceChain,
         statusList,
         trustedStatusListChain,
@@ -220,27 +243,17 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
       })
     }
 
-    if (options.deviceRequest?.docRequests && documents) {
-      try {
-        verifyDocRequestsWithIssuerSigned(
-          options.deviceRequest.docRequests,
-          documents.map((d) => d.issuerSigned)
-        )
-        onCheck({
-          status: 'PASSED',
-          check: 'Device Response did match the Device Request',
-          category: 'DOCUMENT_FORMAT',
-        })
-      } catch (e) {
-        onCheck({
-          status: 'FAILED',
-          check: `Device Response did not match the Device Request: ${(e as Error).message}`,
-          category: 'DOCUMENT_FORMAT',
-        })
-      }
+    let deviceRequestMatch: DeviceRequestMatchResult | undefined
+    if (options.deviceRequest) {
+      deviceRequestMatch = matchDeviceRequest({
+        deviceRequest: options.deviceRequest,
+        deviceResponse: this,
+        elements: options.deviceRequestElements,
+      })
+      reportDeviceRequestMatch(deviceRequestMatch, onCheck)
     }
 
-    return returnValue
+    return { documents: documentResults, deviceRequestMatch }
   }
 
   public get encodedForOid4Vp() {
