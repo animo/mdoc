@@ -1,5 +1,5 @@
 import { X509Certificate } from '@peculiar/x509'
-import { CoseKey, DeviceKey, Issuer, SignatureAlgorithm } from '../../src'
+import { CoseKey, DeviceKey, Issuer, type KeyAuthorizations, SignatureAlgorithm } from '../../src'
 import { DEVICE_JWK_PUBLIC, ISSUER_CERTIFICATE, ISSUER_PRIVATE_KEY_JWK } from '../config'
 import { mdocContext } from '../context'
 
@@ -23,7 +23,11 @@ export const issuerCertificate = new Uint8Array(new X509Certificate(ISSUER_CERTI
 export const mdlDocType = 'org.iso.18013.5.1.mDL'
 export const mdlNamespace = 'org.iso.18013.5.1'
 
-export async function createIssuerSigned(options?: { docType?: string; claims?: Record<string, unknown> }) {
+export async function createIssuerSigned(options?: {
+  docType?: string
+  claims?: Record<string, unknown>
+  keyAuthorizations?: KeyAuthorizations
+}) {
   const docType = options?.docType ?? mdlDocType
   const issuer = new Issuer(docType, mdocContext)
 
@@ -43,7 +47,10 @@ export async function createIssuerSigned(options?: { docType?: string; claims?: 
     certificates: [issuerCertificate],
     algorithm: SignatureAlgorithm.ES256,
     digestAlgorithm: 'SHA-256',
-    deviceKeyInfo: { deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC) },
+    deviceKeyInfo: {
+      deviceKey: DeviceKey.fromJwk(DEVICE_JWK_PUBLIC),
+      ...(options?.keyAuthorizations && { keyAuthorizations: options.keyAuthorizations }),
+    },
     validityInfo: { signed, validFrom, validUntil },
   })
 }

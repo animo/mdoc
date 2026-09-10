@@ -158,7 +158,7 @@ suite('Verification', () => {
       mdocContext
     )
 
-    expect(result).toHaveLength(1)
+    expect(result.documents).toHaveLength(1)
     const [
       {
         document,
@@ -168,7 +168,7 @@ suite('Verification', () => {
         identifierList,
         trustedIdentifierListChain,
       },
-    ] = result
+    ] = result.documents
     expect(document).toBeDefined()
     expect(trustedIssuanceChain).toHaveLength(1)
     expect(trustedIssuanceChain[0]).toEqual(new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData))
@@ -735,7 +735,7 @@ suite('Verification', () => {
       mdocContext
     )
 
-    expect(result).toHaveLength(1)
+    expect(result.documents).toHaveLength(1)
     const [
       {
         document,
@@ -745,7 +745,7 @@ suite('Verification', () => {
         identifierList,
         trustedIdentifierListChain,
       },
-    ] = result
+    ] = result.documents
     expect(document).toBeDefined()
     expect(trustedIssuanceChain).toHaveLength(1)
     expect(trustedIssuanceChain[0]).toEqual(new Uint8Array(new X509Certificate(ISSUER_CERTIFICATE).rawData))

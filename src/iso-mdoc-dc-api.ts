@@ -31,6 +31,7 @@ import {
   SessionTranscript,
   type VerificationCallback,
 } from './mdoc'
+import type { DeviceRequestElementOptions } from './utils/matchDeviceRequest'
 
 /**
  * DC API protocol identifier for ISO/IEC TS 18013-7:2025 Annex C.
@@ -394,6 +395,12 @@ export class IsoMdocDcApi {
       encryptionInfo: string
       recipientKey: CoseKey
       deviceRequest?: DeviceRequest
+      /**
+       * Per-element match options for `deviceRequest`, for elements that are optional or that may
+       * be answered from `deviceSigned`. Every element not named here is required and must be
+       * issuer-signed.
+       */
+      deviceRequestElements?: DeviceRequestElementOptions
       trustedCertificates: Array<{ issuance: Array<Uint8Array>; status?: Array<Uint8Array> }>
       disableCertificateChainValidation?: boolean
       disableStatusValidation?: boolean
@@ -402,12 +409,16 @@ export class IsoMdocDcApi {
       skewSeconds?: number
     },
     ctx: Pick<MdocContext, 'crypto' | 'cose' | 'x509' | 'fetch'>
-  ): Promise<{ deviceResponse: DeviceResponse; verificationResult: DeviceResponseVerificationResult }> {
+  ): Promise<{
+    deviceResponse: DeviceResponse
+    verificationResult: DeviceResponseVerificationResult
+  }> {
     const { deviceResponse, sessionTranscript } = await IsoMdocDcApi.decryptResponse(options, ctx)
 
     const verificationResult = await deviceResponse.verify(
       {
         deviceRequest: options.deviceRequest,
+        deviceRequestElements: options.deviceRequestElements,
         sessionTranscript,
         trustedCertificates: options.trustedCertificates,
         disableCertificateChainValidation: options.disableCertificateChainValidation,

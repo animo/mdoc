@@ -104,9 +104,8 @@ describe('device response createWithDeviceRequest', () => {
     expect(deviceResponse.documents?.map((document) => document.docType)).toStrictEqual([mdlDocType, photoIdDocType])
 
     // Both device signatures verify against the device key of their own document.
-    await expect(deviceResponse.verify({ sessionTranscript, trustedCertificates }, mdocContext)).resolves.toHaveLength(
-      2
-    )
+    const { documents } = await deviceResponse.verify({ sessionTranscript, trustedCertificates }, mdocContext)
+    expect(documents).toHaveLength(2)
   })
 
   test('answers only the documents that were provided', async () => {

@@ -15,6 +15,17 @@ export class ErrorItems extends CborStructure<ErrorItemsStructure> {
     return errorItemsSchema
   }
 
+  /**
+   * Map where keys are data element identifiers and values are error codes
+   */
+  public get errorItems() {
+    return this.structure
+  }
+
+  public getErrorCode(dataElementIdentifier: DataElementIdentifier) {
+    return this.structure.get(dataElementIdentifier)
+  }
+
   public static create(options: ErrorItemsOptions) {
     return this.fromDecodedStructure(options.errorItems)
   }
