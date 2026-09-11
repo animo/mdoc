@@ -16,6 +16,19 @@ export class EitherSignatureOrMacMustBeProvidedError extends MdlError {}
  * one every conformant mdoc reader has to reject, so it is refused up front.
  */
 export class DeviceKeyNotAuthorizedError extends MdlError {}
+
+/**
+ * An element to disclose in a device response is requested, but the document cannot disclose it:
+ * the issuer did not sign it, and no device-signed value the device key is authorized for was
+ * provided.
+ */
+export class MissingRequestedElementError extends MdlError {}
+
+/**
+ * The options to match a device request with do not fit the device request: they refer to a doc
+ * request the device request does not have, or to the same doc request more than once.
+ */
+export class InvalidDeviceRequestMatchOptionsError extends MdlError {}
 export class AtLeastOneCertificateRequiredError extends MdlError {}
 export class SignatureAlgorithmDoesNotMatchSigningKeyAlgorithmError extends MdlError {}
 export class UnableToExtractX5ChainFromCwtError extends MdlError {}

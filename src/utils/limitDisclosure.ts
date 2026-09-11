@@ -3,7 +3,7 @@ import { IssuerNamespaces } from '../mdoc/models/issuer-namespaces'
 import type { IssuerSigned } from '../mdoc/models/issuer-signed'
 import type { IssuerSignedItem } from '../mdoc/models/issuer-signed-item'
 import type { Namespace } from '../mdoc/models/namespace'
-import { findAgeOverCandidate } from './ageOver'
+import { findElement } from './matchDeviceRequest'
 
 export const limitDisclosureToDeviceRequestNameSpaces = (
   issuerSigned: IssuerSigned,
@@ -26,14 +26,7 @@ export const limitDisclosureToDeviceRequestNameSpaces = (
   return IssuerNamespaces.create({ issuerNamespaces })
 }
 
-const prepareIssuerSignedItem = (
-  elementIdentifier: string,
-  nsAttrs: Array<IssuerSignedItem>
-): IssuerSignedItem | null => {
-  // An age_over_NN request may be answered with a different age attestation (18013-5 7.2.5).
-  const ageOverItem = findAgeOverCandidate(elementIdentifier, nsAttrs)
-  if (ageOverItem) return ageOverItem
-
-  const digest = nsAttrs.find((d) => d.elementIdentifier === elementIdentifier)
-  return digest ?? null
-}
+// Found the same way as when matching a device request, including the age attestation an
+// `age_over_NN` request may be answered with (18013-5 7.2.5).
+const prepareIssuerSignedItem = (elementIdentifier: string, nsAttrs: Array<IssuerSignedItem>) =>
+  findElement(elementIdentifier, nsAttrs) ?? null

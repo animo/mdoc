@@ -31,7 +31,7 @@ import {
   SessionTranscript,
   type VerificationCallback,
 } from './mdoc'
-import type { DeviceRequestElementOptions } from './utils/matchDeviceRequest'
+import type { DeviceRequestMatchOptions } from './utils/matchDeviceRequest'
 
 /**
  * DC API protocol identifier for ISO/IEC TS 18013-7:2025 Annex C.
@@ -295,6 +295,15 @@ export class IsoMdocDcApi {
          * Index into `parsedRequest.docRequests` of the doc request this document answers.
          */
         docRequestIndex: number
+        /**
+         * The requested elements to disclose, per namespace. Defaults to every element the doc
+         * request asks for.
+         */
+        elements?: Record<string, Array<string>>
+        /**
+         * Elements to disclose device-signed. Every requested element that is not issuer-signed,
+         * but that the device key is authorized for in the MSO, has to be provided here.
+         */
         deviceNamespaces?: DeviceNamespaces
       }>
     },
@@ -310,6 +319,7 @@ export class IsoMdocDcApi {
         documents: options.documents.map((document) => ({
           docRequestIndex: document.docRequestIndex,
           issuerSigned: document.issuerSigned,
+          elements: document.elements,
           deviceNamespaces: document.deviceNamespaces,
           signature: { signingKey: document.deviceKey },
         })),
@@ -396,11 +406,11 @@ export class IsoMdocDcApi {
       recipientKey: CoseKey
       deviceRequest?: DeviceRequest
       /**
-       * Per-element match options for `deviceRequest`, for elements that are optional or that may
-       * be answered from `deviceSigned`. Every element not named here is required and must be
-       * issuer-signed.
+       * Options to match the response against `deviceRequest` with: per doc request the elements
+       * that are optional or that may be answered from `deviceSigned`. By default every requested
+       * element is required and must be issuer-signed.
        */
-      deviceRequestElements?: DeviceRequestElementOptions
+      deviceRequestMatchOptions?: DeviceRequestMatchOptions
       trustedCertificates: Array<{ issuance: Array<Uint8Array>; status?: Array<Uint8Array> }>
       disableCertificateChainValidation?: boolean
       disableStatusValidation?: boolean
@@ -418,7 +428,7 @@ export class IsoMdocDcApi {
     const verificationResult = await deviceResponse.verify(
       {
         deviceRequest: options.deviceRequest,
-        deviceRequestElements: options.deviceRequestElements,
+        deviceRequestMatchOptions: options.deviceRequestMatchOptions,
         sessionTranscript,
         trustedCertificates: options.trustedCertificates,
         disableCertificateChainValidation: options.disableCertificateChainValidation,
