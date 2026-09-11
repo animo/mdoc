@@ -9,6 +9,7 @@ import {
   SessionTranscript,
   type VerificationCallback,
 } from './mdoc'
+import { type HolderDeviceRequestMatchResult, matchCredentialsToDeviceRequest } from './utils/matchDeviceRequest'
 
 export class Holder {
   /**
@@ -85,6 +86,35 @@ export class Holder {
         ctx
       )
     }
+  }
+
+  /**
+   * Match the credentials of the holder against a device request, to select which credentials can
+   * answer which doc request.
+   *
+   * Reports per doc request, per credential and per check (docType and claims) whether the
+   * credential satisfies the doc request, so a holder can show which credentials match, and for a
+   * credential of the right docType which requested elements it is missing. Credentials are referred
+   * to by their index in `credentials`.
+   *
+   * A requested element is disclosed issuer-signed when the issuer signed it (or, for an
+   * `age_over_NN` request, the age attestation 18013-5 7.2.5 allows in its place). Otherwise it is
+   * disclosed device-signed when the device key is authorized for it in the MSO, and its value has
+   * to be provided in the device namespaces when creating the response.
+   *
+   * Applies the same rules as `Verifier.matchDeviceRequest`.
+   */
+  public static matchDeviceRequest(options: {
+    deviceRequest: Uint8Array | DeviceRequest
+    credentials: Array<IssuerSigned>
+  }): HolderDeviceRequestMatchResult {
+    return matchCredentialsToDeviceRequest({
+      deviceRequest:
+        options.deviceRequest instanceof DeviceRequest
+          ? options.deviceRequest
+          : DeviceRequest.decode(options.deviceRequest),
+      credentials: options.credentials,
+    })
   }
 
   public static async createDeviceResponseForDeviceRequest(

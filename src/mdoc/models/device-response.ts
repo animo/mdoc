@@ -14,15 +14,20 @@ import {
   describeUnauthorizedDeviceSignedElements,
   findUnauthorizedDeviceSignedElements,
 } from '../../utils/keyAuthorizations'
-import { limitDisclosureToDeviceRequestNameSpaces } from '../../utils/limitDisclosure'
 import {
-  type DeviceRequestElementOptions,
+  type DeviceRequestMatchOptions,
   type DeviceRequestMatchResult,
   matchDeviceRequest,
+  matchElements,
   reportDeviceRequestMatch,
 } from '../../utils/matchDeviceRequest'
 import { defaultVerificationCallback, type VerificationCallback } from '../check-callback'
-import { DeviceKeyNotAuthorizedError, EitherSignatureOrMacMustBeProvidedError } from '../errors'
+import {
+  DeviceKeyNotAuthorizedError,
+  EitherSignatureOrMacMustBeProvidedError,
+  MissingRequestedElementError,
+} from '../errors'
+import type { DataElementIdentifier } from './data-element-identifier'
 import { DeviceAuth, type DeviceAuthOptions } from './device-auth'
 import { DeviceAuthentication } from './device-authentication'
 import { DeviceMac } from './device-mac'
@@ -34,7 +39,10 @@ import type { DocRequest } from './doc-request'
 import { Document, type DocumentEncodedStructure } from './document'
 import { DocumentError, type DocumentErrorStructure } from './document-error'
 import type { IssuerAuthVerificationResult } from './issuer-auth'
+import { IssuerNamespaces } from './issuer-namespaces'
 import { IssuerSigned } from './issuer-signed'
+import type { IssuerSignedItem } from './issuer-signed-item'
+import type { Namespace } from './namespace'
 import type { SessionTranscript } from './session-transcript'
 
 const deviceResponseEncodedSchema = typedMap([
@@ -85,6 +93,15 @@ export type DeviceResponseDocumentOptions = {
    * Index into `deviceRequest.docRequests` of the doc request this document answers.
    */
   docRequestIndex: number
+  /**
+   * The requested elements to disclose, per namespace. Defaults to every element the doc request
+   * asks for. Pass a subset to leave out elements, for instance the ones the user declined to share.
+   */
+  elements?: Record<Namespace, Array<DataElementIdentifier>>
+  /**
+   * Elements to disclose device-signed. Every requested element that is not issuer-signed, but that
+   * the device key is authorized for in the MSO, has to be provided here.
+   */
   deviceNamespaces?: DeviceNamespaces
   signature?: {
     signingKey: CoseKey
@@ -165,11 +182,11 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
     options: {
       deviceRequest?: DeviceRequest
       /**
-       * Per-element match options for `deviceRequest`, for elements that are optional or that may
-       * be answered from `deviceSigned`. Every element not named here is required and must be
-       * issuer-signed.
+       * Options to match the response against `deviceRequest` with: per doc request the elements
+       * that are optional or that may be answered from `deviceSigned`. By default every requested
+       * element is required and must be issuer-signed.
        */
-      deviceRequestElements?: DeviceRequestElementOptions
+      deviceRequestMatchOptions?: DeviceRequestMatchOptions
       sessionTranscript: SessionTranscript | Uint8Array
       ephemeralReaderKey?: CoseKey
       disableCertificateChainValidation?: boolean
@@ -248,7 +265,7 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
       deviceRequestMatch = matchDeviceRequest({
         deviceRequest: options.deviceRequest,
         deviceResponse: this,
-        elements: options.deviceRequestElements,
+        matchOptions: options.deviceRequestMatchOptions,
       })
       reportDeviceRequestMatch(deviceRequestMatch, onCheck)
     }
@@ -273,6 +290,7 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
       docRequest: DocRequest
       sessionTranscript: SessionTranscript | Uint8Array
       issuerSigned: IssuerSigned
+      elements?: Record<Namespace, Array<DataElementIdentifier>>
       deviceNamespaces?: DeviceNamespaces
       signature?: {
         signingKey: CoseKey
@@ -293,7 +311,6 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
 
     const { docRequest } = options
     const docType = docRequest.itemsRequest.docType
-    const disclosedIssuerNamespace = limitDisclosureToDeviceRequestNameSpaces(options.issuerSigned, docRequest)
 
     const deviceNamespaces = options.deviceNamespaces ?? DeviceNamespaces.create({ deviceNamespaces: new Map() })
 
@@ -306,6 +323,13 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
     if (unauthorized.length > 0) {
       throw new DeviceKeyNotAuthorizedError(describeUnauthorizedDeviceSignedElements(unauthorized))
     }
+
+    const disclosedIssuerNamespaces = DeviceResponse.selectIssuerSignedItems({
+      docRequest,
+      issuerSigned: options.issuerSigned,
+      deviceNamespaces,
+      elements: options.elements,
+    })
 
     const deviceAuthenticationBytes = DeviceAuthentication.create({
       sessionTranscript: options.sessionTranscript,
@@ -360,7 +384,7 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
     return Document.create({
       docType,
       issuerSigned: IssuerSigned.create({
-        issuerNamespaces: disclosedIssuerNamespace,
+        issuerNamespaces: disclosedIssuerNamespaces,
         issuerAuth: options.issuerSigned.issuerAuth,
       }),
       deviceSigned: DeviceSigned.create({
@@ -368,6 +392,61 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
         deviceAuth: DeviceAuth.create(deviceAuthOptions),
       }),
     })
+  }
+
+  /**
+   * The issuer-signed items to disclose for a doc request, selected with the same rules as
+   * `Holder.matchDeviceRequest`: a requested element is disclosed issuer-signed when the issuer
+   * signed it, and otherwise device-signed when the device key is authorized for it, in which case
+   * its value has to be in the device namespaces.
+   */
+  private static selectIssuerSignedItems(options: {
+    docRequest: DocRequest
+    issuerSigned: IssuerSigned
+    deviceNamespaces: DeviceNamespaces
+    elements?: Record<Namespace, Array<DataElementIdentifier>>
+  }) {
+    const { claims } = matchElements({
+      mode: 'holder',
+      namespaces: options.docRequest.itemsRequest.namespaces,
+      issuerSigned: options.issuerSigned,
+      deviceNamespaces: options.deviceNamespaces,
+    })
+
+    if (options.elements) {
+      for (const [namespace, elementIdentifiers] of Object.entries(options.elements)) {
+        for (const elementIdentifier of elementIdentifiers) {
+          if (!options.docRequest.itemsRequest.namespaces.get(namespace)?.has(elementIdentifier)) {
+            throw new MissingRequestedElementError(
+              `Element '${elementIdentifier}' in namespace '${namespace}' is selected for disclosure, but the doc request does not request it`
+            )
+          }
+        }
+      }
+    }
+
+    const issuerNamespaces = new Map<Namespace, Array<IssuerSignedItem>>()
+    for (const { claim, element } of claims) {
+      const selected = options.elements ? options.elements[claim.namespace]?.includes(claim.elementIdentifier) : true
+      if (!selected) continue
+
+      if (!claim.success) throw new MissingRequestedElementError(claim.reason)
+      if (!element) {
+        throw new MissingRequestedElementError(
+          `Element '${claim.elementIdentifier}' in namespace '${claim.namespace}' is not issuer-signed in the credential, so it has to be disclosed device-signed, but no value was provided for it in the device namespaces`
+        )
+      }
+
+      // Device-signed elements are disclosed through the device namespaces as provided.
+      if (!element.issuerSignedItem) continue
+
+      const items = issuerNamespaces.get(claim.namespace) ?? []
+      // An age attestation can answer more than one `age_over_NN` request, but is disclosed once.
+      if (!items.includes(element.issuerSignedItem)) items.push(element.issuerSignedItem)
+      issuerNamespaces.set(claim.namespace, items)
+    }
+
+    return IssuerNamespaces.create({ issuerNamespaces })
   }
 
   private static fromDocuments(documents: Array<Document>) {
@@ -409,6 +488,7 @@ export class DeviceResponse extends CborStructure<DeviceResponseEncodedStructure
             docRequest: DeviceResponse.findDocRequest(options.deviceRequest, document.docRequestIndex),
             sessionTranscript: options.sessionTranscript,
             issuerSigned: document.issuerSigned,
+            elements: document.elements,
             deviceNamespaces: document.deviceNamespaces,
             signature: document.signature,
             mac: document.mac,

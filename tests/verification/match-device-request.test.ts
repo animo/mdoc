@@ -1,16 +1,17 @@
-import { describe, expect, test } from 'vitest'
+import { assert, describe, expect, expectTypeOf, test } from 'vitest'
 import { z } from 'zod'
 import {
-  type ClaimMatchFailure,
-  type ClaimMatchSuccess,
   CoseKey,
   DeviceNamespaces,
   DeviceRequest,
   DeviceResponse,
   DeviceSignedItems,
   DocRequest,
+  type DocTypeMatchSuccess,
   Document,
+  type DocumentClaimsMatchSuccess,
   DocumentError,
+  InvalidDeviceRequestMatchOptionsError,
   type IssuerSigned,
   ItemsRequest,
   KeyAuthorizations,
@@ -83,11 +84,18 @@ describe('matchDeviceRequest', () => {
 
     const [docRequest] = match.docRequests
     expect(docRequest).toMatchObject({ docRequestIndex: 0, docType: mdlDocType, success: true })
-    expect(docRequest.documents).toHaveLength(1)
+    expect(docRequest.validDocuments).toHaveLength(1)
+    expect(docRequest.failedDocuments).toHaveLength(0)
 
-    const [document] = docRequest.documents
-    expect(document).toMatchObject({ documentIndex: 0, success: true, unrequestedClaims: [] })
-    expect(document.claims).toStrictEqual([
+    assert(docRequest.success)
+    const [document] = docRequest.validDocuments
+    expect(document).toMatchObject({
+      documentIndex: 0,
+      success: true,
+      docType: { success: true, docType: mdlDocType },
+      claims: { success: true, failedClaims: [], unrequestedClaims: [] },
+    })
+    expect(document.claims.validClaims).toStrictEqual([
       {
         success: true,
         namespace: mdlNamespace,
@@ -126,13 +134,21 @@ describe('matchDeviceRequest', () => {
 
     expect(match.success).toBe(false)
 
-    const [document] = match.docRequests[0].documents
-    expect(document.success).toBe(false)
-    expect(document.claims.map((claim) => [claim.elementIdentifier, claim.success])).toStrictEqual([
-      ['family_name', true],
-      ['birth_date', false],
+    // The document has the requested docType, but not every requested claim.
+    const [document] = match.docRequests[0].failedDocuments
+    expect(document).toMatchObject({ success: false, docType: { success: true }, claims: { success: false } })
+    expect(document.claims.validClaims.map((claim) => claim.elementIdentifier)).toStrictEqual(['family_name'])
+    expect(document.claims.failedClaims).toStrictEqual([
+      {
+        success: false,
+        namespace: mdlNamespace,
+        elementIdentifier: 'birth_date',
+        intentToRetain: true,
+        optional: false,
+        failure: 'notDisclosed',
+        reason: `Element 'birth_date' in namespace '${mdlNamespace}' was not disclosed`,
+      },
     ])
-    expect((document.claims[1] as ClaimMatchFailure).reason).toContain('birth_date')
   })
 
   test('elements the mdoc disclosed but the request did not ask for are reported as unrequested', async () => {
@@ -150,7 +166,9 @@ describe('matchDeviceRequest', () => {
 
     // Over-disclosure does not make the request unsatisfied — it is reported separately.
     expect(match.success).toBe(true)
-    expect(match.docRequests[0].documents[0].unrequestedClaims).toStrictEqual([
+    const [docRequest] = match.docRequests
+    assert(docRequest.success)
+    expect(docRequest.validDocuments[0].claims.unrequestedClaims).toStrictEqual([
       { namespace: mdlNamespace, elementIdentifier: 'birth_date', elementValue: '1990-01-01', source: 'issuerSigned' },
     ])
   })
@@ -181,9 +199,14 @@ describe('matchDeviceRequest', () => {
       docRequestIndex: 1,
       docType: photoIdDocType,
       success: false,
-      documents: [],
+      validDocuments: [],
     })
-    expect(match.docRequests[1].reason).toContain(photoIdDocType)
+    // The mDL was matched against the photo ID doc request as well, and failed on its docType.
+    expect(match.docRequests[1].failedDocuments[0].docType).toStrictEqual({
+      success: false,
+      docType: mdlDocType,
+      reason: `Document has docType '${mdlDocType}', but docType '${photoIdDocType}' was requested`,
+    })
   })
 
   test('an age_over_NN request is satisfied by a different age attestation (18013-5 7.2.5)', async () => {
@@ -198,15 +221,17 @@ describe('matchDeviceRequest', () => {
     const match = Verifier.matchDeviceRequest({ deviceRequest, deviceResponse })
 
     expect(match.success).toBe(true)
-    const claim = match.docRequests[0].documents[0].claims[0] as ClaimMatchSuccess
-    expect(claim).toMatchObject({
+    const [docRequest] = match.docRequests
+    assert(docRequest.success)
+    const [document] = docRequest.validDocuments
+    expect(document.claims.validClaims[0]).toMatchObject({
       success: true,
       elementIdentifier: 'age_over_18',
       disclosedElementIdentifier: 'age_over_21',
       elementValue: true,
     })
     // The substituted attestation answers the request, so it is not over-disclosure.
-    expect(match.docRequests[0].documents[0].unrequestedClaims).toHaveLength(0)
+    expect(document.claims.unrequestedClaims).toHaveLength(0)
   })
 
   /**
@@ -220,13 +245,13 @@ describe('matchDeviceRequest', () => {
 
   test('a device-signed element only matches when the verifier marked it as device-signed', async () => {
     const deviceNamespace = 'com.example.device'
-    const disclosedRequest = createDeviceRequest([{ namespaces: { [mdlNamespace]: { family_name: true } } }])
     const deviceRequest = createDeviceRequest([
       { namespaces: { [mdlNamespace]: { family_name: true }, [deviceNamespace]: { session_id: false } } },
     ])
 
+    // A requested element the issuer did not sign can be answered from the device namespaces.
     const deviceResponse = await createDeviceResponse({
-      deviceRequest: disclosedRequest,
+      deviceRequest,
       issuerSigned: [
         await createIssuerSigned({
           keyAuthorizations: KeyAuthorizations.create({ namespaces: [deviceNamespace] }),
@@ -242,7 +267,7 @@ describe('matchDeviceRequest', () => {
     // Without the element options the device-signed element does not answer the request.
     const withoutOptions = Verifier.matchDeviceRequest({ deviceRequest, deviceResponse })
     expect(withoutOptions.success).toBe(false)
-    expect(withoutOptions.docRequests[0].documents[0].claims[1]).toMatchObject({
+    expect(withoutOptions.docRequests[0].failedDocuments[0].claims.failedClaims[0]).toMatchObject({
       success: false,
       failure: 'disallowedSource',
       disclosedFrom: 'deviceSigned',
@@ -251,11 +276,15 @@ describe('matchDeviceRequest', () => {
     const match = Verifier.matchDeviceRequest({
       deviceRequest,
       deviceResponse,
-      elements: { [mdlDocType]: { [deviceNamespace]: { '*': { source: 'deviceSigned' } } } },
+      matchOptions: {
+        docRequests: [{ docRequestIndex: 0, elements: { [deviceNamespace]: { '*': { source: 'deviceSigned' } } } }],
+      },
     })
 
     expect(match.success).toBe(true)
-    const claim = match.docRequests[0].documents[0].claims[1] as ClaimMatchSuccess
+    const [docRequest] = match.docRequests
+    assert(docRequest.success)
+    const claim = docRequest.validDocuments[0].claims.validClaims[1]
     expect(claim).toMatchObject({
       success: true,
       namespace: deviceNamespace,
@@ -285,7 +314,7 @@ describe('matchDeviceRequest', () => {
     const match = Verifier.matchDeviceRequest({ deviceRequest, deviceResponse })
 
     expect(match.success).toBe(false)
-    const claim = match.docRequests[0].documents[0].claims[0] as ClaimMatchFailure
+    const claim = match.docRequests[0].failedDocuments[0].claims.failedClaims[0]
     expect(claim).toMatchObject({
       success: false,
       elementIdentifier: 'age_over_18',
@@ -317,13 +346,16 @@ describe('matchDeviceRequest', () => {
     const match = Verifier.matchDeviceRequest({ deviceRequest, deviceResponse })
 
     expect(match.success).toBe(true)
-    expect(match.docRequests[0].documents[0].claims[0]).toMatchObject({
+    const [docRequest] = match.docRequests
+    assert(docRequest.success)
+    const [document] = docRequest.validDocuments
+    expect(document.claims.validClaims[0]).toMatchObject({
       success: true,
       disclosedElementIdentifier: 'age_over_18',
       source: 'issuerSigned',
     })
     // The self-asserted attestation was not requested from deviceSigned.
-    expect(match.docRequests[0].documents[0].unrequestedClaims).toStrictEqual([
+    expect(document.claims.unrequestedClaims).toStrictEqual([
       { namespace: mdlNamespace, elementIdentifier: 'age_over_21', elementValue: true, source: 'deviceSigned' },
     ])
   })
@@ -342,17 +374,36 @@ describe('matchDeviceRequest', () => {
     const match = Verifier.matchDeviceRequest({
       deviceRequest,
       deviceResponse,
-      elements: { [mdlDocType]: { [mdlNamespace]: { portrait: { optional: true } } } },
+      matchOptions: {
+        docRequests: [{ docRequestIndex: 0, elements: { [mdlNamespace]: { portrait: { optional: true } } } }],
+      },
     })
 
     expect(match.success).toBe(true)
+    const [docRequest] = match.docRequests
+    assert(docRequest.success)
     // The absence is still reported per claim, it just does not make the document fail.
-    expect(match.docRequests[0].documents[0].claims[1]).toMatchObject({
+    expect(docRequest.validDocuments[0].claims.failedClaims[0]).toMatchObject({
       success: false,
       elementIdentifier: 'portrait',
       optional: true,
       failure: 'notDisclosed',
     })
+  })
+
+  test('a successful match is typed as successful down to every check', async () => {
+    const deviceRequest = createDeviceRequest([{ namespaces: { [mdlNamespace]: { family_name: true } } }])
+    const deviceResponse = await createDeviceResponse({ deviceRequest, issuerSigned: [await createIssuerSigned()] })
+
+    const match = Verifier.matchDeviceRequest({ deviceRequest, deviceResponse })
+
+    assert(match.success)
+    const [document] = match.docRequests[0].validDocuments
+    expectTypeOf(document.docType).toEqualTypeOf<DocTypeMatchSuccess>()
+    expectTypeOf(document.claims).toEqualTypeOf<DocumentClaimsMatchSuccess>()
+    // Only optional elements can be missing from a successful claims check.
+    expectTypeOf<(typeof document.claims.failedClaims)[number]['optional']>().toEqualTypeOf<true>()
+    expect(document.docType.success && document.claims.success).toBe(true)
   })
 
   test('a document whose MSO docType differs from its docType does not answer the doc request', async () => {
@@ -382,7 +433,11 @@ describe('matchDeviceRequest', () => {
     const match = Verifier.matchDeviceRequest({ deviceRequest, deviceResponse })
 
     expect(match.success).toBe(false)
-    expect(match.docRequests[0].documents[0].reason).toContain(mdlDocType)
+    expect(match.docRequests[0].failedDocuments[0].docType).toMatchObject({ success: false })
+    expect(match.docRequests[0].failedDocuments[0].docType).toHaveProperty(
+      'reason',
+      expect.stringContaining(mdlDocType)
+    )
   })
 
   test('documents the device request did not ask for are reported', async () => {
@@ -402,6 +457,60 @@ describe('matchDeviceRequest', () => {
     expect(match.success).toBe(true)
     expect(match.unrequestedDocuments).toHaveLength(1)
     expect(match.unrequestedDocuments[0]).toMatchObject({ documentIndex: 1, docType: 'org.iso.23220.photoid.1' })
+  })
+
+  test('match options apply per doc request, also when two doc requests have the same docType', async () => {
+    const disclosedRequest = createDeviceRequest([{ namespaces: { [mdlNamespace]: { family_name: true } } }])
+    const deviceRequest = createDeviceRequest([
+      { namespaces: { [mdlNamespace]: { family_name: true, portrait: true } } },
+      { namespaces: { [mdlNamespace]: { family_name: true, portrait: true } } },
+    ])
+
+    const deviceResponse = await createDeviceResponse({
+      deviceRequest: disclosedRequest,
+      issuerSigned: [await createIssuerSigned()],
+    })
+
+    const match = Verifier.matchDeviceRequest({
+      deviceRequest,
+      deviceResponse,
+      matchOptions: {
+        docRequests: [{ docRequestIndex: 1, elements: { [mdlNamespace]: { portrait: { optional: true } } } }],
+      },
+    })
+
+    expect(match.docRequests.map((docRequest) => docRequest.success)).toEqual([false, true])
+    expect(match.success).toBe(false)
+  })
+
+  test.each([
+    [1, 'Match options refer to doc request 1, but the device request has 1 doc request(s)'],
+    [-1, 'Match options refer to doc request -1, but the device request has 1 doc request(s)'],
+    [0.5, 'Match options refer to doc request 0.5, but the device request has 1 doc request(s)'],
+  ])('match options for doc request %s, which the device request does not have, are rejected', async (docRequestIndex, message) => {
+    const deviceRequest = createDeviceRequest([{ namespaces: { [mdlNamespace]: { family_name: true } } }])
+    const deviceResponse = await createDeviceResponse({ deviceRequest, issuerSigned: [await createIssuerSigned()] })
+
+    expect(() =>
+      Verifier.matchDeviceRequest({
+        deviceRequest,
+        deviceResponse,
+        matchOptions: { docRequests: [{ docRequestIndex, elements: {} }] },
+      })
+    ).toThrow(new InvalidDeviceRequestMatchOptionsError(message))
+  })
+
+  test('match options for the same doc request more than once are rejected', async () => {
+    const deviceRequest = createDeviceRequest([{ namespaces: { [mdlNamespace]: { family_name: true } } }])
+    const deviceResponse = await createDeviceResponse({ deviceRequest, issuerSigned: [await createIssuerSigned()] })
+
+    expect(() =>
+      Verifier.matchDeviceRequest({
+        deviceRequest,
+        deviceResponse,
+        matchOptions: { docRequests: [{ docRequestIndex: 0 }, { docRequestIndex: 0, elements: {} }] },
+      })
+    ).toThrow(new InvalidDeviceRequestMatchOptionsError('Match options are provided more than once for doc request 0'))
   })
 
   test('accepts encoded device requests and responses', async () => {
@@ -452,7 +561,7 @@ describe('DeviceResponse.verify with a device request', () => {
 
     // A collecting callback does not throw, so the match is returned instead.
     expect(deviceRequestMatch?.success).toBe(false)
-    expect(deviceRequestMatch?.docRequests[0].documents[0].claims.find((claim) => !claim.success)).toMatchObject({
+    expect(deviceRequestMatch?.docRequests[0].failedDocuments[0].claims.failedClaims[0]).toMatchObject({
       elementIdentifier: 'birth_date',
       failure: 'notDisclosed',
     })
@@ -525,7 +634,7 @@ describe('DeviceResponse.verify with a device request', () => {
     expect(assessment.result?.type).toBe('deviceRequestMatch')
     const match = assessment.result?.match
     expect(match?.success).toBe(false)
-    expect(match?.docRequests[0].documents[0].claims.filter((claim) => !claim.success)).toEqual([
+    expect(match?.docRequests[0].failedDocuments[0].claims.failedClaims).toEqual([
       expect.objectContaining({ elementIdentifier: 'birth_date', failure: 'notDisclosed' }),
     ])
   })
